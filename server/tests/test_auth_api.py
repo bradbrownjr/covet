@@ -1,0 +1,64 @@
+"""End-to-end auth flow tests."""
+
+from __future__ import annotations
+
+
+def _register(client, username="alice", password="hunter22-secure"):
+    return client.post(
+        "/auth/register",
+        json={"username": username, "password": password, "email": f"{username}@example.com"},
+    )
+
+
+def test_register_login_logout_me(client) -> None:
+    r = _register(client)
+    assert r.status_code == 201, r.text
+    assert r.json()["username"] == "alice"
+
+    r = client.post("/auth/login", json={"username": "alice", "password": "hunter22-secure"})
+    assert r.status_code == 200
+    assert r.json()["user"]["username"] == "alice"
+
+    r = client.get("/auth/me")
+    assert r.status_code == 200
+    assert r.json()["username"] == "alice"
+
+    r = client.post("/auth/logout")
+    assert r.status_code == 204
+
+    r = client.get("/auth/me")
+    assert r.status_code == 401
+
+
+def test_register_disabled(client, monkeypatch) -> None:
+    # Force registration off without rebuilding the app fixture.
+    from covet.config import get_settings
+
+    settings = get_settings()
+    object.__setattr__(settings, "registration_enabled", False)
+
+    r = _register(client, username="bob")
+    assert r.status_code == 403
+
+
+def test_bad_login(client) -> None:
+    _register(client)
+    r = client.post("/auth/login", json={"username": "alice", "password": "wrong-password"})
+    assert r.status_code == 401
+
+
+def test_api_token_auth(client) -> None:
+    _register(client)
+    client.post("/auth/login", json={"username": "alice", "password": "hunter22-secure"})
+    r = client.post("/auth/tokens", params={"name": "test"})
+    assert r.status_code == 201
+    raw = r.json()["token"]
+    assert raw
+
+    # New client without cookies, using bearer token.
+    from fastapi.testclient import TestClient
+
+    bare = TestClient(client.app)
+    r = bare.get("/auth/me", headers={"Authorization": f"Bearer {raw}"})
+    assert r.status_code == 200
+    assert r.json()["username"] == "alice"

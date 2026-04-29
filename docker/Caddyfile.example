@@ -1,0 +1,9 @@
+# Caddy reference snippet for Covet behind a reverse proxy.
+#
+# Place this in your Caddyfile (or include it via an `import`).
+# Pair with COVET_BEHIND_PROXY=true and COVET_ALLOWED_HOSTS=<domain>.
+
+covet.example.com {
+    encode zstd gzip
+    reverse_proxy covet:8000
+}

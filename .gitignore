@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.sqlite
+*.sqlite3
+*.db
+
+# Node / SvelteKit
+node_modules/
+.svelte-kit/
+.vite/
+.turbo/
+.next/
+.parcel-cache/
+.npm/
+
+# Android / Gradle
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/captures/
+android/app/release/
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# Editors / OS
+.idea/
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.DS_Store
+Thumbs.db
+
+# Project-specific
+data/
+config/
+.env
+.env.local
+.env.*.local
+secret.key
+*.log
+
+# Generated clients
+shared/generated/

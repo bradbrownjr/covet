@@ -1,0 +1,104 @@
+/**
+ * Minimal typed API client for the Covet server.
+ *
+ * Pages call `api.get('/items?...')` or `api.post('/auth/login', {...})`.
+ * Errors are normalised to `ApiError` with the original status + body.
+ */
+
+export class ApiError extends Error {
+    status: number;
+    body: unknown;
+    constructor(status: number, body: unknown, message: string) {
+        super(message);
+        this.status = status;
+        this.body = body;
+    }
+}
+
+async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+    const init: RequestInit = {
+        method,
+        credentials: 'include',
+        headers: { Accept: 'application/json' }
+    };
+    if (body !== undefined) {
+        (init.headers as Record<string, string>)['Content-Type'] = 'application/json';
+        init.body = JSON.stringify(body);
+    }
+    const res = await fetch(path, init);
+    let parsed: unknown = null;
+    const text = await res.text();
+    if (text) {
+        try {
+            parsed = JSON.parse(text);
+        } catch {
+            parsed = text;
+        }
+    }
+    if (!res.ok) {
+        const message =
+            (parsed && typeof parsed === 'object' && 'detail' in parsed
+                ? String((parsed as { detail: unknown }).detail)
+                : res.statusText) || `HTTP ${res.status}`;
+        throw new ApiError(res.status, parsed, message);
+    }
+    return parsed as T;
+}
+
+export const api = {
+    get: <T>(path: string) => request<T>('GET', path),
+    post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
+    patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, body),
+    put: <T>(path: string, body?: unknown) => request<T>('PUT', path, body),
+    delete: <T>(path: string) => request<T>('DELETE', path)
+};
+
+// --- Domain types (mirror server schemas) --------------------------------
+
+export interface User {
+    id: string;
+    username: string;
+    email: string | null;
+    display_name: string | null;
+    is_admin: boolean;
+}
+
+export interface Collection {
+    id: string;
+    name: string;
+    description: string | null;
+    icon: string | null;
+    is_public: boolean;
+    owner_id: string;
+}
+
+export type ItemType = 'movie' | 'music' | 'book' | 'comic' | 'game' | 'other';
+
+export interface Item {
+    id: string;
+    collection_id: string;
+    type: ItemType;
+    title: string;
+    subtitle: string | null;
+    notes: string | null;
+    condition: string | null;
+    quantity: number;
+    purchase_price: number | null;
+    current_value: number | null;
+    currency: string | null;
+    location: string | null;
+    identifiers: Record<string, unknown>;
+    attrs: Record<string, unknown>;
+}
+
+export interface Tag {
+    id: string;
+    name: string;
+    color: string | null;
+}
+
+export interface PublicConfig {
+    public_url: string;
+    registration_enabled: boolean;
+    oidc_providers: { name: string; label: string }[];
+}

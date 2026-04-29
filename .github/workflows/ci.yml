@@ -1,0 +1,145 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "22"
+  UV_VERSION: "0.5.4"
+  UV_LINK_MODE: copy
+  UV_NO_PROGRESS: "1"
+
+jobs:
+  server:
+    name: Server (lint + tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install project (with dev extras)
+        run: uv sync --extra dev
+
+      - name: Ruff
+        run: uv run ruff check .
+
+      - name: Mypy
+        run: uv run mypy src
+        continue-on-error: true # tighten once strict baseline is clean
+
+      - name: Pytest
+        run: uv run pytest -q --cov=covet --cov-report=term-missing
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: pip-audit (Python deps)
+        working-directory: server
+        run: |
+          uv sync --extra dev
+          uv run --with pip-audit pip-audit --strict --ignore-vuln GHSA-4xh5-x5gv-qwph || true
+          # ↑ Non-blocking for now; flip to a hard-fail once we triage the
+          #   first audit run. Vuln IDs to ignore should be listed explicitly.
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: npm audit (production deps only)
+        working-directory: web
+        run: npm audit --omit=dev --audit-level=high || true
+
+  web:
+    name: Web (check + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install --no-audit --no-fund; fi
+      - name: Type check
+        run: npm run check
+      - name: Build
+        run: npm run build
+      - name: Upload web build
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: web/build
+          if-no-files-found: error
+          retention-days: 7
+
+  docker:
+    name: Docker build (smoke)
+    runs-on: ubuntu-latest
+    needs: [server, web]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: false
+          load: true
+          tags: covet:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Run image and probe /healthz
+        run: |
+          docker run -d --name covet-ci -p 8000:8000 \
+            -e COVET_ADMIN_USERNAME=admin \
+            -e COVET_ADMIN_PASSWORD=changeme-dev-only \
+            covet:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/healthz; then
+              echo "OK"; exit 0
+            fi
+            sleep 2
+          done
+          echo "Container did not become healthy"; docker logs covet-ci; exit 1
+      - name: Stop container
+        if: always()
+        run: docker rm -f covet-ci || true
