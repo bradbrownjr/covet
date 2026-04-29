@@ -26,7 +26,7 @@ from typing import IO
 # stdlib XML parser; it raises on entity-expansion / XXE attempts.
 from defusedxml import ElementTree as DET  # type: ignore[import-untyped]
 
-from covet.importers.base import ImportItem, ImportResult, Importer
+from covet.importers.base import Importer, ImportItem, ImportResult
 
 
 def _text(node, name: str) -> str | None:  # type: ignore[no-untyped-def]

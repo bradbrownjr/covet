@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from covet.models.tag import ItemTag
 
 
-class ItemType(str, enum.Enum):
+class ItemType(enum.StrEnum):
     GENERIC = "generic"
     VINYL = "vinyl"
     CD = "cd"

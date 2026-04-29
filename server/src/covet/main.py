@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -43,7 +43,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     # Trusted hosts (from settings)
     if settings.allowed_hosts:
-        app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts + ["testserver"])
+        app.add_middleware(
+            TrustedHostMiddleware,
+            allowed_hosts=[*settings.allowed_hosts, "testserver"],
+        )
 
     # CORS
     if settings.cors_origins:
@@ -92,6 +95,7 @@ def _mount_web(app: FastAPI, settings: Settings) -> None:
     Returns silently if no build is found, leaving the API the only surface.
     """
     from pathlib import Path
+
     from fastapi import HTTPException
     from fastapi.responses import FileResponse
     from starlette.staticfiles import StaticFiles

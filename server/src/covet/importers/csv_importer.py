@@ -14,7 +14,7 @@ import io
 from dataclasses import dataclass
 from typing import IO
 
-from covet.importers.base import ImportItem, ImportResult, Importer
+from covet.importers.base import Importer, ImportItem, ImportResult
 
 _NUMERIC = {"purchase_price", "current_value"}
 _INT = {"quantity"}

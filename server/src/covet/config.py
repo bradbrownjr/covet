@@ -11,12 +11,10 @@ from __future__ import annotations
 import os
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 from urllib.parse import urlparse
 
 import yaml
-from typing_extensions import Annotated
-
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
@@ -79,7 +77,7 @@ class Settings(BaseSettings):
     data_dir: Path = Path("/data")
     config_dir: Path = Path("/config")
     web_dir: Path | None = None
-    host: str = "0.0.0.0"  # noqa: S104 - container default
+    host: str = "0.0.0.0"
     port: int = 8000
     log_level: str = "INFO"
     log_format: str = "console"

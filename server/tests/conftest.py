@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import os
-import tempfile
 import shutil
+import tempfile
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session as DBSession
 
 from covet.config import reset_settings_cache
-from covet.db import get_engine, init_engine
+from covet.db import get_engine
 
 
 def _fast_tmp_root() -> Path:

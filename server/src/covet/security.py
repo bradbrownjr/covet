@@ -36,12 +36,12 @@ def load_or_create_secret_key(provided: str | None, config_dir: Path) -> str:
         text = key_path.read_text(encoding="utf-8").strip()
         if text:
             return text
+    import contextlib
+
     key = secrets.token_urlsafe(64)
     key_path.write_text(key + "\n", encoding="utf-8")
-    try:
+    with contextlib.suppress(OSError):
         key_path.chmod(0o600)
-    except OSError:
-        pass
     return key
 
 

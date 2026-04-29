@@ -1,6 +1,6 @@
 """Importers: read external sources into ``ImportItem`` records."""
 
-from covet.importers.base import ImportItem, Importer, ImportResult
+from covet.importers.base import Importer, ImportItem, ImportResult
 from covet.importers.clz import (
     CLZ_IMPORTERS,
     CLZBookImporter,
@@ -21,8 +21,8 @@ from covet.importers.json_backup import (
 
 __all__ = [
     "BACKUP_VERSION",
-    "BackupStats",
     "CLZ_IMPORTERS",
+    "BackupStats",
     "CLZBookImporter",
     "CLZComicImporter",
     "CLZGameImporter",

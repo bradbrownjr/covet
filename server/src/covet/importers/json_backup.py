@@ -26,7 +26,6 @@ from sqlalchemy.orm import Session as DBSession
 
 from covet.models import (
     Collection,
-    CollectionMembership,
     Contact,
     Item,
     Loan,
@@ -35,8 +34,8 @@ from covet.models import (
     Tag,
     User,
 )
-from covet.models.tag import ItemTag
 from covet.models.base import ulid_str
+from covet.models.tag import ItemTag
 
 BACKUP_VERSION = 1
 
@@ -158,7 +157,7 @@ def export_user(db: DBSession, *, user: User) -> dict[str, Any]:
         "tags": [_model_to_dict(t, _TAG_FIELDS) for t in tags],
         "item_tags": [{"item_id": i, "tag_id": t} for i, t in item_tag_pairs],
         "contacts": [_model_to_dict(c, _CONTACT_FIELDS) for c in contacts],
-        "loans": [_model_to_dict(l, _LOAN_FIELDS) for l in loans],
+        "loans": [_model_to_dict(loan, _LOAN_FIELDS) for loan in loans],
         "share_links": [_model_to_dict(s, _SHARE_FIELDS) for s in share_links],
     }
     return payload
