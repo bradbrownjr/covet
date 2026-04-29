@@ -29,7 +29,7 @@ import io.github.bradbrownjr.covet.data.repo.CategoryRepository
 import io.github.bradbrownjr.covet.data.repo.CollectionRepository
 import javax.inject.Inject
 
-private enum class WizardStep { CLOSED, PICK_PRESET, CONFIRM }
+enum class WizardStep { CLOSED, PICK_PRESET, CONFIRM }
 
 data class CollectionsUi(
     val items: List<CollectionDto> = emptyList(),
