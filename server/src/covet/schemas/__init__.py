@@ -35,6 +35,11 @@ from covet.schemas.item_template import (
     TemplateField,
 )
 from covet.schemas.loan import LoanCreate, LoanRead, LoanUpdate
+from covet.schemas.maintenance import (
+    MaintenanceTaskCreate,
+    MaintenanceTaskRead,
+    MaintenanceTaskUpdate,
+)
 from covet.schemas.sync import (
     SyncChange,
     SyncChangeUpload,
@@ -72,6 +77,9 @@ __all__ = [
     "LoanRead",
     "LoanUpdate",
     "LoginRequest",
+    "MaintenanceTaskCreate",
+    "MaintenanceTaskRead",
+    "MaintenanceTaskUpdate",
     "MembershipCreate",
     "MembershipDetail",
     "MembershipRead",

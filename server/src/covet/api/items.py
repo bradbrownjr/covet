@@ -29,6 +29,33 @@ def _require_role(db: DBSession, auth: AuthContext, collection_id: str, allowed:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
 
+def _validate_parent(
+    db: DBSession, parent_id: str, collection_id: str, child_id: str | None
+) -> None:
+    if child_id is not None and parent_id == child_id:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Item cannot be its own parent",
+        )
+    parent = db.get(Item, parent_id)
+    if parent is None or parent.collection_id != collection_id:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Parent item not found in this collection",
+        )
+    # Walk ancestors to detect cycles.
+    seen: set[str] = set()
+    cursor: Item | None = parent
+    while cursor is not None and cursor.parent_id is not None:
+        if cursor.parent_id in seen or cursor.parent_id == child_id:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Parent assignment would create a cycle",
+            )
+        seen.add(cursor.parent_id)
+        cursor = db.get(Item, cursor.parent_id)
+
+
 @router.get("", response_model=list[ItemRead])
 def list_items(
     collection_id: str = Query(...),
@@ -58,6 +85,8 @@ def create_item(
 ) -> ItemRead:
     _require_role(db, auth, payload.collection_id, _EDITOR_ROLES)
     data = payload.model_dump()
+    if data.get("parent_id"):
+        _validate_parent(db, data["parent_id"], payload.collection_id, child_id=None)
     if data.get("template_id"):
         tmpl = db.get(ItemTemplate, data["template_id"])
         if tmpl is None or tmpl.collection_id != payload.collection_id:
@@ -98,6 +127,8 @@ def update_item(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     _require_role(db, auth, item.collection_id, _EDITOR_ROLES)
     updates = payload.model_dump(exclude_unset=True)
+    if updates.get("parent_id"):
+        _validate_parent(db, updates["parent_id"], item.collection_id, child_id=item.id)
     new_template_id = updates.get("template_id", item.template_id)
     if ("attrs" in updates or ("template_id" in updates and new_template_id)) and new_template_id:
         tmpl = db.get(ItemTemplate, new_template_id)
@@ -127,3 +158,19 @@ def delete_item(
     _require_role(db, auth, item.collection_id, _EDITOR_ROLES)
     db.delete(item)
     db.commit()
+
+
+@router.get("/{item_id}/children", response_model=list[ItemRead])
+def list_item_children(
+    item_id: str,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> list[ItemRead]:
+    item = db.get(Item, item_id)
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    _require_role(db, auth, item.collection_id, _VIEWER_ROLES)
+    rows = db.scalars(
+        select(Item).where(Item.parent_id == item_id).order_by(Item.title)
+    ).all()
+    return [ItemRead.model_validate(r) for r in rows]

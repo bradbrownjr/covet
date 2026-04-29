@@ -8,6 +8,22 @@ All notable changes to **Covet** are documented here. Format follows
 
 ### Added
 
+- **Maintenance schedules** — items can carry recurring maintenance
+  tasks (oil change, filter swap, calibration). New
+  `MaintenanceTask` model + endpoints
+  `POST/GET /items/{id}/maintenance`,
+  `PATCH/DELETE /maintenance/{id}`,
+  `POST /maintenance/{id}/complete` (advances `last_completed_at` and
+  re-computes `next_due_at` from `interval_days`), and
+  `GET /maintenance?within_days=N` for a due-soon dashboard scoped to
+  readable collections.
+
+- **Parent / child items (kits)** — items gain optional `parent_id`
+  for grouping (a "Camera kit" with lens + body + battery as
+  children). New `GET /items/{id}/children` endpoint. Server validates
+  parent exists, lives in the same collection, is not the item itself,
+  and that the assignment doesn't create a cycle.
+
 - **Document attachments + expiry tracking** — items can now hold
   arbitrary file attachments (manuals, receipts, warranties). New
   endpoints `POST/GET /items/{id}/documents`, `GET /documents/{id}/download`,

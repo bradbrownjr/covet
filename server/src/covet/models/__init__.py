@@ -12,6 +12,7 @@ from covet.models.invitation import Invitation
 from covet.models.item import Item, ItemType
 from covet.models.item_template import ItemTemplate
 from covet.models.loan import Loan
+from covet.models.maintenance import MaintenanceTask
 from covet.models.metadata_cache import MetadataCacheEntry
 from covet.models.photo import Photo
 from covet.models.share_link import ShareLink
@@ -40,6 +41,7 @@ __all__ = [
     "ItemTemplate",
     "ItemType",
     "Loan",
+    "MaintenanceTask",
     "MetadataCacheEntry",
     "OIDCIdentity",
     "Photo",
