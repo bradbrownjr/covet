@@ -1,0 +1,251 @@
+# Agent Guide for Covet
+
+This file is the persistent shared memory for any AI assistant working on
+Covet (GitHub Copilot, Claude, etc.). It captures the rules of engagement,
+project-specific gotchas, and a registry of every shipped feature so that
+large refactors don't silently regress them.
+
+---
+
+## Always / Never Memory Protocol
+
+- If the user says **"always"**, **"never"**, **"remember"**, **"don't"** or
+  similar, treat it as a permanent project rule and add it here as a clear,
+  testable directive.
+- If a rule is not written down in this file, assume it will be forgotten in
+  the next session.
+- Update / remove rules that turn out to be wrong or outdated rather than
+  letting them accumulate.
+
+## Communication Style
+
+- Be brief. Target 1–3 sentences for simple answers.
+- Action over explanation — show the change, don't narrate "I'll now…".
+- No preambles, no restating the user's request, no apologies for prior
+  iterations. Just fix it.
+- DRY / KISS / progressive cleanup — remove dead imports / commented blocks
+  as you iterate.
+- Parallel tool calls when operations are independent.
+- For straightforward single-file changes, proceed directly. For large or
+  cross-cutting changes, present a plan + open questions + risks first and
+  get alignment before writing code.
+- Treat every user question as requiring a direct answer; do not silently
+  skip questions to start coding.
+
+## Root-Cause Policy
+
+- Never patch symptoms. Identify the underlying cause before fixing.
+- Trace the call chain / data flow far enough to understand *why*, not just
+  *where*.
+- Prefer invasive-but-correct fixes over safe-but-superficial workarounds.
+- After a fix, verify the symptom *and* the root cause are gone.
+
+## Regression Check Policy
+
+This is the bar that protects shipped features:
+
+- **Before every commit**, mentally run `git diff --stat`. If deletions
+  outnumber additions, or any single file is shrinking by more than ~50
+  lines, **explicitly audit** that no shipped behavior is being removed.
+- A single commit removing **200+ lines** from one file requires a written
+  justification in the commit body (what was removed, why it is safe).
+- Before any large file rewrite, list the named features / API routes /
+  exported functions present in that file, then confirm each one survives
+  the rewrite. Cross-reference against the Feature Registry below.
+- Run the full local test suite after any multi-file change or any deletion
+  of a non-trivial block:
+  - Server: `cd server && uv run ruff check . && uv run pytest -q`
+  - Web: `cd web && npm run check && npm run build`
+  - Android is CI-only in this dev environment (no JDK locally).
+- After pushing, watch the CI run. A regression that goes green locally but
+  red in CI is still a regression — fix forward, don't disable the check.
+
+## Commit & Release Policy
+
+- Imperative mood; the body explains *what* changed and *why*.
+- One logical change per commit. Don't batch unrelated work.
+- Never commit broken builds, failing tests, or unresolved lint errors.
+- After completing a task, commit and push (`git add -A && git commit && git push`).
+- The user does not currently use the `Co-authored-by: Copilot` trailer.
+  Don't add it unless asked.
+
+### Release procedure
+
+A new version requires four file edits, one CHANGELOG entry, and a tag
+push. The `release.yml` workflow auto-publishes the GitHub Release from the
+tag and the matching `## [X.Y.Z]` section of `CHANGELOG.md`.
+
+1. Bump version in:
+   - `server/src/covet/__init__.py` (`__version__`)
+   - `server/pyproject.toml` (`version`)
+   - `web/package.json` (`"version"`)
+   - `android/app/build.gradle.kts` (`versionCode` + `versionName`)
+2. Add a `## [X.Y.Z] — YYYY-MM-DD` section to `CHANGELOG.md` describing the
+   release in user-facing terms.
+3. Commit, push, then `git tag -a vX.Y.Z -m "..." && git push origin vX.Y.Z`.
+4. `release.yml` creates the GitHub Release. `release-image.yml` builds the
+   multi-arch GHCR image at `:X.Y.Z`, `:X.Y`, `:X`. `android.yml` rebuilds
+   the debug APK; signed APK upload requires `ANDROID_KEYSTORE_BASE64` etc.
+   and is currently disabled.
+
+## Definition of Done
+
+- Solves the validated root cause.
+- Code is DRY / KISS, with no dead imports or commented-out blocks.
+- Test suite passes locally for the affected component.
+- `ruff check` / `svelte-check` / lint clean.
+- Documentation updated (`CHANGELOG.md` for user-facing changes;
+  `AGENTS.md` for new rules / gotchas; `README.md` only when needed).
+- Committed and pushed; CI green on `main`.
+
+---
+
+## Project Layout
+
+```
+covet/
+├── server/              # FastAPI + SQLAlchemy + Alembic (Python 3.12, uv, ruff, pytest)
+│   ├── src/covet/
+│   │   ├── api/         # Routers (auth, items, collections, sync, meta, ...)
+│   │   ├── models/      # SQLAlchemy models
+│   │   ├── schemas/     # Pydantic schemas
+│   │   ├── importers/   # CLZ, generic CSV, JSON backup
+│   │   ├── hardening.py
+│   │   ├── observability.py
+│   │   ├── bootstrap.py
+│   │   ├── cli.py
+│   │   └── main.py
+│   ├── alembic/         # Migrations (shipped to /opt/covet/share/covet/alembic in image)
+│   └── tests/           # pytest, currently 42 passing
+├── web/                 # SvelteKit 2.8 / Svelte 5 runes / adapter-static
+│   └── src/{lib,routes,app.html}
+├── android/             # AGP 8.7.2, Kotlin 2.0.21, Hilt, Room, Compose
+│   └── app/src/main/java/us/lynwood/covet/
+├── docker/              # Compose examples (standard / postgres / unraid)
+├── Dockerfile           # Multi-stage; runs as non-root via PUID/PGID/UMASK
+├── .github/workflows/   # ci.yml, release-image.yml, android.yml, release.yml
+└── CHANGELOG.md         # User-facing release notes
+```
+
+## Tech Stack Versions
+
+- Python 3.12, FastAPI 0.115, SQLAlchemy 2, Alembic, slowapi, structlog, prometheus-client 0.21, uv 0.5.4
+- Node 22, SvelteKit 2.8, Svelte 5, adapter-static
+- Kotlin 2.0.21, AGP 8.7.2, KSP `2.0.21-1.0.28` (KSP1 worker forced — see gotchas)
+- Compose BOM 2024.11, Hilt 2.52, Room 2.6.1, WorkManager 2.10
+- Docker buildx multi-arch (linux/amd64, linux/arm64) → GHCR
+
+## CI Gates (must stay green)
+
+- **CI / Server (lint + tests)** — `uv run ruff check .` clean, `uv run pytest -q` 42/42.
+- **CI / Web (check + build)** — `npm run check` 0 errors, `npm run build` succeeds.
+- **CI / Dependency audit** — `pip-audit` + `npm audit` (soft-fail today; tighten later).
+- **CI / Docker build (smoke)** — image builds and `/healthz` answers within timeout.
+- **Android / Lint, test, build APK** — `:app:lintDebug`, `:app:testDebugUnitTest`, `:app:assembleDebug`.
+- **Release Docker image** — multi-arch push to `ghcr.io/bradbrownjr/covet`.
+- **Release** — auto-publish GitHub Release on `v*.*.*` tag.
+
+All workflows opt into Node 24 via `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`.
+
+---
+
+## Repo-Specific Gotchas
+
+These are bugs we have hit. Re-introducing any of them is a regression.
+
+### `.gitignore` patterns must be root-anchored when they collide with source
+
+Bare `data/` and `config/` rules silently untracked the entire
+`android/.../data/` Kotlin source package. **Always use `/data/`, `/config/`
+(leading slash) for repo-root runtime dirs.** Never use bare directory names
+that could match a source package anywhere in the tree.
+
+### Alembic migrations must be shipped into the Docker image
+
+The runtime image installs Covet as a wheel under `/opt/covet`, so
+`alembic/` and `alembic.ini` next to `server/src` are not present at
+runtime. The Dockerfile copies them to `/opt/covet/share/covet/` and sets
+`COVET_ALEMBIC_DIR`. `bootstrap._find_alembic_dir()` honors this env var,
+falls back to the dev repo layout, then to `<sys.prefix>/share/covet/alembic`.
+**If you add new migrations, no Dockerfile change is needed**, but if you
+ever move `alembic/` you must update both copies.
+
+### Loopback hosts must always be in `allowed_hosts`
+
+The container `HEALTHCHECK` curls `http://127.0.0.1:8000/healthz`. If
+`TrustedHostMiddleware` rejects loopback names, the container never goes
+healthy and CI's docker smoke test fails with a stream of HTTP 400s.
+`config.Settings.model_post_init` injects `localhost`, `127.0.0.1`, `::1`
+into `allowed_hosts` automatically; do not remove that block.
+
+### KSP2 AA worker is broken on our toolchain
+
+KSP `2.0.21-1.0.27` and `1.0.28` both crash in the AA worker with
+`unexpected jvm signature V` on Hilt processors at Kotlin 2.0.21.
+`android/gradle.properties` sets `ksp.useKSP2=false`; the legacy KSP1
+worker doesn't have this codepath. Re-enable only after upstream fixes
+the AA worker.
+
+### slowapi limit-providers must be static strings, not callables
+
+In our slowapi version, the dynamic `limit-from-request` callable is
+invoked with zero args, which breaks any signature taking `request`. Keep
+`DEFAULT_GLOBAL_LIMIT` and `DEFAULT_LOGIN_LIMIT` as module-level string
+constants in `covet/hardening.py`. Also keep `headers_enabled=False` —
+`True` requires a `response: Response` parameter on every route or all
+routes 500.
+
+### CSRF middleware must allow missing `Origin` header
+
+Modern browsers always send `Origin` on cross-origin requests, but
+TestClient and many CLIs do not send one at all. `OriginCsrfMiddleware`
+allows requests with no `Origin` so tests and bearer-auth API clients work.
+
+### Ruff `B008` is globally ignored
+
+FastAPI's `Depends(...)`, `Query(...)`, `Body(...)` idiom requires call
+expressions in default arguments. `B008` (function-call-in-default) is in
+the global ignore list with an explanation comment. Don't re-enable.
+
+---
+
+## Feature Registry
+
+Compact checklist of shipped user-facing features keyed to their primary
+implementation files. **Before any large refactor, verify every row touching
+the affected file column is preserved.**
+
+| Feature | Key file(s) | Key identifiers |
+|---|---|---|
+| Local auth (register, login, password) | `server/src/covet/api/auth.py`, `auth/service.py`, `auth/passwords.py` | `register`, `login`, `Argon2`, `create_user` |
+| API tokens (CLI / mobile) | `server/src/covet/api/auth.py` | `POST/GET/DELETE /auth/tokens`, `create_token` |
+| Sessions / cookie auth | `server/src/covet/auth/session.py`, `api/auth.py` | `SessionInfoDto`, cookie name from settings |
+| Collections CRUD | `server/src/covet/api/collections.py`, `models/collection.py` | `GET/POST/PATCH/DELETE /collections` |
+| Items CRUD + filtering | `server/src/covet/api/items.py`, `models/item.py` | `GET/POST/PATCH/DELETE /items`, `?search`, `?type` |
+| Tags / item-tags | `server/src/covet/api/tags.py`, `models/tag.py` | `tag`, `item_tag` |
+| Contacts + loans | `server/src/covet/api/loans.py`, `models/{contact,loan}.py` | `loan`, `contact` |
+| Photos (multipart, sha256 dedupe) | `server/src/covet/api/photos.py`, `models/photo.py` | `POST /photos`, `_photo_path` |
+| Sync (CRDT changes + snapshots) | `server/src/covet/api/sync.py`, `sync/automerge.py` | `GET/POST /sync/{collection_id}`, `apply_changes` |
+| Importers (CLZ, generic CSV, JSON) | `server/src/covet/importers/{clz,csv_importer,json_backup}.py`, `api/imports.py` | `clz`, `csv`, `json_backup` |
+| Backup / restore CLI | `server/src/covet/cli.py`, `importers/json_backup.py` | `covet backup`, `covet restore`, `covet version` |
+| Hardening (CSP, rate limit, CSRF) | `server/src/covet/hardening.py` | `SecurityHeadersMiddleware`, `OriginCsrfMiddleware`, `limiter` |
+| Observability (access log, metrics) | `server/src/covet/observability.py`, `api/meta.py` | `AccessLogMiddleware`, `/metrics`, `covet_http_requests_total` |
+| Health / readiness | `server/src/covet/api/meta.py` | `/healthz`, `/readyz` |
+| Web auth flow (login, register, gating) | `web/src/routes/{login,register,+layout.svelte}`, `lib/session.ts` | `me`, `refreshMe`, `logout` |
+| Web collections list / detail | `web/src/routes/collections/...` | — |
+| Web import wizard | `web/src/routes/import/+page.svelte` | CLZ + CSV + JSON restore |
+| Web settings + tokens | `web/src/routes/settings/+page.svelte` | `tokens`, `revoke`, theme toggle |
+| Web theme (light/dark/system) | `web/src/lib/theme.ts`, `lib/styles.css`, `app.html` | `initTheme`, `data-theme`, `meta[name=theme-color]`, pre-hydration script |
+| Android auth (URL + creds → token) | `android/.../ui/screen/login/LoginScreen.kt`, `data/auth/SessionStore.kt`, `data/repo/AuthRepository.kt` | `SessionStore.baseUrl`, `apiFor` |
+| Android collections / items list / add / delete | `android/.../ui/screen/{collections,collection}/...` | `CollectionListViewModel`, `CollectionDetailViewModel` |
+| Android barcode scanner | `android/.../ui/screen/scan/ScannerScreen.kt` | CameraX + ML Kit `BarcodeScanning` |
+| Android Room cache (offline reads) | `android/.../data/local/{CovetDatabase,Mappers}.kt`, `di/DatabaseModule.kt`, `data/repo/Repositories.kt` | `CollectionEntity`, `ItemEntity`, `observe()`, `deleteMissing` |
+| Android sync worker (15-min refresh) | `android/.../data/sync/SyncWorker.kt`, `CovetApp.kt` | `SyncWorker.schedule`, `UNIQUE_NAME`, `KEEP` policy |
+| Docker image (multi-arch, non-root) | `Dockerfile`, `docker/entrypoint.sh` | `PUID/PGID/UMASK`, `tini`, `gosu`, `COVET_ALEMBIC_DIR` |
+| Compose examples | `docker/docker-compose.{standard,postgres,unraid}.yml` | — |
+| CI: server lint+tests, web check, audit, docker smoke | `.github/workflows/ci.yml` | jobs `server`, `web`, `audit`, `docker` |
+| CI: multi-arch GHCR image | `.github/workflows/release-image.yml` | tag patterns `:X.Y.Z`, `:X.Y`, `:X`, `:edge` |
+| CI: Android build + APK artifact | `.github/workflows/android.yml` | `:app:lintDebug`, `:app:testDebugUnitTest`, `:app:assembleDebug` |
+| CI: auto-publish Release on tag | `.github/workflows/release.yml` | extracts `## [X.Y.Z]` from `CHANGELOG.md`; `prerelease` for `0.x` |
+
+Update this table whenever a new feature lands or an existing feature moves.
