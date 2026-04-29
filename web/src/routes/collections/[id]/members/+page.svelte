@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import {
         api,
         type AuditLogEntry,
@@ -27,7 +27,7 @@
     let newInviteEmail = $state('');
     let newInviteRole: Role = $state('viewer');
 
-    const cid = $derived($page.params.id ?? '');
+    const cid = $derived(page.params.id ?? '');
 
     async function load() {
         loading = true;

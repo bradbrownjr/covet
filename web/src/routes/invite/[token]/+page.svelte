@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import { goto } from '$app/navigation';
     import { api, type InvitationPreview } from '$lib/api';
     import { me } from '$lib/session';
@@ -10,7 +10,7 @@
     let error = $state('');
     let accepting = $state(false);
 
-    const token = $derived($page.params.token ?? '');
+    const token = $derived(page.params.token ?? '');
 
     async function load() {
         loading = true;

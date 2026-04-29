@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import { api, type Collection, type Item, type ItemType } from '$lib/api';
 
     let collection = $state<Collection | null>(null);
@@ -16,7 +16,7 @@
     let scrapeUrl = $state('');
     let scraping = $state(false);
 
-    const cid = $derived($page.params.id ?? '');
+    const cid = $derived(page.params.id ?? '');
 
     async function load() {
         loading = true;

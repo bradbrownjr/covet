@@ -2,7 +2,7 @@
     import '$lib/styles.css';
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import { me, refreshMe, loadPublicConfig, logout } from '$lib/session';
     import { initTheme } from '$lib/theme';
 
@@ -13,7 +13,7 @@
         initTheme();
         await Promise.all([refreshMe(), loadPublicConfig()]);
         ready = true;
-        const path = $page.url.pathname;
+        const path = page.url.pathname;
         const onAuth = path === '/login' || path === '/register';
         const isPublic = path.startsWith('/share/') || path.startsWith('/invite/');
         if (!$me && !onAuth && !isPublic) {

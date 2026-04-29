@@ -1,5 +1,9 @@
 # Covet
 
+<p align="center">
+  <img src="web/static/icon-512.png" alt="Covet logo" width="160" height="160" />
+</p>
+
 Self-hosted personal inventory management for collectibles, tools, spices —
 anything you want to keep track of. Built for collectors who need to check
 their inventory in the wild (a record store, a garage sale) without an

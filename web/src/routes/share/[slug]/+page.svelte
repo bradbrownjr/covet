@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import { api, type Collection, type Item } from '$lib/api';
 
     let collection = $state<Collection | null>(null);
@@ -8,7 +8,7 @@
     let loading = $state(true);
     let error = $state('');
 
-    const slug = $derived($page.params.slug ?? '');
+    const slug = $derived(page.params.slug ?? '');
 
     async function load() {
         loading = true;

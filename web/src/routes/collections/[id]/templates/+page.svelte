@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import { api, type Collection, type ItemTemplate, type TemplateField, type TemplateFieldType } from '$lib/api';
 
     const ITEM_TYPES = [
@@ -29,7 +29,7 @@
     let newFieldsJson = $state('[]');
     const placeholderExample = '[{"key":"isbn","label":"ISBN","type":"text","required":true}]';
 
-    const cid = $derived($page.params.id ?? '');
+    const cid = $derived(page.params.id ?? '');
 
     async function load() {
         loading = true;
