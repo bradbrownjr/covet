@@ -38,7 +38,7 @@ services:
       COVET_PUBLIC_URL: ${COVET_PUBLIC_URL:-}
       COVET_ALLOWED_HOSTS: ${COVET_ALLOWED_HOSTS:-*}
       # COVET_BEHIND_PROXY: "true"
-      COVET_REGISTRATION_ENABLED: "false"
+      COVET_REGISTRATION_ENABLED: ${COVET_REGISTRATION_ENABLED:-true}
       # Optional: bootstrap an admin from env on first launch.
       # If you leave both unset, browse to http://<unraid-ip>:8000/ after
       # the container is healthy and click 'Register' — the very first

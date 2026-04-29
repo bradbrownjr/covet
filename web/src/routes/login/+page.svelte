@@ -49,6 +49,10 @@
         <p class="muted">No account? <a href="/register">Register</a></p>
     {/if}
 
+    {#if $publicConfig?.version}
+        <p class="version muted">v{$publicConfig.version}</p>
+    {/if}
+
     {#if $publicConfig?.oidc_providers?.length}
         <h3>Or sign in with:</h3>
         <ul>
@@ -63,5 +67,10 @@
     .auth {
         max-width: 400px;
         margin: 4rem auto 0;
+    }
+    .version {
+        text-align: center;
+        font-size: 0.75rem;
+        margin-top: 2rem;
     }
 </style>

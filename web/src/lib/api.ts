@@ -177,6 +177,7 @@ export interface ItemTemplate {
 }
 
 export interface PublicConfig {
+    version: string;
     public_url: string;
     registration_enabled: boolean;
     oidc_enabled: boolean;

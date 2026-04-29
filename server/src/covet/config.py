@@ -128,7 +128,7 @@ class Settings(BaseSettings):
     session_cookie_secure: bool | None = None
     session_cookie_samesite: str = "lax"
     session_ttl_hours: int = 720
-    registration_enabled: bool = False
+    registration_enabled: bool = True
     password_min_length: int = 12
 
     # OIDC

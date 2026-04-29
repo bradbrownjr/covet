@@ -18,7 +18,7 @@ services:
       PUID: ${PUID:-1000}
       PGID: ${PGID:-1000}
       COVET_PUBLIC_URL: ${COVET_PUBLIC_URL:-http://localhost:8000}
-      COVET_REGISTRATION_ENABLED: ${COVET_REGISTRATION_ENABLED:-false}
+      COVET_REGISTRATION_ENABLED: ${COVET_REGISTRATION_ENABLED:-true}
       # Optional: bootstrap an admin from env on first launch. If left empty,
       # the very first user to register through the web UI is automatically
       # promoted to admin (regardless of COVET_REGISTRATION_ENABLED).

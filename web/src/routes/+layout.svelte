@@ -3,7 +3,7 @@
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
     import { page } from '$app/state';
-    import { me, refreshMe, loadPublicConfig, logout } from '$lib/session';
+    import { me, refreshMe, loadPublicConfig, logout, publicConfig } from '$lib/session';
     import { initTheme } from '$lib/theme';
 
     let { children } = $props();
@@ -31,6 +31,7 @@
 
 <header>
     <a href="/" class="brand">Covet</a>
+    {#if $publicConfig?.version}<span class="version muted">v{$publicConfig.version}</span>{/if}
     <nav>
         {#if $me}
             <a href="/">Collections</a>
@@ -63,6 +64,9 @@
         font-weight: 700;
         font-size: 1.25rem;
         color: var(--text);
+    }
+    .version {
+        font-size: 0.75rem;
     }
     nav {
         display: flex;
