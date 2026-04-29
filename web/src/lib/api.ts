@@ -109,6 +109,16 @@ export interface Membership {
     display_name: string | null;
 }
 
+export interface ShareLink {
+    id: string;
+    collection_id: string;
+    slug: string;
+    label: string | null;
+    expires_at: string | null;
+    revoked: boolean;
+    created_at: string;
+}
+
 export interface PublicConfig {
     public_url: string;
     registration_enabled: boolean;

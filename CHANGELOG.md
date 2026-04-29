@@ -21,6 +21,13 @@ All notable changes to **Covet** are documented here. Format follows
   `GET/POST/PATCH/DELETE /collections/{id}/members`. Web app gains a
   per-collection Members page with add/remove/role-change controls.
   Owner is surfaced in the member list (read-only).
+- **Public read-only share links** — owners can mint per-collection
+  share URLs (`/collections/{id}/share-links` CRUD). Anonymous visitors
+  load `/public/share/{slug}` (collection metadata) and
+  `/public/share/{slug}/items` to browse the collection — no sign-in
+  required. Links can have an optional label and `expires_at`; revoke
+  immediately cuts off access. Web app exposes the share UI on the
+  Members page and serves the public viewer at `/share/{slug}`.
 
 ### Changed
 

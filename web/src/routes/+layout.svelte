@@ -15,7 +15,8 @@
         ready = true;
         const path = $page.url.pathname;
         const onAuth = path === '/login' || path === '/register';
-        if (!$me && !onAuth) {
+        const isPublic = path.startsWith('/share/');
+        if (!$me && !onAuth && !isPublic) {
             await goto('/login');
         } else if ($me && onAuth) {
             await goto('/');
