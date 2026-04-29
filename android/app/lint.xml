@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- CameraX ImageProxy.image is gated behind ExperimentalGetImage. We use it
+         intentionally in CameraPreview to feed frames to ML Kit BarcodeScanning.
+         Project-wide opt-in here matches the @OptIn annotation at the call site
+         and keeps lintDebug from re-flagging it as an error. -->
+    <issue id="UnsafeOptInUsageError">
+        <option name="opt-in" value="androidx.camera.core.ExperimentalGetImage" />
+    </issue>
+</lint>
