@@ -13,7 +13,7 @@ class MappersTest {
     private val moshi: Moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
 
     @Test
-    fun `collection round-trips dto -> entity -> dto`() {
+    fun `collection round-trips dto to entity to dto`() {
         val dto = CollectionDto(
             id = "c1",
             name = "Vinyl",
