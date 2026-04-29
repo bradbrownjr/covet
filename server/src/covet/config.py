@@ -225,8 +225,12 @@ class Settings(BaseSettings):
 
         if not self.allowed_hosts:
             host = parsed.hostname
-            if host:
-                object.__setattr__(self, "allowed_hosts", [host])
+            # Always trust loopback names so the container HEALTHCHECK and
+            # local probes (curl 127.0.0.1) succeed regardless of public_url.
+            hosts: list[str] = ["localhost", "127.0.0.1", "::1"]
+            if host and host not in hosts:
+                hosts.insert(0, host)
+            object.__setattr__(self, "allowed_hosts", hosts)
 
         if self.musicbrainz_user_agent is None:
             object.__setattr__(
