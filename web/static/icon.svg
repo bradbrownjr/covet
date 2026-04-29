@@ -39,13 +39,14 @@
     <path d="M 447  80 L 577  80 L 603 223 L 421 223 Z" fill="#bae6fd"/>
 
     <!-- ============ CHEST (flat) ============ -->
-    <!-- Body: rounded rectangle in slate-700 -->
-    <rect x="160" y="620" width="704" height="300" rx="48" fill="#1e293b"/>
-    <!-- Open lid: domed cap in slate-600 (one shade lighter than the body) -->
+    <!-- Body: square top corners (meet the lid flush), rounded bottom -->
+    <path d="M 160 620 L 864 620 L 864 872 Q 864 920 816 920 L 208 920 Q 160 920 160 872 Z"
+          fill="#334155"/>
+    <!-- Open lid: domed cap in slate-500 (one shade lighter than the body) -->
     <path d="M 160 620
              Q 160 460 512 460
              Q 864 460 864 620 Z"
-          fill="#334155"/>
+          fill="#475569"/>
     <!-- Single horizontal brass band across the body -->
     <rect x="160" y="772" width="704" height="36" fill="#f59e0b"/>
     <!-- Clasp: single rounded rect straddling the lid/body seam -->
