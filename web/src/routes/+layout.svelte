@@ -4,6 +4,7 @@
     import { goto } from '$app/navigation';
     import { page } from '$app/state';
     import { me, refreshMe, loadPublicConfig, logout, publicConfig } from '$lib/session';
+    import { get } from 'svelte/store';
     import { initTheme } from '$lib/theme';
 
     let { children } = $props();
@@ -17,7 +18,8 @@
         const onAuth = path === '/login' || path === '/register';
         const isPublic = path.startsWith('/share/') || path.startsWith('/invite/');
         if (!$me && !onAuth && !isPublic) {
-            await goto('/login');
+            const cfg = get(publicConfig);
+            await goto(cfg?.setup_required ? '/register' : '/login');
         } else if ($me && onAuth) {
             await goto('/');
         }

@@ -45,7 +45,14 @@
         {#if error}<p class="error">{error}</p>{/if}
     </form>
 
-    {#if $publicConfig?.registration_enabled}
+    {#if $publicConfig?.setup_required}
+        <div class="setup">
+            <p>
+                <strong>First-run setup.</strong> No users exist yet —
+                <a href="/register">create the admin account</a>.
+            </p>
+        </div>
+    {:else if $publicConfig?.registration_enabled}
         <p class="muted">No account? <a href="/register">Register</a></p>
     {/if}
 
@@ -67,6 +74,13 @@
     .auth {
         max-width: 400px;
         margin: 4rem auto 0;
+    }
+    .setup {
+        margin-top: 1rem;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--accent);
+        border-radius: 0.5rem;
+        background: color-mix(in srgb, var(--accent) 10%, transparent);
     }
     .version {
         text-align: center;

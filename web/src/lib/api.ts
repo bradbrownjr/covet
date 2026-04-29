@@ -180,6 +180,7 @@ export interface PublicConfig {
     version: string;
     public_url: string;
     registration_enabled: boolean;
+    setup_required: boolean;
     oidc_enabled: boolean;
     oidc_providers: { name: string; label: string; login_url: string }[];
 }

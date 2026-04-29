@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Response, status
-from sqlalchemy import text
+from fastapi import APIRouter, Depends, Response, status
+from sqlalchemy import select, text
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from covet import __version__
 from covet.config import get_settings
-from covet.db import get_engine
+from covet.db import get_engine, get_session
+from covet.models.user import User
 
 router = APIRouter(tags=["meta"])
 
@@ -38,7 +40,7 @@ def version() -> dict[str, str]:
 
 
 @router.get("/config/public")
-def public_config() -> dict[str, object]:
+def public_config(db: Session = Depends(get_session)) -> dict[str, object]:
     """Return non-sensitive runtime info for clients (web/mobile)."""
     settings = get_settings()
     providers = []
@@ -54,7 +56,16 @@ def public_config() -> dict[str, object]:
     return {
         "version": __version__,
         "registration_enabled": settings.registration_enabled,
+        "setup_required": _no_users_yet(db),
         "oidc_enabled": settings.oidc_enabled,
         "oidc_providers": providers,
         "public_url": settings.public_url,
     }
+
+
+def _no_users_yet(db: Session) -> bool:
+    """True when the database has zero users (first-run setup state)."""
+    try:
+        return db.scalar(select(User.id).limit(1)) is None
+    except SQLAlchemyError:
+        return False
