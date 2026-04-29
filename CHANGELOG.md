@@ -6,6 +6,8 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.12.0] — 2026-04-29
+
 ### Added
 
 - **In-app "What's new" modal.** A sparkle icon next to the version in

@@ -19,5 +19,6 @@ data/
 config/
 *.md
 !README.md
+!CHANGELOG.md
 docker-compose*.yml
 android/
