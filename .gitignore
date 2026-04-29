@@ -45,9 +45,10 @@ android/app/release/
 .DS_Store
 Thumbs.db
 
-# Project-specific
-data/
-config/
+# Project-specific (runtime data dirs at repo root only — not the
+# Android Kotlin "data/" package or anything nested in source trees).
+/data/
+/config/
 .env
 .env.local
 .env.*.local
