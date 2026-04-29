@@ -41,9 +41,20 @@ def version() -> dict[str, str]:
 def public_config() -> dict[str, object]:
     """Return non-sensitive runtime info for clients (web/mobile)."""
     settings = get_settings()
+    providers = []
+    if settings.oidc_enabled:
+        providers = [
+            {
+                "name": p.name,
+                "label": p.display_name,
+                "login_url": f"/auth/oidc/{p.name}/login",
+            }
+            for p in settings.oidc_providers
+        ]
     return {
         "version": __version__,
         "registration_enabled": settings.registration_enabled,
         "oidc_enabled": settings.oidc_enabled,
+        "oidc_providers": providers,
         "public_url": settings.public_url,
     }

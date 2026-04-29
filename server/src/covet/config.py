@@ -15,7 +15,7 @@ from typing import Annotated, Any
 from urllib.parse import urlparse
 
 import yaml
-from pydantic import Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -31,25 +31,36 @@ def _read_secret_file(env_name: str) -> str | None:
         return None
 
 
-def _load_yaml_overlay() -> dict[str, Any]:
+def _load_yaml_overlay() -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Return (flat-overlay, oidc_providers).
+
+    Top-level scalars become ``COVET_*`` env-style keys. The optional
+    ``oidc_providers:`` list is returned separately because nested config
+    can't round-trip cleanly through env vars.
+    """
     config_dir = os.environ.get("COVET_CONFIG_DIR", "/config")
     yaml_path = Path(config_dir) / "covet.yaml"
     if not yaml_path.is_file():
-        return {}
+        return {}, []
     try:
         loaded = yaml.safe_load(yaml_path.read_text(encoding="utf-8")) or {}
     except (OSError, yaml.YAMLError):
-        return {}
+        return {}, []
     if not isinstance(loaded, dict):
-        return {}
-    # Flatten only top-level keys; uppercase + COVET_ prefix to match env style.
-    return {
-        f"COVET_{k.upper()}" if not k.upper().startswith("COVET_") else k.upper(): v
-        for k, v in loaded.items()
-    }
+        return {}, []
+    providers_raw = loaded.pop("oidc_providers", None)
+    providers: list[dict[str, Any]] = []
+    if isinstance(providers_raw, list):
+        providers = [p for p in providers_raw if isinstance(p, dict)]
+    flat: dict[str, Any] = {}
+    for k, v in loaded.items():
+        if isinstance(v, list | dict):
+            continue  # only scalars supported via env-style overlay
+        flat[f"COVET_{k.upper()}" if not k.upper().startswith("COVET_") else k.upper()] = v
+    return flat, providers
 
 
-class OIDCProvider(BaseSettings):
+class OIDCProvider(BaseModel):
     """Configuration for a single OIDC provider."""
 
     name: str
@@ -124,6 +135,7 @@ class Settings(BaseSettings):
     oidc_enabled: bool = False
     oidc_auto_create_users: bool = True
     oidc_default_role: str = "viewer"
+    oidc_providers: list[OIDCProvider] = Field(default_factory=list)
 
     # Photo storage
     photos_dir: Path | None = None
@@ -279,11 +291,16 @@ class Settings(BaseSettings):
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
     """Return cached :class:`Settings`; YAML overlay is applied as defaults."""
-    overlay = _load_yaml_overlay()
+    overlay, providers = _load_yaml_overlay()
     # YAML overlay only fills variables NOT already in env, so env always wins.
     for key, value in overlay.items():
         os.environ.setdefault(key, str(value))
-    return Settings()
+    settings = Settings()
+    if providers and not settings.oidc_providers:
+        object.__setattr__(
+            settings, "oidc_providers", [OIDCProvider(**p) for p in providers]
+        )
+    return settings
 
 
 def reset_settings_cache() -> None:

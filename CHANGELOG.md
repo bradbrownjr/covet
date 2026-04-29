@@ -4,6 +4,24 @@ All notable changes to **Covet** are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **OIDC / OAuth2 SSO (server)** — admin can configure one or more OIDC
+  providers via `oidc_providers:` in `covet.yaml`. New endpoints
+  `/auth/oidc/{provider}/login` and `/auth/oidc/{provider}/callback`
+  perform the full authorization-code flow via Authlib, then mint a
+  Covet session cookie. First login creates a user (or links to an
+  existing one by email). Optional `admin_groups` claim mapping promotes
+  members of named groups to admin. `/config/public` now lists enabled
+  providers so the web sign-in page renders the right buttons.
+
+### Changed
+
+- `OIDCProvider` config moved off `BaseSettings` (it's nested config, not
+  env-driven) so YAML overlay works correctly.
+
 ## [0.9.0] — 2026-04-29 — Beta
 
 First public beta. Feature set is complete enough for self-hosted use; the

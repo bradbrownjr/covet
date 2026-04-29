@@ -100,5 +100,6 @@ export interface Tag {
 export interface PublicConfig {
     public_url: string;
     registration_enabled: boolean;
-    oidc_providers: { name: string; label: string }[];
+    oidc_enabled: boolean;
+    oidc_providers: { name: string; label: string; login_url: string }[];
 }

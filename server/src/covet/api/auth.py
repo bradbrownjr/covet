@@ -1,11 +1,13 @@
-"""Authentication endpoints (local password + sessions + API tokens)."""
+"""Authentication endpoints (local password + sessions + API tokens + OIDC)."""
 
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session as DBSession
 
+from covet.auth import oidc as oidc_service
 from covet.auth import service as auth_service
 from covet.auth.deps import AuthContext, require_admin, require_user
 from covet.config import Settings, get_settings
@@ -184,3 +186,91 @@ def revoke_token(
     token.revoked = True
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# --- OIDC ---------------------------------------------------------------------------------
+
+
+def _redirect_uri(request: Request, settings: Settings, provider_name: str) -> str:
+    """Build the absolute callback URL for the given provider."""
+    provider = oidc_service.get_provider(settings, provider_name)
+    if provider and provider.redirect_uri:
+        return provider.redirect_uri
+    base = settings.public_url.rstrip("/")
+    return f"{base}/auth/oidc/{provider_name}/callback"
+
+
+@router.get("/oidc/{provider_name}/login", include_in_schema=False)
+async def oidc_login(
+    provider_name: str,
+    request: Request,
+    next: str = "/",
+    settings: Settings = Depends(get_settings),
+) -> Response:
+    if not settings.oidc_enabled:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="OIDC disabled")
+    client = oidc_service.client_for(settings, provider_name)
+    if client is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Unknown OIDC provider")
+    request.session["oidc_next"] = next or "/"
+    return await client.authorize_redirect(
+        request, _redirect_uri(request, settings, provider_name)
+    )
+
+
+@router.get("/oidc/{provider_name}/callback", include_in_schema=False)
+async def oidc_callback(
+    provider_name: str,
+    request: Request,
+    db: DBSession = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+) -> Response:
+    if not settings.oidc_enabled:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="OIDC disabled")
+    provider = oidc_service.get_provider(settings, provider_name)
+    client = oidc_service.client_for(settings, provider_name)
+    if provider is None or client is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Unknown OIDC provider")
+
+    try:
+        token = await client.authorize_access_token(request)
+    except Exception as exc:  # authlib raises a few different errors here
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"OIDC exchange failed: {exc.__class__.__name__}",
+        ) from exc
+
+    claims = token.get("userinfo") or {}
+    if not claims:
+        # Some providers don't return userinfo with the token; ask explicitly.
+        try:
+            resp = await client.userinfo(token=token)
+            claims = dict(resp)
+        except Exception:
+            claims = {}
+
+    user = oidc_service.upsert_user_from_claims(
+        db, settings=settings, provider=provider, claims=claims
+    )
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="OIDC login rejected (user creation disabled or missing subject)",
+        )
+
+    _session, raw = auth_service.create_session(
+        db,
+        user=user,
+        settings=settings,
+        user_agent=request.headers.get("user-agent"),
+        ip_address=request.client.host if request.client else None,
+    )
+    db.commit()
+
+    next_url = request.session.pop("oidc_next", "/") or "/"
+    if not next_url.startswith("/"):
+        next_url = "/"
+    response = RedirectResponse(url=next_url, status_code=status.HTTP_303_SEE_OTHER)
+    _set_session_cookie(response, raw, settings)
+    return response
+

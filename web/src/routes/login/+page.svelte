@@ -53,7 +53,7 @@
         <h3>Or sign in with:</h3>
         <ul>
             {#each $publicConfig.oidc_providers as p}
-                <li><a href={`/auth/oidc/${p.name}/login`}>{p.label}</a></li>
+                <li><a href={p.login_url}>{p.label}</a></li>
             {/each}
         </ul>
     {/if}
