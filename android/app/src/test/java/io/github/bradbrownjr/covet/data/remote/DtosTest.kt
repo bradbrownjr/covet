@@ -22,13 +22,14 @@ class DtosTest {
     @Test fun `parses item with extras`() {
         val json = """
             {
-              "id":"02","collection_id":"01","type":"movie","title":"Dune",
+              "id":"02","collection_id":"01","category_id":"cat-1","title":"Dune",
               "identifiers":{"barcode":"012"},
               "attrs":{"year":2021}
             }
         """.trimIndent()
         val i = moshi.adapter(ItemDto::class.java).fromJson(json)!!
         assertEquals("Dune", i.title)
+        assertEquals("cat-1", i.category_id)
         assertEquals("012", i.identifiers["barcode"])
     }
 }

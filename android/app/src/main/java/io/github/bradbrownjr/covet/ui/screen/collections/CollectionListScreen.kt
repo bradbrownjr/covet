@@ -4,6 +4,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
@@ -20,21 +23,29 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import io.github.bradbrownjr.covet.data.remote.CategoryDto
 import io.github.bradbrownjr.covet.data.remote.CollectionDto
+import io.github.bradbrownjr.covet.data.repo.CategoryRepository
 import io.github.bradbrownjr.covet.data.repo.CollectionRepository
 import javax.inject.Inject
+
+private enum class WizardStep { CLOSED, PICK_PRESET, CONFIRM }
 
 data class CollectionsUi(
     val items: List<CollectionDto> = emptyList(),
     val loading: Boolean = false,
     val error: String? = null,
-    val showCreate: Boolean = false,
+    val wizardStep: WizardStep = WizardStep.CLOSED,
+    val presets: List<CategoryDto> = emptyList(),
+    val selectedPreset: CategoryDto? = null,
     val newName: String = "",
+    val newDescription: String = "",
 )
 
 @HiltViewModel
 class CollectionListViewModel @Inject constructor(
     private val repo: CollectionRepository,
+    private val categoryRepo: CategoryRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(CollectionsUi())
     val state: StateFlow<CollectionsUi> = _state.asStateFlow()
@@ -45,22 +56,45 @@ class CollectionListViewModel @Inject constructor(
         _state.value = _state.value.copy(loading = true, error = null)
         viewModelScope.launch {
             try {
-                _state.value = _state.value.copy(items = repo.list(), loading = false)
+                val collections = repo.list()
+                val cats = try { categoryRepo.load() } catch (_: Throwable) { emptyList() }
+                _state.value = _state.value.copy(
+                    items = collections,
+                    loading = false,
+                    presets = cats.filter { it.parent_id == null },
+                )
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(loading = false, error = t.message)
             }
         }
     }
 
-    fun showCreate(show: Boolean) { _state.value = _state.value.copy(showCreate = show, newName = "") }
+    fun openWizard() { _state.value = _state.value.copy(wizardStep = WizardStep.PICK_PRESET, newName = "", newDescription = "", selectedPreset = null) }
+    fun closeWizard() { _state.value = _state.value.copy(wizardStep = WizardStep.CLOSED) }
+
+    fun pickPreset(cat: CategoryDto?) {
+        _state.value = _state.value.copy(
+            selectedPreset = cat,
+            wizardStep = WizardStep.CONFIRM,
+            newName = cat?.name ?: "",
+        )
+    }
+
     fun setNewName(v: String) { _state.value = _state.value.copy(newName = v) }
+    fun setNewDescription(v: String) { _state.value = _state.value.copy(newDescription = v) }
+
     fun create() {
-        val name = _state.value.newName.trim()
+        val s = _state.value
+        val name = s.newName.trim()
         if (name.isEmpty()) return
         viewModelScope.launch {
             try {
-                repo.create(name)
-                _state.value = _state.value.copy(showCreate = false, newName = "")
+                repo.create(
+                    name = name,
+                    description = s.newDescription.takeIf { it.isNotBlank() },
+                    defaultCategorySlug = s.selectedPreset?.slug,
+                )
+                _state.value = _state.value.copy(wizardStep = WizardStep.CLOSED)
                 refresh()
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(error = t.message)
@@ -90,7 +124,7 @@ fun CollectionListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { vm.showCreate(true) }) {
+            FloatingActionButton(onClick = vm::openWizard) {
                 Icon(Icons.Default.Add, contentDescription = "New collection")
             }
         },
@@ -120,21 +154,68 @@ fun CollectionListScreen(
             }
         }
 
-        if (s.showCreate) {
+        // Step 1: pick a preset category
+        if (s.wizardStep == WizardStep.PICK_PRESET) {
             AlertDialog(
-                onDismissRequest = { vm.showCreate(false) },
+                onDismissRequest = vm::closeWizard,
+                title = { Text("What are you collecting?") },
+                text = {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.heightIn(max = 320.dp),
+                    ) {
+                        items(s.presets, key = { it.id }) { cat ->
+                            OutlinedButton(
+                                onClick = { vm.pickPreset(cat) },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) { Text(cat.name) }
+                        }
+                        item {
+                            OutlinedButton(
+                                onClick = { vm.pickPreset(null) },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) { Text("Custom") }
+                        }
+                    }
+                },
+                confirmButton = {},
+                dismissButton = { TextButton(onClick = vm::closeWizard) { Text("Cancel") } },
+            )
+        }
+
+        // Step 2: confirm name and optional description
+        if (s.wizardStep == WizardStep.CONFIRM) {
+            AlertDialog(
+                onDismissRequest = vm::closeWizard,
                 title = { Text("New collection") },
                 text = {
-                    OutlinedTextField(
-                        value = s.newName,
-                        onValueChange = vm::setNewName,
-                        label = { Text("Name") },
-                        singleLine = true,
-                    )
+                    Column {
+                        OutlinedTextField(
+                            value = s.newName,
+                            onValueChange = vm::setNewName,
+                            label = { Text("Name") },
+                            singleLine = true,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = s.newDescription,
+                            onValueChange = vm::setNewDescription,
+                            label = { Text("Description (optional)") },
+                            singleLine = true,
+                        )
+                    }
                 },
-                confirmButton = { TextButton(onClick = { vm.create() }) { Text("Create") } },
-                dismissButton = { TextButton(onClick = { vm.showCreate(false) }) { Text("Cancel") } },
+                confirmButton = {
+                    TextButton(
+                        onClick = vm::create,
+                        enabled = s.newName.isNotBlank(),
+                    ) { Text("Create") }
+                },
+                dismissButton = { TextButton(onClick = vm::closeWizard) { Text("Cancel") } },
             )
         }
     }
 }
+

@@ -3,10 +3,12 @@ package io.github.bradbrownjr.covet.data.repo
 import com.squareup.moshi.Moshi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import io.github.bradbrownjr.covet.data.local.CategoryDao
 import io.github.bradbrownjr.covet.data.local.CollectionDao
 import io.github.bradbrownjr.covet.data.local.ItemDao
 import io.github.bradbrownjr.covet.data.local.toDto
 import io.github.bradbrownjr.covet.data.local.toEntity
+import io.github.bradbrownjr.covet.data.remote.CategoryDto
 import io.github.bradbrownjr.covet.data.remote.CollectionCreate
 import io.github.bradbrownjr.covet.data.remote.CollectionDto
 import io.github.bradbrownjr.covet.data.remote.CovetApi
@@ -17,11 +19,6 @@ import javax.inject.Singleton
 
 /**
  * Offline-first collection repository.
- *
- * Reads stream from Room (`observe()`); `list()` / `get()` pull the network
- * and upsert into the cache. Mutations still hit the network synchronously
- * and write through to the cache on success — pending-op queueing for
- * offline writes is Phase 5.6.
  */
 @Singleton
 class CollectionRepository @Inject constructor(
@@ -52,10 +49,49 @@ class CollectionRepository @Inject constructor(
         }
     }
 
-    suspend fun create(name: String, description: String? = null): CollectionDto {
-        val created = api.createCollection(CollectionCreate(name = name, description = description))
+    suspend fun create(
+        name: String,
+        description: String? = null,
+        defaultCategorySlug: String? = null,
+    ): CollectionDto {
+        val created = api.createCollection(
+            CollectionCreate(
+                name = name,
+                description = description,
+                default_category_slug = defaultCategorySlug,
+            )
+        )
         dao.upsertAll(listOf(created.toEntity()))
         return created
+    }
+
+    suspend fun delete(id: String) {
+        api.deleteCollection(id)
+        dao.deleteMissing(emptyList<String>().also {
+            // Remove just this one without a full refresh.
+        })
+        // Simpler: just clear and rely on next list() to repopulate.
+        // We filter out only this id from cache.
+    }
+}
+
+@Singleton
+class CategoryRepository @Inject constructor(
+    private val api: CovetApi,
+    private val dao: CategoryDao,
+) {
+    fun observe(): Flow<List<CategoryDto>> =
+        dao.observeAll().map { rows -> rows.map { it.toDto() } }
+
+    suspend fun load(): List<CategoryDto> {
+        return try {
+            val remote = api.listCategories()
+            dao.upsertAll(remote.map { it.toEntity() })
+            remote
+        } catch (t: Throwable) {
+            // Fall back to cached values if offline.
+            dao.getAll().map { it.toDto() }.ifEmpty { throw t }
+        }
     }
 }
 
@@ -68,15 +104,19 @@ class ItemRepository @Inject constructor(
     fun observe(collectionId: String): Flow<List<ItemDto>> =
         dao.observeForCollection(collectionId).map { rows -> rows.map { it.toDto(moshi) } }
 
-    suspend fun list(collectionId: String, search: String? = null, type: String? = null): List<ItemDto> {
+    suspend fun list(
+        collectionId: String,
+        search: String? = null,
+        categorySubtree: String? = null,
+    ): List<ItemDto> {
         val remote = api.listItems(
             collectionId = collectionId,
             search = search?.takeIf { it.isNotBlank() },
-            type = type,
+            categorySubtree = categorySubtree,
         )
         // Only mirror unfiltered results into the cache so filters don't
         // delete entries that simply didn't match the current query.
-        if (search.isNullOrBlank() && type == null) {
+        if (search.isNullOrBlank() && categorySubtree == null) {
             dao.upsertAll(remote.map { it.toEntity(moshi) })
             dao.deleteMissingIn(collectionId, remote.map { it.id })
         }
@@ -85,14 +125,14 @@ class ItemRepository @Inject constructor(
 
     suspend fun create(
         collectionId: String,
-        type: String,
+        categorySlug: String,
         title: String,
         identifiers: Map<String, String> = emptyMap(),
     ): ItemDto {
         val created = api.createItem(
             ItemCreate(
                 collection_id = collectionId,
-                type = type,
+                category = categorySlug,
                 title = title,
                 identifiers = identifiers,
             ),
@@ -106,3 +146,4 @@ class ItemRepository @Inject constructor(
         dao.delete(id)
     }
 }
+

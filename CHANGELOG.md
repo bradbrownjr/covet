@@ -6,6 +6,28 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.13.3] — 2026-05-01
+
+### Fixed
+
+- **Android app now works with the v0.13.0 taxonomy changes.** The app
+  was sending `type` on every new item (e.g. `"movie"`), which the
+  server rejected with 422 since v0.13.0 removed the old enum in favour
+  of the categories table. Items can now be added again.
+- **Android: category picker replaces free-text type field.** The
+  add-item dialog now shows cascading Root → Sub-category dropdowns
+  loaded from the server, pre-selected to the collection's default
+  category.
+- **Android: barcode scanner wired to item creation.** Scanning a
+  barcode (e.g. an ISBN or EAN) from the collection detail screen now
+  calls the metadata scrape endpoint to prefill the item title and
+  category before you tap Add.
+- **Android: collection creation wizard.** Tapping + on the collections
+  screen now opens a category-preset picker (Books, Music, Movies…)
+  followed by a name / description form — matching the web experience.
+- **Android: Room database schema updated to v2** (destructive
+  migration — local cache is rebuilt on first launch after update).
+
 ## [0.13.2] — 2026-04-30
 
 ### Changed

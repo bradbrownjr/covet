@@ -7,6 +7,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.github.bradbrownjr.covet.data.local.CategoryDao
 import io.github.bradbrownjr.covet.data.local.CollectionDao
 import io.github.bradbrownjr.covet.data.local.CovetDatabase
 import io.github.bradbrownjr.covet.data.local.ItemDao
@@ -23,5 +24,6 @@ object DatabaseModule {
             .build()
 
     @Provides fun collectionDao(db: CovetDatabase): CollectionDao = db.collections()
+    @Provides fun categoryDao(db: CovetDatabase): CategoryDao = db.categories()
     @Provides fun itemDao(db: CovetDatabase): ItemDao = db.items()
 }

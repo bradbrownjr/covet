@@ -31,6 +31,18 @@ data class CollectionEntity(
     val icon: String?,
     @ColumnInfo(name = "is_public") val isPublic: Boolean,
     @ColumnInfo(name = "owner_id") val ownerId: String,
+    @ColumnInfo(name = "default_category_slug") val defaultCategorySlug: String?,
+    @ColumnInfo(name = "cached_at") val cachedAt: Long,
+)
+
+@Entity(tableName = "categories")
+data class CategoryEntity(
+    @PrimaryKey val id: String,
+    @ColumnInfo(name = "parent_id") val parentId: String?,
+    val slug: String,
+    val name: String,
+    val description: String?,
+    val position: Int,
     @ColumnInfo(name = "cached_at") val cachedAt: Long,
 )
 
@@ -38,7 +50,8 @@ data class CollectionEntity(
 data class ItemEntity(
     @PrimaryKey val id: String,
     @ColumnInfo(name = "collection_id", index = true) val collectionId: String,
-    val type: String,
+    @ColumnInfo(name = "category_id") val categoryId: String,
+    @ColumnInfo(name = "category_slug") val categorySlug: String?,
     val title: String,
     val subtitle: String?,
     val notes: String?,
@@ -76,6 +89,21 @@ interface CollectionDao {
 }
 
 @Dao
+interface CategoryDao {
+    @Query("SELECT * FROM categories ORDER BY position ASC")
+    fun observeAll(): Flow<List<CategoryEntity>>
+
+    @Query("SELECT * FROM categories ORDER BY position ASC")
+    suspend fun getAll(): List<CategoryEntity>
+
+    @Upsert
+    suspend fun upsertAll(rows: List<CategoryEntity>)
+
+    @Query("DELETE FROM categories")
+    suspend fun clear()
+}
+
+@Dao
 interface ItemDao {
     @Query("SELECT * FROM items WHERE collection_id = :collectionId ORDER BY title COLLATE NOCASE ASC")
     fun observeForCollection(collectionId: String): Flow<List<ItemEntity>>
@@ -99,13 +127,14 @@ class Converters {
 }
 
 @Database(
-    entities = [CollectionEntity::class, ItemEntity::class],
-    version = 1,
+    entities = [CollectionEntity::class, CategoryEntity::class, ItemEntity::class],
+    version = 2,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
 abstract class CovetDatabase : RoomDatabase() {
     abstract fun collections(): CollectionDao
+    abstract fun categories(): CategoryDao
     abstract fun items(): ItemDao
 }
 

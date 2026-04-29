@@ -57,15 +57,19 @@ fun CovetApp() {
             }
             composable(Routes.COLLECTION_DETAIL) { backStack ->
                 val id = backStack.arguments?.getString("id").orEmpty()
+                val scannedBarcode by backStack.savedStateHandle
+                    .getStateFlow<String?>("barcode", null)
+                    .collectAsState()
                 CollectionDetailScreen(
                     collectionId = id,
+                    scannedBarcode = scannedBarcode,
                     onScan = { nav.navigate(Routes.SCANNER) },
                     onBack = { nav.popBackStack() },
                 )
             }
             composable(Routes.SCANNER) {
                 ScannerScreen(onResult = { code ->
-                    // TODO Phase 5.4: prefill new-item dialog with looked-up metadata
+                    nav.previousBackStackEntry?.savedStateHandle?.set("barcode", code)
                     nav.popBackStack()
                 })
             }

@@ -2,6 +2,7 @@ package io.github.bradbrownjr.covet.data.local
 
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
+import io.github.bradbrownjr.covet.data.remote.CategoryDto
 import io.github.bradbrownjr.covet.data.remote.CollectionDto
 import io.github.bradbrownjr.covet.data.remote.ItemDto
 
@@ -26,6 +27,7 @@ fun CollectionDto.toEntity(now: Long = System.currentTimeMillis()): CollectionEn
         icon = icon,
         isPublic = is_public,
         ownerId = owner_id,
+        defaultCategorySlug = default_category_slug,
         cachedAt = now,
     )
 
@@ -37,6 +39,28 @@ fun CollectionEntity.toDto(): CollectionDto =
         icon = icon,
         is_public = isPublic,
         owner_id = ownerId,
+        default_category_slug = defaultCategorySlug,
+    )
+
+fun CategoryDto.toEntity(now: Long = System.currentTimeMillis()): CategoryEntity =
+    CategoryEntity(
+        id = id,
+        parentId = parent_id,
+        slug = slug,
+        name = name,
+        description = description,
+        position = position,
+        cachedAt = now,
+    )
+
+fun CategoryEntity.toDto(): CategoryDto =
+    CategoryDto(
+        id = id,
+        parent_id = parentId,
+        slug = slug,
+        name = name,
+        description = description,
+        position = position,
     )
 
 fun ItemDto.toEntity(moshi: Moshi, now: Long = System.currentTimeMillis()): ItemEntity {
@@ -44,7 +68,8 @@ fun ItemDto.toEntity(moshi: Moshi, now: Long = System.currentTimeMillis()): Item
     return ItemEntity(
         id = id,
         collectionId = collection_id,
-        type = type,
+        categoryId = category_id,
+        categorySlug = category_slug,
         title = title,
         subtitle = subtitle,
         notes = notes,
@@ -65,7 +90,8 @@ fun ItemEntity.toDto(moshi: Moshi): ItemDto {
     return ItemDto(
         id = id,
         collection_id = collectionId,
-        type = type,
+        category_id = categoryId,
+        category_slug = categorySlug,
         title = title,
         subtitle = subtitle,
         notes = notes,
@@ -79,3 +105,4 @@ fun ItemEntity.toDto(moshi: Moshi): ItemDto {
         attrs = adapter.fromJson(attrsJson) ?: emptyMap(),
     )
 }
+

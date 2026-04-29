@@ -29,12 +29,19 @@ interface CovetApi {
     @GET("collections/{id}")
     suspend fun getCollection(@Path("id") id: String): CollectionDto
 
+    @DELETE("collections/{id}")
+    suspend fun deleteCollection(@Path("id") id: String)
+
+    // --- Categories ---
+    @GET("categories")
+    suspend fun listCategories(): List<CategoryDto>
+
     // --- Items ---
     @GET("items")
     suspend fun listItems(
         @Query("collection_id") collectionId: String,
         @Query("search") search: String? = null,
-        @Query("type") type: String? = null,
+        @Query("category_subtree") categorySubtree: String? = null,
     ): List<ItemDto>
 
     @POST("items")
@@ -42,4 +49,8 @@ interface CovetApi {
 
     @DELETE("items/{id}")
     suspend fun deleteItem(@Path("id") id: String)
+
+    // --- Metadata ---
+    @POST("metadata/scrape")
+    suspend fun scrape(@Body body: ScrapeRequest): ScrapeResponse
 }

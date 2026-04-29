@@ -35,16 +35,42 @@ data class CollectionDto(
     val icon: String? = null,
     val is_public: Boolean = false,
     val owner_id: String,
+    val default_category_slug: String? = null,
 )
 
 @JsonClass(generateAdapter = true)
-data class CollectionCreate(val name: String, val description: String? = null)
+data class CollectionCreate(
+    val name: String,
+    val description: String? = null,
+    val default_category_slug: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class CategoryDto(
+    val id: String,
+    val parent_id: String? = null,
+    val slug: String,
+    val name: String,
+    val description: String? = null,
+    val position: Int = 0,
+)
+
+@JsonClass(generateAdapter = true)
+data class ScrapeResponse(
+    val title: String? = null,
+    val description: String? = null,
+    val category: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class ScrapeRequest(val url: String)
 
 @JsonClass(generateAdapter = true)
 data class ItemDto(
     val id: String,
     val collection_id: String,
-    val type: String,
+    val category_id: String,
+    val category_slug: String? = null,
     val title: String,
     val subtitle: String? = null,
     val notes: String? = null,
@@ -61,7 +87,7 @@ data class ItemDto(
 @JsonClass(generateAdapter = true)
 data class ItemCreate(
     val collection_id: String,
-    val type: String,
+    val category: String,       // leaf slug, e.g. "music.vinyl"
     val title: String,
     val subtitle: String? = null,
     val notes: String? = null,

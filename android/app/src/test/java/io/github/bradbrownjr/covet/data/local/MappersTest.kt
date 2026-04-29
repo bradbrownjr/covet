@@ -21,6 +21,7 @@ class MappersTest {
             icon = null,
             is_public = false,
             owner_id = "u1",
+            default_category_slug = "music",
         )
         val back = dto.toEntity().toDto()
         assertEquals(dto, back)
@@ -31,7 +32,8 @@ class MappersTest {
         val dto = ItemDto(
             id = "i1",
             collection_id = "c1",
-            type = "vinyl",
+            category_id = "cat-vinyl",
+            category_slug = "music.vinyl",
             title = "Kind of Blue",
             subtitle = "Miles Davis",
             notes = null,
@@ -47,8 +49,10 @@ class MappersTest {
         val back = dto.toEntity(moshi).toDto(moshi)
         assertEquals(dto.id, back.id)
         assertEquals(dto.title, back.title)
+        assertEquals(dto.category_slug, back.category_slug)
         assertEquals(dto.identifiers["upc"], back.identifiers["upc"])
         assertEquals(dto.purchase_price, back.purchase_price)
         assertNull(back.notes)
     }
 }
+
