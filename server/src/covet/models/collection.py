@@ -26,6 +26,9 @@ class Collection(ULIDPrimaryKey, TimestampMixin, Base):
     description: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     icon: Mapped[str | None] = mapped_column(String(64), nullable=True)
     is_public: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Slug of a category (root or leaf) the create-item form should default
+    # to. Purely a UX hint; items can still belong to any category.
+    default_category_slug: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     owner: Mapped[User] = relationship(foreign_keys=[owner_id])
     items: Mapped[list[Item]] = relationship(

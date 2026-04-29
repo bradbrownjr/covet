@@ -5,7 +5,24 @@ All notable changes to **Covet** are documented here. Format follows
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [0.13.1] — 2026-04-30
 
+### Added
+
+- **Guided collection wizard.** The home page no longer presents a blank
+  name field. Click **+ New collection** to pick a starting point
+  (Music, Movies, Video Games, Tabletop, Books, Collectibles, Tools,
+  Spices, or **Custom**). The chosen preset prefills the name and
+  description and is stored on the collection so the new-item form on
+  that collection's page defaults to the matching category root.
+- **Delete a collection from the UI.** A **Delete collection** action
+  is now available next to the Members and Templates links on the
+  collection detail page; it confirms, calls
+  `DELETE /collections/{id}`, and returns to the home list.
+- **`collections.default_category_slug`** column (alembic 0009) +
+  `default_category_slug` field on `CollectionCreate`/`CollectionUpdate`/
+  `CollectionRead`. Optional and ignored when null — it is purely a UX
+  hint for the create-item form.
 ## [0.13.0] — 2026-04-30
 
 ### Added

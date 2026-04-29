@@ -75,6 +75,7 @@ export interface Collection {
     icon: string | null;
     is_public: boolean;
     owner_id: string;
+    default_category_slug: string | null;
 }
 
 export interface Category {

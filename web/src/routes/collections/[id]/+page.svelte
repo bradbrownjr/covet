@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import { goto } from '$app/navigation';
     import { page } from '$app/state';
     import { api, type Category, type Collection, type Item } from '$lib/api';
     import { childrenOf, loadCategories, rootCategories } from '$lib/categories';
@@ -12,6 +13,7 @@
     let rootFilter = $state('');
     let loading = $state(true);
     let error = $state('');
+    let didSeedDefaults = $state(false);
 
     // Inline create form: cascading root → leaf.
     let newRoot = $state('movies');
@@ -39,6 +41,22 @@
         try {
             if (categories.length === 0) categories = await loadCategories();
             collection = await api.get<Collection>(`/collections/${cid}`);
+            // Seed the create-item form root from the collection's
+            // default_category_slug (root or leaf) on first successful load.
+            const def = collection?.default_category_slug;
+            if (def && !didSeedDefaults) {
+                const cat = categories.find((c) => c.slug === def);
+                if (cat) {
+                    if (cat.parent_id === null) {
+                        newRoot = cat.slug;
+                    } else {
+                        const parent = categories.find((c) => c.id === cat.parent_id);
+                        if (parent) newRoot = parent.slug;
+                        newLeaf = cat.slug;
+                    }
+                }
+                didSeedDefaults = true;
+            }
             const params = new URLSearchParams({ collection_id: cid });
             if (search) params.set('search', search);
             if (rootFilter) params.set('category_subtree', rootFilter);
@@ -95,6 +113,23 @@
         await load();
     }
 
+    async function deleteCollection() {
+        if (!collection) return;
+        const name = collection.name;
+        if (
+            !confirm(
+                `Delete the "${name}" collection? This permanently removes all items, photos, and shares it owns.`
+            )
+        )
+            return;
+        try {
+            await api.delete(`/collections/${cid}`);
+            await goto('/');
+        } catch (e) {
+            error = (e as Error).message;
+        }
+    }
+
     onMount(load);
 </script>
 
@@ -105,6 +140,10 @@
         <a href="/collections/{cid}/members">Manage members →</a>
         &nbsp;·&nbsp;
         <a href="/collections/{cid}/templates">Item templates →</a>
+        &nbsp;·&nbsp;
+        <button type="button" class="link-danger" onclick={deleteCollection}>
+            Delete collection
+        </button>
     </p>
 
     <form onsubmit={addItem} class="card" style="margin: 1rem 0">
@@ -178,3 +217,15 @@
 {:else if !loading}
     <p class="error">Collection not found.</p>
 {/if}
+
+<style>
+    .link-danger {
+        background: none;
+        border: none;
+        padding: 0;
+        font: inherit;
+        color: var(--danger, #c0392b);
+        cursor: pointer;
+        text-decoration: underline;
+    }
+</style>

@@ -15,6 +15,7 @@ class CollectionBase(BaseModel):
     description: str | None = Field(default=None, max_length=2048)
     icon: str | None = None
     is_public: bool = False
+    default_category_slug: str | None = Field(default=None, max_length=64)
 
 
 class CollectionCreate(CollectionBase):
@@ -26,6 +27,7 @@ class CollectionUpdate(BaseModel):
     description: str | None = None
     icon: str | None = None
     is_public: bool | None = None
+    default_category_slug: str | None = Field(default=None, max_length=64)
 
 
 class CollectionRead(CollectionBase):
