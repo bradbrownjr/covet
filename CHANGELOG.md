@@ -6,6 +6,8 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.10.0] — 2026-04-29 — Make it shareable
+
 ### Added
 
 - **OIDC / OAuth2 SSO (server)** — admin can configure one or more OIDC
