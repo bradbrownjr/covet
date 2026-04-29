@@ -8,6 +8,12 @@ All notable changes to **Covet** are documented here. Format follows
 
 ### Fixed
 
+- **Web UI no longer renders a blank page under the default CSP.** The
+  hardening middleware shipped `script-src 'self'`, which silently
+  blocked SvelteKit's inline bootstrap script and our pre-hydration
+  theme script in `app.html`. Both inline blocks are now hashed at
+  startup and added to `script-src` (`'sha256-...'`) so the SPA
+  hydrates while the CSP stays strict — no `'unsafe-inline'`.
 - **Unraid compose no longer requires a pre-existing `proxy` network.**
   The `docker-compose.unraid.yml` sample previously declared its
   network as `external: true`, which failed on a fresh box with

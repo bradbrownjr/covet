@@ -7,7 +7,11 @@ settings without breaking the others.
 
 from __future__ import annotations
 
+import base64
+import hashlib
+import re
 from collections.abc import Awaitable, Callable
+from pathlib import Path
 from urllib.parse import urlparse
 
 from fastapi import FastAPI, Request
@@ -59,15 +63,25 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     inline blocks at build time, which is a v0.2 task.
     """
 
-    def __init__(self, app: ASGIApp, *, hsts: bool, csp: str | None = None) -> None:
+    def __init__(
+        self,
+        app: ASGIApp,
+        *,
+        hsts: bool,
+        csp: str | None = None,
+        script_hashes: list[str] | None = None,
+    ) -> None:
         super().__init__(app)
         self._hsts = hsts
+        script_src = "'self'"
+        if script_hashes:
+            script_src = "'self' " + " ".join(f"'{h}'" for h in script_hashes)
         self._csp = csp or (
             "default-src 'self'; "
             "img-src 'self' data: blob:; "
             "media-src 'self' blob:; "
             "style-src 'self' 'unsafe-inline'; "
-            "script-src 'self'; "
+            f"script-src {script_src}; "
             "connect-src 'self'; "
             "frame-ancestors 'none'; "
             "base-uri 'self'; "
@@ -159,6 +173,47 @@ class OriginCsrfMiddleware(BaseHTTPMiddleware):
         )
 
 
+# --- SPA inline-script hashing ------------------------------------------------------------
+
+
+_INLINE_SCRIPT_RE = re.compile(
+    rb"<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>",
+    re.DOTALL | re.IGNORECASE,
+)
+
+
+def _spa_inline_script_hashes(settings: Settings) -> list[str]:
+    """SHA-256 hashes of every inline ``<script>`` block in the SPA's index.html.
+
+    SvelteKit's static build emits an inline bootstrap script (and we add a
+    pre-hydration theme script in ``app.html``). With ``script-src 'self'``
+    those would be blocked and the page would never hydrate. We hash them at
+    startup so they survive a strict CSP.
+    """
+    candidates: list[Path] = []
+    if settings.web_dir:
+        candidates.append(Path(settings.web_dir))
+    here = Path(__file__).resolve()
+    candidates.append(here.parents[3] / "web" / "build")
+    candidates.append(Path("/app/web"))
+
+    index = next(
+        (c / "index.html" for c in candidates if (c / "index.html").is_file()),
+        None,
+    )
+    if index is None:
+        return []
+    try:
+        html = index.read_bytes()
+    except OSError:
+        return []
+    hashes: list[str] = []
+    for match in _INLINE_SCRIPT_RE.finditer(html):
+        digest = hashlib.sha256(match.group(1)).digest()
+        hashes.append("sha256-" + base64.b64encode(digest).decode("ascii"))
+    return hashes
+
+
 # --- Wiring helper -----------------------------------------------------------------------
 
 
@@ -177,7 +232,12 @@ def install_hardening(app: FastAPI, settings: Settings) -> None:
 
     app.add_middleware(SlowAPIMiddleware)
 
-    app.add_middleware(SecurityHeadersMiddleware, hsts=bool(settings.force_https))
+    script_hashes = _spa_inline_script_hashes(settings)
+    app.add_middleware(
+        SecurityHeadersMiddleware,
+        hsts=bool(settings.force_https),
+        script_hashes=script_hashes,
+    )
 
     csrf_hosts: set[str] = set(settings.allowed_hosts or [])
     parsed_public = urlparse(settings.public_url)
