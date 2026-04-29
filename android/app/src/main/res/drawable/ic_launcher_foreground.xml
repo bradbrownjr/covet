@@ -1,16 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Adaptive-icon foreground for Covet.
+  The 108dp drawable is mostly safe-zone padding; the actual artwork
+  is drawn in a 1024x1024 design space (matching web/static/icon.svg)
+  scaled to fit the central ~72dp of the launcher tile. Background is
+  defined separately in @color/ic_launcher_background (slate-900).
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Simple "C" mark for Covet -->
-    <path
-        android:fillColor="#7C3AED"
-        android:pathData="M54,30 m-22,0 a22,22 0 1,0 44,0 a22,22 0 1,0 -44,0 z" />
-    <path
-        android:fillColor="#0F172A"
-        android:pathData="M54,30 m-14,0 a14,14 0 1,0 28,0 a14,14 0 1,0 -28,0 z" />
-    <path
-        android:fillColor="#0F172A"
-        android:pathData="M40,18 L74,18 L74,42 L40,42 z" />
+    <group
+        android:translateX="18"
+        android:translateY="18"
+        android:scaleX="0.0703"
+        android:scaleY="0.0703">
+
+        <!-- ============ GEM (round brilliant) ============ -->
+        <!-- Pavilion -->
+        <path android:fillColor="#0284c7" android:pathData="M 369 171 L 421 223 L 512 379 Z" />
+        <path android:fillColor="#0369a1" android:pathData="M 421 223 L 603 223 L 512 379 Z" />
+        <path android:fillColor="#0284c7" android:pathData="M 603 223 L 655 171 L 512 379 Z" />
+        <!-- Girdle -->
+        <path android:fillColor="#38bdf8" android:pathData="M 369 171 L 395 119 L 421 223 Z" />
+        <path android:fillColor="#38bdf8" android:pathData="M 655 171 L 629 119 L 603 223 Z" />
+        <!-- Crown sides -->
+        <path android:fillColor="#7dd3fc" android:pathData="M 395 119 L 447 80 L 421 223 Z" />
+        <path android:fillColor="#7dd3fc" android:pathData="M 629 119 L 577 80 L 603 223 Z" />
+        <!-- Crown table -->
+        <path android:fillColor="#bae6fd" android:pathData="M 447 80 L 577 80 L 603 223 L 421 223 Z" />
+
+        <!-- ============ CHEST ============ -->
+        <!-- Body: square top corners flush against the lid, rounded bottom -->
+        <path android:fillColor="#334155"
+            android:pathData="M 160 620 L 864 620 L 864 872 Q 864 920 816 920 L 208 920 Q 160 920 160 872 Z" />
+        <!-- Open lid: domed cap -->
+        <path android:fillColor="#475569"
+            android:pathData="M 160 620 Q 160 460 512 460 Q 864 460 864 620 Z" />
+        <!-- Brass band -->
+        <path android:fillColor="#f59e0b"
+            android:pathData="M 160 772 L 864 772 L 864 808 L 160 808 Z" />
+        <!-- Clasp -->
+        <path android:fillColor="#f59e0b"
+            android:pathData="M 486 580 L 538 580 Q 552 580 552 594 L 552 662 Q 552 676 538 676 L 486 676 Q 472 676 472 662 L 472 594 Q 472 580 486 580 Z" />
+    </group>
 </vector>
