@@ -1,47 +1,78 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   Covet brand mark.
-  Open treasure box with a faceted gem floating above, in the project's
-  slate/sky palette (matches web/src/lib/styles.css and the
-  meta[name=theme-color] in web/src/app.html).
+  Treasure chest with a domed lid, brass bands and a clasp; a wide
+  faceted gem floats above, lit by a soft warm glow rising from the
+  open chest. Palette matches web/src/lib/styles.css.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Covet">
     <title>Covet</title>
-    <!-- Tile background (rounded square) -->
+    <defs>
+        <radialGradient id="treasureGlow" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0" stop-color="#fbbf24" stop-opacity="0.85"/>
+            <stop offset="0.55" stop-color="#f59e0b" stop-opacity="0.35"/>
+            <stop offset="1" stop-color="#f59e0b" stop-opacity="0"/>
+        </radialGradient>
+    </defs>
+
+    <!-- Tile background -->
     <rect width="1024" height="1024" rx="192" fill="#0f172a"/>
 
-    <!-- Faceted gem floating above the box -->
-    <g>
-        <!-- Outline coords:
-             P1 (table-left)   = 464, 96
-             P2 (table-right)  = 560, 96
-             P3 (girdle-right) = 624, 200
-             P4 (culet)        = 512, 308
-             P5 (girdle-left)  = 400, 200 -->
-        <!-- Left facet -->
-        <path d="M 464 96 L 400 200 L 512 308 Z" fill="#7dd3fc"/>
-        <!-- Right facet -->
-        <path d="M 560 96 L 624 200 L 512 308 Z" fill="#0ea5e9"/>
-        <!-- Center facet (table + main pavilion) -->
-        <path d="M 464 96 L 560 96 L 512 308 Z" fill="#38bdf8"/>
-        <!-- Outline + facet creases -->
-        <path d="M 464 96 L 560 96 L 624 200 L 512 308 L 400 200 Z
-                 M 464 96 L 512 308 M 560 96 L 512 308"
-              fill="none" stroke="#0f172a" stroke-width="10" stroke-linejoin="round"/>
+    <!-- Warm glow rising from the open chest, behind the gem -->
+    <ellipse cx="512" cy="420" rx="320" ry="220" fill="url(#treasureGlow)"/>
+
+    <!-- ============ GEM (round brilliant, wide table) ============ -->
+    <g stroke="#0f172a" stroke-width="10" stroke-linejoin="round">
+        <!-- Pavilion (lower half) — three facets meeting at the culet -->
+        <path d="M 252 300 L 360 420 L 512 492 Z" fill="#0284c7"/>
+        <path d="M 360 420 L 664 420 L 512 492 Z" fill="#0369a1"/>
+        <path d="M 664 420 L 772 300 L 512 492 Z" fill="#0284c7"/>
+        <!-- Girdle slivers -->
+        <path d="M 252 300 L 280 232 L 360 420 Z" fill="#38bdf8"/>
+        <path d="M 772 300 L 744 232 L 664 420 Z" fill="#38bdf8"/>
+        <!-- Crown left/right facets -->
+        <path d="M 280 232 L 360 156 L 360 420 Z" fill="#7dd3fc"/>
+        <path d="M 744 232 L 664 156 L 664 420 Z" fill="#7dd3fc"/>
+        <!-- Crown table (large central top facet) -->
+        <path d="M 360 156 L 664 156 L 664 420 L 360 420 Z" fill="#bae6fd"/>
+        <!-- Specular highlight on the table -->
+        <path d="M 384 184 L 472 184 L 432 232 L 384 232 Z"
+              fill="#ffffff" fill-opacity="0.55" stroke="none"/>
     </g>
 
-    <!-- Treasure box -->
-    <g fill="#1e293b" stroke="#38bdf8" stroke-width="32" stroke-linejoin="round" stroke-linecap="round">
-        <!-- Open lid, hinged at back-top, tilted up & back -->
-        <path d="M 268 528 L 756 528 L 712 360 L 224 360 Z"/>
-        <!-- Box body (front face) with rounded corners -->
-        <rect x="208" y="536" width="608" height="368" rx="40"/>
-    </g>
-    <!-- Inner shadow at the top of the box opening to read as "open" -->
-    <rect x="240" y="552" width="544" height="40" rx="14" fill="#0f172a"/>
-    <!-- Subtle clasp / lock plate centered on front face -->
-    <g fill="#38bdf8">
-        <rect x="476" y="700" width="72" height="96" rx="12"/>
-        <circle cx="512" cy="748" r="14" fill="#0f172a"/>
-    </g>
+    <!-- ============ CHEST ============ -->
+    <!-- Body (front face), rounded bottom corners -->
+    <path d="M 188 700 L 188 884 Q 188 920 224 920 L 800 920 Q 836 920 836 884 L 836 700 Z"
+          fill="#1e293b" stroke="#38bdf8" stroke-width="28" stroke-linejoin="round"/>
+
+    <!-- Brass bands across the body -->
+    <rect x="172" y="780" width="680" height="18" fill="#f59e0b"/>
+    <rect x="172" y="868" width="680" height="18" fill="#f59e0b"/>
+
+    <!-- Open lid, drawn as a domed shape tilted up & to the back left.
+         Outer arch: from front-right of lid (above the chest opening)
+         curving up to the back-top, then down behind the chest. -->
+    <path d="M 836 700
+             Q 720 540 460 540
+             Q 200 540 188 700
+             L 188 660
+             Q 200 500 460 500
+             Q 720 500 836 660 Z"
+          fill="#1e293b" stroke="#38bdf8" stroke-width="28" stroke-linejoin="round"/>
+
+    <!-- Lid brass trim along the front edge (the "rim") -->
+    <path d="M 188 700 Q 200 540 460 540 Q 720 540 836 700"
+          fill="none" stroke="#f59e0b" stroke-width="14" stroke-linecap="round"/>
+
+    <!-- Inside-of-lid warm strip (the "lining" peeking out) -->
+    <path d="M 220 660 Q 240 580 460 580 Q 680 580 808 660 L 808 700 L 220 700 Z"
+          fill="#f59e0b" fill-opacity="0.85"/>
+
+    <!-- Open-chest interior shadow strip just under the lid -->
+    <rect x="200" y="700" width="624" height="32" fill="#0f172a"/>
+
+    <!-- Clasp hanging from the lid line over the front face -->
+    <path d="M 480 690 L 544 690 L 544 758 Q 544 774 528 774 L 496 774 Q 480 774 480 758 Z"
+          fill="#f59e0b" stroke="#0f172a" stroke-width="6" stroke-linejoin="round"/>
+    <circle cx="512" cy="732" r="8" fill="#0f172a"/>
 </svg>
