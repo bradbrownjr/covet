@@ -14,6 +14,14 @@ services:
     image: ${COVET_IMAGE:-ghcr.io/bradbrownjr/covet:edge}
     container_name: covet
     restart: unless-stopped
+    # Unraid Docker tab labels. [IP] resolves to the host's LAN IP and
+    # [PORT:8000] resolves to whichever host port you mapped to 8000
+    # below, so the Web UI link works whether you reverse-proxy or not.
+    # Drop in any HTTPS image URL for `icon` to set a custom tile icon.
+    labels:
+      net.unraid.docker.webui: "http://[IP]:[PORT:8000]/"
+      net.unraid.docker.shell: "bash"
+      # net.unraid.docker.icon: "https://example.com/covet-icon.png"
     ports:
       - "8000:8000"
     environment:
