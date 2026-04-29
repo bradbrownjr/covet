@@ -84,6 +84,13 @@ jobs:
       - name: Assemble debug APK
         run: ./gradlew :app:assembleDebug --no-daemon
 
+      - name: Rename debug APK for release
+        if: github.event_name == 'release'
+        run: |
+          VERSION=$(grep versionName android/app/build.gradle.kts | head -1 | grep -oP '"\K[^"]+')
+          mv android/app/build/outputs/apk/debug/app-debug.apk \
+             android/app/build/outputs/apk/debug/covet-${VERSION}-debug.apk
+
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
@@ -112,12 +119,14 @@ jobs:
             echo "No release keystore configured — skipping signed build"
           fi
 
-      - name: Attach release APK to GitHub Release
+      - name: Attach APKs to GitHub Release
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
           files: |
+            android/app/build/outputs/apk/debug/*.apk
             android/app/build/outputs/apk/release/*.apk
+          fail_on_unmatched_files: false
 
       - name: Attach debug APK to GitHub Release (fallback if unsigned)
         # Always attach the debug APK to the release so users have an
