@@ -31,7 +31,12 @@ def test_register_login_logout_me(client) -> None:
 
 
 def test_register_disabled(client, monkeypatch) -> None:
-    # Force registration off without rebuilding the app fixture.
+    # First user is always allowed and becomes admin (first-run bootstrap).
+    r = _register(client, username="alice")
+    assert r.status_code == 201
+    assert r.json()["is_admin"] is True
+
+    # With users present, COVET_REGISTRATION_ENABLED gates additional signups.
     from covet.config import get_settings
 
     settings = get_settings()
@@ -39,6 +44,22 @@ def test_register_disabled(client, monkeypatch) -> None:
 
     r = _register(client, username="bob")
     assert r.status_code == 403
+
+
+def test_first_user_is_admin(client) -> None:
+    r = _register(client, username="root")
+    assert r.status_code == 201
+    assert r.json()["is_admin"] is True
+
+    # Allow a second registration explicitly; that user must NOT be admin.
+    from covet.config import get_settings
+
+    settings = get_settings()
+    object.__setattr__(settings, "registration_enabled", True)
+
+    r = _register(client, username="second")
+    assert r.status_code == 201
+    assert r.json()["is_admin"] is False
 
 
 def test_bad_login(client) -> None:

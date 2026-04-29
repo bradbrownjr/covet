@@ -13,7 +13,7 @@ from covet.auth.deps import AuthContext, require_admin, require_user
 from covet.config import Settings, get_settings
 from covet.db import get_session
 from covet.hardening import DEFAULT_LOGIN_LIMIT, limiter
-from covet.models import APIToken
+from covet.models import APIToken, User
 from covet.schemas import (
     LoginRequest,
     RegisterRequest,
@@ -87,7 +87,11 @@ def register(
     db: DBSession = Depends(get_session),
     settings: Settings = Depends(get_settings),
 ) -> UserRead:
-    if not settings.registration_enabled:
+    # First-run: if there are no users yet, allow registration regardless of
+    # COVET_REGISTRATION_ENABLED and promote the first user to admin so a
+    # fresh deployment can be bootstrapped without any environment vars.
+    is_first_user = db.scalar(select(User.id).limit(1)) is None
+    if not is_first_user and not settings.registration_enabled:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Registration is disabled"
         )
@@ -97,6 +101,7 @@ def register(
         password=payload.password,
         email=payload.email,
         display_name=payload.display_name,
+        is_admin=is_first_user,
     )
     db.commit()
     return UserRead.model_validate(user)

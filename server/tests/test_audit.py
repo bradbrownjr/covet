@@ -89,6 +89,8 @@ def test_audit_non_owner_403(client) -> None:
 
 
 def test_audit_global_requires_admin(client) -> None:
+    # First user is auto-admin; need a second user to test the 403 case.
+    _register(client, "root")
     _register(client, "alice")
     _login(client, "alice")
     r = client.get("/audit")

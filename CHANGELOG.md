@@ -6,6 +6,16 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+### Changed
+
+- **First registered user is auto-promoted to admin.** When the database
+  contains zero users, `POST /auth/register` always succeeds and the new
+  account is created with `is_admin=true`, regardless of the
+  `COVET_REGISTRATION_ENABLED` setting. After that initial signup the
+  normal registration gate applies. This removes the need to set
+  `COVET_ADMIN_USERNAME` / `COVET_ADMIN_PASSWORD` for casual deployments
+  and matches the standard self-hosted-app pattern.
+
 ## [0.11.0] — 2026-04-29 — Make items richer
 
 ### Added

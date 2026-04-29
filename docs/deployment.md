@@ -22,9 +22,9 @@ curl -fsSLO https://raw.githubusercontent.com/bradbrownjr/covet/main/docker/dock
 docker compose -f docker-compose.standard.yml up -d
 ```
 
-Then browse to <http://localhost:8000/> and complete first-run setup. Set
-`COVET_ADMIN_USERNAME` and `COVET_ADMIN_PASSWORD` in your `.env` to skip the
-wizard and bootstrap the initial admin automatically.
+Then browse to <http://localhost:8000/> and register the first account —
+it is automatically promoted to admin. To bootstrap headlessly instead,
+set `COVET_ADMIN_USERNAME` and `COVET_ADMIN_PASSWORD` in your `.env`.
 
 ## Unraid
 

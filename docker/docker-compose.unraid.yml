@@ -26,7 +26,12 @@ services:
       COVET_BEHIND_PROXY: "true"
       COVET_ALLOWED_HOSTS: ${COVET_ALLOWED_HOSTS:-covet.example.com}
       COVET_REGISTRATION_ENABLED: "false"
-      # Set these on first boot to bootstrap an admin without the wizard:
+      # Optional: bootstrap an admin from env on first launch.
+      # If you leave both unset, simply browse to ${COVET_PUBLIC_URL} after
+      # the container is healthy and click 'Register' — the very first user
+      # to sign up is automatically promoted to admin (regardless of the
+      # COVET_REGISTRATION_ENABLED setting). Set these only if you want a
+      # specific admin username/password baked into the deployment.
       # COVET_ADMIN_USERNAME: admin
       # COVET_ADMIN_PASSWORD_FILE: /run/secrets/covet_admin_password
     volumes:

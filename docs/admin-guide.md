@@ -15,12 +15,15 @@ The first time the container starts:
 1. The schema is created and Alembic migrations run automatically
    (unless `COVET_DB_AUTO_MIGRATE=false`).
 2. If `COVET_ADMIN_USERNAME` **and** `COVET_ADMIN_PASSWORD` are set in
-   the environment, an admin account is created and the in-UI wizard
-   is skipped. Pair with `COVET_ADMIN_PASSWORD_FILE` for Docker
-   secrets / Unraid file mounts.
-3. Otherwise, the **first visitor** to the web UI is taken through a
-   first-run wizard that creates the initial admin and (optionally)
-   seeds a default collection.
+   the environment, that admin account is created automatically. Pair
+   with `COVET_ADMIN_PASSWORD_FILE` for Docker secrets / Unraid file
+   mounts.
+3. Otherwise, browse to the URL and click **Register**. The very first
+   user to sign up is automatically promoted to admin — even when
+   `COVET_REGISTRATION_ENABLED=false`. After that initial signup, the
+   normal `COVET_REGISTRATION_ENABLED` rule applies and further public
+   registration is rejected with HTTP 403 unless you explicitly enable
+   it.
 
 Once an admin exists, self-registration is **off** by default. Set
 `COVET_REGISTRATION_ENABLED=true` to allow open signup, or invite users

@@ -77,7 +77,7 @@ COVET_ALLOWED_HOSTS=covet.example.com
 | `COVET_SESSION_COOKIE_SECURE`     | auto            | Defaults from `FORCE_HTTPS`                    |
 | `COVET_SESSION_COOKIE_SAMESITE`   | `lax`           |                                                |
 | `COVET_SESSION_TTL_HOURS`         | `720`           |                                                |
-| `COVET_REGISTRATION_ENABLED`      | `false`         | First-run wizard always allowed                |
+| `COVET_REGISTRATION_ENABLED`      | `false`         | First registered user is always promoted to admin |
 | `COVET_PASSWORD_MIN_LENGTH`       | `12`            |                                                |
 
 ## OIDC / OAuth (optional)
@@ -140,8 +140,10 @@ Per-provider (replace `<NAME>`, e.g. `AUTHENTIK`, `GOOGLE`):
 
 ## First-run admin bootstrap
 
-If both are set on first launch, an admin is created and the in-UI first-run
-wizard is skipped:
+These variables are **optional**. If both are set on first launch the
+admin user is created from env. If you leave them unset, browse to the
+UI and register — the first account to sign up is auto-promoted to
+admin, regardless of `COVET_REGISTRATION_ENABLED`:
 
 | Variable                | Notes                          |
 | ----------------------- | ------------------------------ |
