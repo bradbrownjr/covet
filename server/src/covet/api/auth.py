@@ -16,6 +16,7 @@ from covet.hardening import DEFAULT_LOGIN_LIMIT, limiter
 from covet.models import APIToken, User
 from covet.schemas import (
     LoginRequest,
+    MeUpdate,
     RegisterRequest,
     SessionInfo,
     TokenInfo,
@@ -110,6 +111,31 @@ def register(
 @router.get("/me", response_model=UserRead)
 def me(auth: AuthContext = Depends(require_user)) -> UserRead:
     return UserRead.model_validate(auth.user)
+
+
+@router.patch("/me", response_model=UserRead)
+def update_me(
+    payload: MeUpdate,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> UserRead:
+    """Update the signed-in user's own profile (display name, email, password).
+
+    Cannot change ``is_admin`` / ``is_active`` from this endpoint — that would
+    let any user self-promote. Use the admin user endpoints for that.
+    """
+    user = auth.user
+    if payload.display_name is not None:
+        user.display_name = payload.display_name or None
+    if payload.email is not None:
+        user.email = payload.email or None
+    if payload.password:
+        from covet.security import hash_password
+
+        user.password_hash = hash_password(payload.password)
+    db.flush()
+    db.commit()
+    return UserRead.model_validate(user)
 
 
 # --- Admin user management ---------------------------------------------------------------

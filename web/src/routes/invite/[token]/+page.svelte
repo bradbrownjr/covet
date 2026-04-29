@@ -2,7 +2,7 @@
     import { onMount } from 'svelte';
     import { page } from '$app/state';
     import { goto } from '$app/navigation';
-    import { api, type InvitationPreview } from '$lib/api';
+    import { api, userLabel, type InvitationPreview } from '$lib/api';
     import { me } from '$lib/session';
 
     let preview = $state<InvitationPreview | null>(null);
@@ -53,7 +53,7 @@
         </p>
 
         {#if $me}
-            <p class="muted">Signed in as {$me.username}.</p>
+            <p class="muted">Signed in as {userLabel($me)}.</p>
             <button onclick={accept} disabled={accepting}>
                 {accepting ? 'Accepting…' : 'Accept invitation'}
             </button>

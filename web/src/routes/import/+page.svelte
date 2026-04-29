@@ -5,7 +5,7 @@
     let collections = $state<Collection[]>([]);
     let collectionId = $state('');
 
-    let mode = $state<'clz' | 'csv' | 'restore'>('clz');
+    let mode = $state<'clz' | 'csv' | 'list' | 'restore'>('clz');
 
     // CLZ
     let clzFlavor = $state<'clz-movie' | 'clz-music' | 'clz-book' | 'clz-comic' | 'clz-game'>('clz-movie');
@@ -15,8 +15,13 @@
     let csvType = $state('movie');
     let csvFile = $state<FileList | null>(null);
     let csvMapping = $state(
-        '{\n  "Name": "title",\n  "Year": "attr:year",\n  "Barcode": "id:barcode"\n}'
+        '{\n  "Title": "title",\n  "Subtitle": "subtitle",\n  "Year": "attr:year",\n  "Notes": "notes",\n  "Quantity": "quantity",\n  "Condition": "condition",\n  "Location": "location",\n  "Currency": "currency",\n  "Purchase price": "purchase_price",\n  "Current value": "current_value",\n  "Barcode": "id:barcode"\n}'
     );
+
+    // List (plain titles)
+    let listType = $state('movie');
+    let listText = $state('');
+    let listFile = $state<FileList | null>(null);
 
     // Restore
     let restoreFile = $state<FileList | null>(null);
@@ -52,6 +57,14 @@
                 fd.set('mapping', csvMapping);
                 fd.set('file', csvFile[0]);
                 path = '/imports/csv';
+            } else if (mode === 'list') {
+                if (!listText.trim() && !listFile?.[0])
+                    throw new Error('Paste a list or attach a .txt file');
+                fd.set('collection_id', collectionId);
+                fd.set('item_type', listType);
+                if (listText.trim()) fd.set('titles', listText);
+                if (listFile?.[0]) fd.set('file', listFile[0]);
+                path = '/imports/list';
             } else {
                 if (!restoreFile?.[0]) throw new Error('Pick a file');
                 fd.set('file', restoreFile[0]);
@@ -84,6 +97,19 @@
         a.click();
         URL.revokeObjectURL(url);
     }
+
+    async function downloadCsvTemplate() {
+        const res = await fetch(`/imports/csv/template?item_type=${encodeURIComponent(csvType)}`, {
+            credentials: 'include'
+        });
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `covet-${csvType}-template.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
 </script>
 
 <h1>Import / Backup</h1>
@@ -102,6 +128,7 @@
         <select bind:value={mode}>
             <option value="clz">CLZ XML import</option>
             <option value="csv">Generic CSV import</option>
+            <option value="list">List of titles (paste or .txt)</option>
             <option value="restore">Restore JSON backup</option>
         </select>
     </div>
@@ -146,6 +173,15 @@
                 </select>
             </div>
             <div class="field">
+                <button type="button" class="secondary" onclick={downloadCsvTemplate}>
+                    Download CSV template
+                </button>
+                <p class="muted hint">
+                    Fill in the template, then upload it below. The default mapping
+                    matches the template's headers.
+                </p>
+            </div>
+            <div class="field">
                 <label>CSV file</label>
                 <input type="file" accept=".csv,text/csv" bind:files={csvFile} />
             </div>
@@ -158,6 +194,36 @@
                     <code>location</code>, or <code>id:&lt;name&gt;</code> /
                     <code>attr:&lt;name&gt;</code>.
                 </p>
+            </div>
+        {:else if mode === 'list'}
+            <div class="field">
+                <label>Item type</label>
+                <select bind:value={listType}>
+                    <option>movie</option>
+                    <option>music</option>
+                    <option>book</option>
+                    <option>comic</option>
+                    <option>game</option>
+                    <option>other</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="list-text">Paste titles (one per line)</label>
+                <textarea
+                    id="list-text"
+                    rows="8"
+                    placeholder="The Matrix&#10;Pulp Fiction&#10;Blade Runner"
+                    bind:value={listText}
+                ></textarea>
+                <p class="muted hint">
+                    Each non-blank line becomes a new item. Lines starting with
+                    <code>#</code> are skipped. Flesh out the details later from the
+                    collection screen.
+                </p>
+            </div>
+            <div class="field">
+                <label>Or attach a .txt file</label>
+                <input type="file" accept=".txt,text/plain" bind:files={listFile} />
             </div>
         {:else}
             <div class="field">

@@ -4,6 +4,7 @@
     import { refreshMe } from '$lib/session';
 
     let username = $state('');
+    let displayName = $state('');
     let email = $state('');
     let password = $state('');
     let error = $state('');
@@ -14,7 +15,12 @@
         busy = true;
         error = '';
         try {
-            await api.post('/auth/register', { username, password, email: email || null });
+            await api.post('/auth/register', {
+                username,
+                password,
+                email: email || null,
+                display_name: displayName || null
+            });
             await api.post('/auth/login', { username, password });
             await refreshMe();
             await goto('/');
@@ -32,6 +38,10 @@
         <div class="field">
             <label for="u">Username</label>
             <input id="u" bind:value={username} required autocomplete="username" />
+        </div>
+        <div class="field">
+            <label for="n">Full name <span class="muted">(optional)</span></label>
+            <input id="n" bind:value={displayName} autocomplete="name" />
         </div>
         <div class="field">
             <label for="e">Email <span class="muted">(optional)</span></label>

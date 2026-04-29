@@ -118,3 +118,23 @@ jobs:
         with:
           files: |
             android/app/build/outputs/apk/release/*.apk
+
+      - name: Attach debug APK to GitHub Release (fallback if unsigned)
+        # Always attach the debug APK to the release so users have an
+        # installable build even when no production keystore is wired up.
+        # Rename it to make the signing status obvious.
+        if: github.event_name == 'release'
+        run: |
+          set -euo pipefail
+          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${VERSION#v}"
+          mkdir -p apk-out
+          cp android/app/build/outputs/apk/debug/app-debug.apk \
+             "apk-out/covet-${VERSION}-debug.apk"
+
+      - name: Upload debug APK to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            apk-out/covet-*-debug.apk

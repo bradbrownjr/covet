@@ -96,6 +96,12 @@ tag and the matching `## [X.Y.Z]` section of `CHANGELOG.md`.
 - `ruff check` / `svelte-check` / lint clean.
 - Documentation updated (`CHANGELOG.md` for user-facing changes;
   `AGENTS.md` for new rules / gotchas; `README.md` only when needed).
+- **`CHANGELOG.md` is the source for the in-app "What's new" modal** —
+  every user-facing change must land in `CHANGELOG.md` under
+  `## [Unreleased]` (or the active version). The web client fetches
+  `/changelog` and renders it; an out-of-date CHANGELOG ships
+  out-of-date release notes to every user. Keep entries terse and
+  user-oriented (no internal refactor noise).
 - Committed and pushed; CI green on `main`.
 
 ---

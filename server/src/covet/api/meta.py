@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Response, status
+import os
+import sys
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi.responses import PlainTextResponse
 from sqlalchemy import select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -69,3 +74,21 @@ def _no_users_yet(db: Session) -> bool:
         return db.scalar(select(User.id).limit(1)) is None
     except SQLAlchemyError:
         return False
+
+
+@router.get("/changelog", response_class=PlainTextResponse)
+def changelog() -> PlainTextResponse:
+    """Serve CHANGELOG.md as plain markdown for the in-app 'What's new' modal."""
+    candidates: list[Path] = []
+    env_path = os.environ.get("COVET_CHANGELOG_PATH")
+    if env_path:
+        candidates.append(Path(env_path))
+    here = Path(__file__).resolve()
+    candidates.append(here.parents[3] / "CHANGELOG.md")
+    candidates.append(Path("/opt/covet/share/covet/CHANGELOG.md"))
+    candidates.append(Path(sys.prefix) / "share" / "covet" / "CHANGELOG.md")
+
+    for c in candidates:
+        if c.is_file():
+            return PlainTextResponse(c.read_text(encoding="utf-8"), media_type="text/markdown")
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="CHANGELOG not found")

@@ -18,7 +18,15 @@ class RegisterRequest(BaseModel):
     username: str = Field(min_length=3, max_length=64)
     email: EmailStr | None = None
     password: str = Field(min_length=12, max_length=255)
-    display_name: str | None = None
+    display_name: str | None = Field(default=None, max_length=128)
+
+
+class MeUpdate(BaseModel):
+    """Self-service profile updates. Cannot change is_admin/is_active."""
+
+    display_name: str | None = Field(default=None, max_length=128)
+    email: EmailStr | None = None
+    password: str | None = Field(default=None, min_length=12, max_length=255)
 
 
 class SessionInfo(BaseModel):

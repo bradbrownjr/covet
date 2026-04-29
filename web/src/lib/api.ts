@@ -63,6 +63,11 @@ export interface User {
     is_admin: boolean;
 }
 
+/** Display label for a user: full name when set, else username. */
+export function userLabel(u: { display_name?: string | null; username: string }): string {
+    return (u.display_name && u.display_name.trim()) || u.username;
+}
+
 export interface Collection {
     id: string;
     name: string;

@@ -44,7 +44,7 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
 RUN pip install --no-cache-dir "uv==${UV_VERSION}"
 
 WORKDIR /src
-COPY LICENSE NOTICE README.md ./
+COPY LICENSE NOTICE README.md CHANGELOG.md ./
 COPY server/pyproject.toml ./server/pyproject.toml
 COPY server/src ./server/src
 COPY server/alembic.ini ./server/alembic.ini
@@ -55,7 +55,8 @@ RUN uv venv --python python${PYTHON_VERSION} /opt/covet \
     && uv pip install --python /opt/covet/bin/python --no-cache ./server \
     && mkdir -p /opt/covet/share/covet \
     && cp -r /src/server/alembic /opt/covet/share/covet/alembic \
-    && cp /src/server/alembic.ini /opt/covet/share/covet/alembic.ini
+    && cp /src/server/alembic.ini /opt/covet/share/covet/alembic.ini \
+    && cp /src/CHANGELOG.md /opt/covet/share/covet/CHANGELOG.md
 
 # ----------------------------------------------------------------------------
 # Stage 3: runtime

@@ -6,7 +6,7 @@ import json
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from sqlalchemy.orm import Session as DBSession
 
 from covet.auth.deps import (
@@ -143,6 +143,84 @@ async def import_csv(
         ],
     )
     return {"imported": inserted, "warnings": result.warnings}
+
+
+@router.get("/csv/template", status_code=status.HTTP_200_OK)
+def csv_template(item_type: str = "movie") -> PlainTextResponse:
+    """Download a starter CSV with the column headers Covet's CSV importer
+    expects out of the box. Users fill it in and upload it back through the
+    CSV importer with the matching default mapping.
+    """
+    headers = [
+        "Title",
+        "Subtitle",
+        "Year",
+        "Notes",
+        "Quantity",
+        "Condition",
+        "Location",
+        "Currency",
+        "Purchase price",
+        "Current value",
+        "Barcode",
+    ]
+    sample = {
+        "movie": ["The Matrix", "", "1999", "", "1", "good", "", "USD", "", "", ""],
+        "music": ["OK Computer", "Radiohead", "1997", "", "1", "good", "", "USD", "", "", ""],
+        "book": ["Dune", "Frank Herbert", "1965", "", "1", "good", "", "USD", "", "", ""],
+        "comic": ["Saga #1", "", "2012", "", "1", "good", "", "USD", "", "", ""],
+        "game": ["Hades", "", "2020", "", "1", "good", "", "USD", "", "", ""],
+        "other": ["Item name", "", "", "", "1", "", "", "", "", "", ""],
+    }.get(item_type, ["", "", "", "", "1", "", "", "", "", "", ""])
+
+    import csv
+    import io
+
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(headers)
+    w.writerow(sample)
+    return PlainTextResponse(
+        buf.getvalue(),
+        media_type="text/csv",
+        headers={"content-disposition": f'attachment; filename="covet-{item_type}-template.csv"'},
+    )
+
+
+@router.post("/list", status_code=status.HTTP_200_OK)
+async def import_list(
+    collection_id: Annotated[str, Form()],
+    item_type: Annotated[str, Form(description="movie|music|book|comic|game|other")],
+    titles: Annotated[str, Form()] = "",
+    file: Annotated[UploadFile | None, File()] = None,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> dict:
+    """Quick-add a flat list of titles. Each non-blank line becomes one item
+    of ``item_type`` with only ``title`` set. Lines beginning with '#' are
+    treated as comments and skipped. Either paste the list in ``titles`` or
+    attach a plain-text ``file``.
+    """
+    _check_collection(db, auth, collection_id)
+    raw_text = titles or ""
+    if file is not None:
+        raw_text += "\n" + (await file.read()).decode("utf-8", errors="replace")
+    lines = [
+        line.strip()
+        for line in raw_text.splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    ]
+    if not lines:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No titles provided. Paste a list or attach a .txt file.",
+        )
+    inserted = _persist_items(
+        db,
+        collection_id=collection_id,
+        items_data=[{"type": item_type, "title": t} for t in lines],
+    )
+    return {"imported": inserted, "warnings": []}
 
 
 @router.get("/backup", status_code=status.HTTP_200_OK)

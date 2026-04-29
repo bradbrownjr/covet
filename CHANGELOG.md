@@ -6,8 +6,35 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+### Added
+
+- **In-app "What's new" modal.** A sparkle icon next to the version in
+  the header opens a dialog rendering the project `CHANGELOG.md`
+  directly. A small dot indicator highlights the button until you
+  open it after a version bump.
+- **Editable profile.** Click your name in the header to edit your
+  display name, email, and password. A new `PATCH /auth/me` endpoint
+  backs the form; admin-only fields (`is_admin`, `is_active`) are
+  ignored on this route to prevent self-escalation.
+- **Display name on registration.** The signup form now accepts an
+  optional full name. When set, it is shown throughout the UI in
+  place of the username (which stays your private login handle).
+- **List import.** A new "List of titles" mode on the Import page
+  accepts a pasted block of titles or a `.txt` upload and creates
+  one item per non-blank line. Backed by `POST /imports/list`.
+- **Downloadable CSV template.** The CSV import mode now offers a
+  "Download template" button per item type, served from
+  `GET /imports/csv/template?item_type=...`.
+- **Debug APK attached to GitHub Releases.** Until a signing keystore
+  is configured, the Android workflow now uploads the unsigned debug
+  APK to each release as `covet-<version>-debug.apk`.
+
 ### Fixed
 
+- **Same-origin POSTs no longer return 403.** The CSRF middleware
+  treated `*` in `COVET_ALLOWED_HOSTS` as a literal hostname and
+  rejected requests whose `Origin` host matched the request host.
+  Both cases are now allowed.
 - **Web UI no longer renders a blank page under the default CSP.** The
   hardening middleware shipped `script-src 'self'`, which silently
   blocked SvelteKit's inline bootstrap script and our pre-hydration

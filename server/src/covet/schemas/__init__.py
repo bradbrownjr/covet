@@ -3,6 +3,7 @@
 from covet.schemas.audit import AuditLogRead
 from covet.schemas.auth import (
     LoginRequest,
+    MeUpdate,
     OIDCProviderInfo,
     RegisterRequest,
     SessionInfo,
@@ -81,6 +82,7 @@ __all__ = [
     "MaintenanceTaskCreate",
     "MaintenanceTaskRead",
     "MaintenanceTaskUpdate",
+    "MeUpdate",
     "MembershipCreate",
     "MembershipDetail",
     "MembershipRead",
