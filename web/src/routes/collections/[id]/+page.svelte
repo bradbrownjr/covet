@@ -13,6 +13,8 @@
     // Inline create form
     let newType: ItemType = $state('movie');
     let newTitle = $state('');
+    let scrapeUrl = $state('');
+    let scraping = $state(false);
 
     const cid = $derived($page.params.id ?? '');
 
@@ -39,6 +41,26 @@
         await load();
     }
 
+    async function scrapeFromUrl() {
+        const url = scrapeUrl.trim();
+        if (!url) return;
+        scraping = true;
+        error = '';
+        try {
+            const res = await api.post<{ title?: string; item_type?: string }>(
+                '/metadata/scrape',
+                { url }
+            );
+            if (res.title) newTitle = res.title;
+            if (res.item_type) newType = res.item_type as ItemType;
+            scrapeUrl = '';
+        } catch (e) {
+            error = (e as Error).message;
+        } finally {
+            scraping = false;
+        }
+    }
+
     async function removeItem(id: string) {
         if (!confirm('Delete this item?')) return;
         await api.delete(`/items/${id}`);
@@ -58,6 +80,15 @@
     </p>
 
     <form onsubmit={addItem} class="card" style="margin: 1rem 0">
+        <div style="display:grid; grid-template-columns:1fr auto; gap:.5rem; margin-bottom:.5rem">
+            <input
+                bind:value={scrapeUrl}
+                placeholder="Paste URL to prefill (Open Library, any web page)…"
+            />
+            <button type="button" onclick={scrapeFromUrl} disabled={scraping}>
+                {scraping ? 'Scraping…' : 'Scrape URL'}
+            </button>
+        </div>
         <div style="display: grid; grid-template-columns: 140px 1fr auto; gap: .5rem">
             <select bind:value={newType}>
                 <option value="movie">Movie</option>

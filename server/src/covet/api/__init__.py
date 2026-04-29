@@ -12,6 +12,7 @@ from covet.api import item_templates as item_templates_router
 from covet.api import items as items_router
 from covet.api import loans as loans_router
 from covet.api import meta as meta_router
+from covet.api import metadata as metadata_router
 from covet.api import share as share_router
 from covet.api import sync as sync_router
 from covet.api import tags as tags_router
@@ -30,5 +31,6 @@ api_router.include_router(imports_router.router)
 api_router.include_router(share_router.router)
 api_router.include_router(invitations_router.router)
 api_router.include_router(audit_router.router)
+api_router.include_router(metadata_router.router)
 
 __all__ = ["api_router"]

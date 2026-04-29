@@ -8,6 +8,16 @@ All notable changes to **Covet** are documented here. Format follows
 
 ### Added
 
+- **URL metadata scraper** — new `POST /metadata/scrape {url}` endpoint
+  fetches a URL through a pluggable adapter registry and returns
+  suggested item fields (`title`, `description`, `image_url`,
+  `item_type`, `attrs`). Ships with an Open Library ISBN adapter and a
+  generic OpenGraph fallback that parses `og:*`, `<meta name="...">`
+  and `<title>`. SSRF-protected: rejects non-http(s) URLs and any host
+  that resolves to a private/loopback/link-local address. Web app gets
+  a "Scrape URL" prefill on the new-item form. Adapters for IGDB / IMDB
+  / Discogs can be registered via `register_adapter()`.
+
 - **Item templates / per-type custom fields** — collections gain
   reusable `ItemTemplate` schemas (`name`, `item_type`, `fields[]`).
   Each field declares `key`, `label`, `type`
