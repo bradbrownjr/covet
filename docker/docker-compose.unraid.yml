@@ -17,17 +17,17 @@ services:
     ports:
       - "8000:8000"
     environment:
-      TZ: ${TZ:-America/Chicago}
+      TZ: ${TZ:-Etc/UTC}
       # Unraid 'nobody:users' = 99:100
       PUID: 99
       PGID: 100
       UMASK: "0022"
-      COVET_PUBLIC_URL: ${COVET_PUBLIC_URL:-https://covet.lynwood.us}
+      COVET_PUBLIC_URL: ${COVET_PUBLIC_URL:-https://covet.example.com}
       COVET_BEHIND_PROXY: "true"
-      COVET_ALLOWED_HOSTS: ${COVET_ALLOWED_HOSTS:-covet.lynwood.us}
+      COVET_ALLOWED_HOSTS: ${COVET_ALLOWED_HOSTS:-covet.example.com}
       COVET_REGISTRATION_ENABLED: "false"
       # Set these on first boot to bootstrap an admin without the wizard:
-      # COVET_ADMIN_USERNAME: brad
+      # COVET_ADMIN_USERNAME: admin
       # COVET_ADMIN_PASSWORD_FILE: /run/secrets/covet_admin_password
     volumes:
       - /mnt/user/appdata/covet/data:/data
