@@ -4,6 +4,38 @@ All notable changes to **Covet** are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0] — 2026-04-30
+
+### Added
+
+- **Multi-source barcode lookup (Android + server).** Scanning a barcode
+  now queries Open Library (books), MusicBrainz (music), Open Food Facts
+  (grocery/household), and Google Books (optional API key) in parallel.
+  When multiple matches are found a picker card list lets you choose the
+  right one; a single match auto-fills; no match opens a blank form.
+  A "Looking up barcode…" overlay shows while the search is in progress.
+- **Pull-to-refresh on the collections list (Android).** Swipe down on
+  the collections list to reload — was already wired on the item list but
+  missing from the top-level screen.
+- **Retry button on error states (Android).** Both the collections list
+  and the item list now show a Retry button when a network error occurs,
+  instead of just displaying the error text.
+- **Test Connection button in Settings (Android).** Tap to verify the
+  server URL is reachable; shows inline pass/fail feedback without
+  leaving the screen.
+- **`COVET_GOOGLE_BOOKS_API_KEY` config option.** Optional environment
+  variable to use an authenticated Google Books quota (1000 req/day free
+  tier) for barcode lookups. Falls back to unauthenticated if unset.
+
+### Fixed
+
+- **Android add-item dialog no longer pre-selects a category** for
+  collections that have no default category set. Previously "music > vinyl"
+  (the first category alphabetically) was silently pre-selected, causing
+  items to be filed under the wrong category. The dropdowns now show
+  "Select…" with an error outline until the user makes an explicit choice,
+  and the Add button stays disabled until both a category and title are set.
+
 ## [0.14.0] — 2026-04-30
 
 ### Added
