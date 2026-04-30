@@ -1,6 +1,8 @@
 package io.github.bradbrownjr.covet.data.repo
 
 import com.squareup.moshi.Moshi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import io.github.bradbrownjr.covet.data.auth.SessionStore
 import io.github.bradbrownjr.covet.data.auth.normalizedBaseUrl
@@ -39,6 +41,18 @@ class AuthRepository @Inject constructor(
         val token = authedApi.createToken(deviceName)
         val raw = token.token ?: error("Server did not return a token value")
         session.save(base, raw, username)
+    }
+
+    suspend fun testConnection(serverUrl: String) {
+        withContext(Dispatchers.IO) {
+            val base = serverUrl.normalizedBaseUrl()
+            val request = okhttp3.Request.Builder()
+                .url("$base/healthz")
+                .build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) error("Server returned HTTP ${response.code}")
+            }
+        }
     }
 
     suspend fun logout() = session.clear()
