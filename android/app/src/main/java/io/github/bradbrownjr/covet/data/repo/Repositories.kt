@@ -70,6 +70,12 @@ class CollectionRepository @Inject constructor(
         return created
     }
 
+    suspend fun update(id: String, patch: io.github.bradbrownjr.covet.data.remote.CollectionPatch): CollectionDto {
+        val updated = api.patchCollection(id, patch)
+        dao.upsertAll(listOf(updated.toEntity()))
+        return updated
+    }
+
     suspend fun delete(id: String) {
         api.deleteCollection(id)
         dao.deleteById(id)

@@ -33,11 +33,13 @@ data class SettingsUi(
     val testBusy: Boolean = false,
     val testResult: String? = null,
     val testOk: Boolean = false,
+    // "system" | "light" | "dark" — null treated as "system"
+    val themeMode: String? = null,
 )
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    session: SessionStore,
+    private val session: SessionStore,
     private val auth: AuthRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SettingsUi())
@@ -50,10 +52,19 @@ class SettingsViewModel @Inject constructor(
                     _state.value = _state.value.copy(baseUrl = url, username = name)
                 }
         }
+        viewModelScope.launch {
+            session.themeMode.collect { mode ->
+                _state.value = _state.value.copy(themeMode = mode)
+            }
+        }
     }
 
     fun signOut(after: () -> Unit) {
         viewModelScope.launch { auth.logout(); after() }
+    }
+
+    fun setTheme(mode: String) {
+        viewModelScope.launch { session.saveTheme(mode) }
     }
 
     fun testConnection() {
@@ -117,6 +128,21 @@ fun SettingsScreen(
                         text = s.testResult!!,
                         color = if (s.testOk) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+            HorizontalDivider()
+            Text("Appearance", style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            @OptIn(ExperimentalMaterial3Api::class)
+            SingleChoiceSegmentedButtonRow {
+                val options = listOf("system" to "System", "light" to "Light", "dark" to "Dark")
+                options.forEachIndexed { index, (value, label) ->
+                    SegmentedButton(
+                        selected = (s.themeMode ?: "system") == value,
+                        onClick = { vm.setTheme(value) },
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                        label = { Text(label) },
                     )
                 }
             }

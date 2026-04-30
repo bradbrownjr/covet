@@ -33,8 +33,14 @@ interface CovetApi {
     @GET("collections/{id}")
     suspend fun getCollection(@Path("id") id: String): CollectionDto
 
+    @PATCH("collections/{id}")
+    suspend fun patchCollection(@Path("id") id: String, @Body body: CollectionPatch): CollectionDto
+
     @DELETE("collections/{id}")
     suspend fun deleteCollection(@Path("id") id: String)
+
+    @GET("changelog")
+    suspend fun changelog(): String
 
     // --- Categories ---
     @GET("categories")

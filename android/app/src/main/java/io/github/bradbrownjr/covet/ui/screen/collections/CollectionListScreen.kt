@@ -9,7 +9,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
@@ -118,17 +118,34 @@ class CollectionListViewModel @Inject constructor(
 fun CollectionListScreen(
     onOpen: (String) -> Unit,
     onSettings: () -> Unit,
+    onAbout: () -> Unit,
     vm: CollectionListViewModel = hiltViewModel(),
 ) {
     val s by vm.state.collectAsState()
+    var menuExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Collections") },
                 actions = {
-                    IconButton(onClick = onSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    Box {
+                        IconButton(onClick = { menuExpanded = true }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Menu")
+                        }
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Settings") },
+                                onClick = { menuExpanded = false; onSettings() },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("About") },
+                                onClick = { menuExpanded = false; onAbout() },
+                            )
+                        }
                     }
                 },
             )

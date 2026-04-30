@@ -15,6 +15,7 @@ private val Context.authStore by preferencesDataStore(name = "auth")
 private val KEY_BASE_URL = stringPreferencesKey("base_url")
 private val KEY_TOKEN    = stringPreferencesKey("api_token")
 private val KEY_USERNAME = stringPreferencesKey("username")
+private val KEY_THEME    = stringPreferencesKey("theme_mode")
 
 /**
  * Persistent server URL + bearer token + (display) username.
@@ -26,9 +27,10 @@ private val KEY_USERNAME = stringPreferencesKey("username")
 @Singleton
 class SessionStore @Inject constructor(@ApplicationContext private val ctx: Context) {
 
-    val baseUrl: Flow<String?> = ctx.authStore.data.map { it[KEY_BASE_URL] }
-    val token:   Flow<String?> = ctx.authStore.data.map { it[KEY_TOKEN] }
-    val username: Flow<String?> = ctx.authStore.data.map { it[KEY_USERNAME] }
+    val baseUrl:   Flow<String?> = ctx.authStore.data.map { it[KEY_BASE_URL] }
+    val token:     Flow<String?> = ctx.authStore.data.map { it[KEY_TOKEN] }
+    val username:  Flow<String?> = ctx.authStore.data.map { it[KEY_USERNAME] }
+    val themeMode: Flow<String?> = ctx.authStore.data.map { it[KEY_THEME] }
 
     suspend fun save(baseUrl: String, token: String, username: String) {
         ctx.authStore.edit { p ->
@@ -42,8 +44,12 @@ class SessionStore @Inject constructor(@ApplicationContext private val ctx: Cont
         ctx.authStore.edit { p ->
             p.remove(KEY_TOKEN)
             p.remove(KEY_USERNAME)
-            // Keep baseUrl so the user doesn't have to retype on re-login.
+            // Keep baseUrl and theme so the user doesn't have to retype on re-login.
         }
+    }
+
+    suspend fun saveTheme(mode: String) {
+        ctx.authStore.edit { p -> p[KEY_THEME] = mode }
     }
 }
 

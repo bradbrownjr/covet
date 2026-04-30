@@ -6,20 +6,40 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.16.0] — 2026-04-30
+
 ### Added
 
-- **Android: list / grid view toggle in collection detail.** A toggle button
-  in the toolbar switches between the familiar item list and a 2-column photo
-  card grid. Each card shows the item's cover photo (if any), category badge,
-  title, and subtitle.
-- **Android: photo support on item detail.** The item detail screen now shows
-  a horizontal photo strip beneath the toolbar. Tap a thumbnail to open a
-  full-screen viewer; tap the trash icon to delete it; tap the "+" card to
-  pick an image from the device gallery and upload it.
-- **Server: `primary_photo_id` on item list.** The `/items` API response now
-  includes the primary photo ID for each item (populated in one extra IN query
-  via `selectinload`), enabling the Android grid view to display cover photos
-  without extra per-item requests.
+- **Android: About screen.** New screen (hamburger menu → About) shows the
+  app description, installed version, a tappable link to the source
+  repository, a "What's new" button that fetches the server changelog, and a
+  "Help / User guide" button with an embedded guide.
+- **Android: hamburger menu on the collections screen.** The gear icon is
+  replaced by a `☰` menu that opens Settings and About, making room for future
+  entries without crowding the toolbar.
+- **Android: edit collections in the field.** A pencil icon appears in the
+  collection detail toolbar for owners and editors. Tapping it opens a dialog
+  to rename the collection or update its description; the change is saved via
+  `PATCH /collections/{id}`.
+- **Android: System / Light / Dark theme selector in Settings.** A three-way
+  segmented-button control lets users override the system appearance. The
+  preference is stored in DataStore and applied on next launch (and live
+  across recomposition in MainActivity).
+- **Android: `my_role` on `CollectionDto`.** The DTO now surfaces the
+  authenticated user's role in each collection, used to gate the edit button.
+- **Docs: Android install guide** (`docs/android-install.md`) — Obtanium
+  steps, manual sideloading, Samsung AV scan note, permissions table,
+  troubleshooting.
+- **Docs: Android user guide** (`docs/android-user-guide.md`) — first-launch
+  setup, collections, items, barcode scanning, photos, settings, offline
+  behaviour, permissions.
+
+### Fixed
+
+- **Android: Obtanium shows two APKs.** Removed `applicationIdSuffix =
+  ".debug"` from the debug build type. Both debug and release builds now share
+  the app ID `io.github.bradbrownjr.covet`, so Android treats them as the
+  same application and Obtanium sees only one installable APK per release.
 
 ## [0.15.1] — 2026-04-30
 

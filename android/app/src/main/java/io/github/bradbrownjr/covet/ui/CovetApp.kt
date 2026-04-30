@@ -10,6 +10,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import io.github.bradbrownjr.covet.ui.screen.about.AboutScreen
 import io.github.bradbrownjr.covet.ui.screen.collection.CollectionDetailScreen
 import io.github.bradbrownjr.covet.ui.screen.collections.CollectionListScreen
 import io.github.bradbrownjr.covet.ui.screen.item.ItemDetailScreen
@@ -26,6 +27,7 @@ object Routes {
     fun itemDetail(id: String) = "item/$id"
     const val SCANNER = "scanner"
     const val SETTINGS = "settings"
+    const val ABOUT = "about"
 }
 
 @Composable
@@ -56,6 +58,7 @@ fun CovetApp() {
                 CollectionListScreen(
                     onOpen = { nav.navigate(Routes.collectionDetail(it)) },
                     onSettings = { nav.navigate(Routes.SETTINGS) },
+                    onAbout = { nav.navigate(Routes.ABOUT) },
                 )
             }
             composable(Routes.COLLECTION_DETAIL) { backStack ->
@@ -89,6 +92,9 @@ fun CovetApp() {
                     },
                     onBack = { nav.popBackStack() },
                 )
+            }
+            composable(Routes.ABOUT) {
+                AboutScreen(onBack = { nav.popBackStack() })
             }
         }
     }

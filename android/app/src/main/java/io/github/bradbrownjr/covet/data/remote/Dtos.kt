@@ -36,6 +36,13 @@ data class CollectionDto(
     val is_public: Boolean = false,
     val owner_id: String,
     val default_category_slug: String? = null,
+    val my_role: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class CollectionPatch(
+    val name: String? = null,
+    val description: String? = null,
 )
 
 @JsonClass(generateAdapter = true)

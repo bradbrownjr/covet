@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -79,6 +80,11 @@ data class DetailUi(
     // Barcode candidate picker
     val showCandidatePicker: Boolean = false,
     val candidates: List<BarcodeCandidateDto> = emptyList(),
+    // Collection edit dialog
+    val showEdit: Boolean = false,
+    val editName: String = "",
+    val editDescription: String = "",
+    val editSaving: Boolean = false,
 )
 
 @HiltViewModel
@@ -316,6 +322,41 @@ class CollectionDetailViewModel @Inject constructor(
             }
         }
     }
+
+    fun startEdit() {
+        val c = _state.value.collection ?: return
+        _state.value = _state.value.copy(
+            showEdit = true,
+            editName = c.name,
+            editDescription = c.description.orEmpty(),
+        )
+    }
+
+    fun cancelEdit() { _state.value = _state.value.copy(showEdit = false) }
+
+    fun setEditName(v: String) { _state.value = _state.value.copy(editName = v) }
+    fun setEditDescription(v: String) { _state.value = _state.value.copy(editDescription = v) }
+
+    fun saveEdit() {
+        val s = _state.value
+        if (s.editName.isBlank()) return
+        _state.value = s.copy(editSaving = true)
+        viewModelScope.launch {
+            try {
+                collections.update(
+                    collectionId,
+                    io.github.bradbrownjr.covet.data.remote.CollectionPatch(
+                        name = s.editName.trim(),
+                        description = s.editDescription.trimEnd().ifEmpty { null },
+                    ),
+                )
+                _state.value = _state.value.copy(showEdit = false, editSaving = false)
+                refresh()
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(editSaving = false, error = t.message)
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -346,6 +387,11 @@ fun CollectionDetailScreen(
                     }
                 },
                 actions = {
+                    if (s.collection?.my_role == "owner" || s.collection?.my_role == "editor") {
+                        IconButton(onClick = vm::startEdit) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit collection")
+                        }
+                    }
                     IconButton(onClick = vm::toggleViewMode) {
                         Icon(
                             if (s.viewMode == ViewMode.LIST) Icons.Default.GridView else Icons.AutoMirrored.Filled.ViewList,
@@ -520,6 +566,38 @@ fun CollectionDetailScreen(
                 dismissButton = {
                     TextButton(onClick = vm::dismissCandidatePicker) { Text("Cancel") }
                 },
+            )
+        }
+
+        if (s.showEdit) {
+            AlertDialog(
+                onDismissRequest = vm::cancelEdit,
+                title = { Text("Edit collection") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = s.editName,
+                            onValueChange = vm::setEditName,
+                            label = { Text("Name") },
+                            singleLine = true,
+                            enabled = !s.editSaving,
+                        )
+                        OutlinedTextField(
+                            value = s.editDescription,
+                            onValueChange = vm::setEditDescription,
+                            label = { Text("Description") },
+                            minLines = 2,
+                            enabled = !s.editSaving,
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = vm::saveEdit,
+                        enabled = !s.editSaving && s.editName.isNotBlank(),
+                    ) { Text(if (s.editSaving) "Saving…" else "Save") }
+                },
+                dismissButton = { TextButton(onClick = vm::cancelEdit) { Text("Cancel") } },
             )
         }
 
