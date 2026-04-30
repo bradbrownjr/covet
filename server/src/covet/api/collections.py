@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session as DBSession
 
+from covet.api.item_templates import _do_scaffold
 from covet.auth.deps import (
     AuthContext,
     collection_role,
@@ -58,6 +59,8 @@ def create_collection(
 ) -> CollectionRead:
     collection = Collection(owner_id=auth.user.id, **payload.model_dump())
     db.add(collection)
+    db.flush()  # populate collection.id before scaffolding
+    _do_scaffold(db, collection.id, collection.default_category_slug, auth.user.id)
     db.commit()
     db.refresh(collection)
     return CollectionRead.model_validate(collection)

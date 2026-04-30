@@ -273,6 +273,45 @@ def clone_template(
     return ItemTemplateRead.model_validate(clone)
 
 
+# ---------------------------------------------------------------------------
+# Scaffold helper (also called by create_collection)
+# ---------------------------------------------------------------------------
+
+
+def _do_scaffold(
+    db: DBSession,
+    collection_id: str,
+    default_category_slug: str | None,
+    created_by: str,
+) -> None:
+    """Seed default templates for *collection_id*.
+
+    Idempotent: skips names that already exist. Does NOT commit — caller is
+    responsible for committing the surrounding transaction.
+    """
+    root = (default_category_slug or "").split(".")[0]
+    seeds = _SCAFFOLD.get(root, [])
+    if not seeds:
+        return
+
+    existing_names = set(
+        db.scalars(
+            select(ItemTemplate.name).where(ItemTemplate.collection_id == collection_id)
+        ).all()
+    )
+
+    for seed in seeds:
+        if seed["name"] in existing_names:
+            continue
+        db.add(ItemTemplate(
+            collection_id=collection_id,
+            name=seed["name"],
+            category_slug=seed["category_slug"],
+            fields=seed["fields"],
+            created_by=created_by,
+        ))
+
+
 @router.post(
     "/collections/{collection_id}/scaffold-templates",
     response_model=list[ItemTemplateRead],
@@ -293,34 +332,15 @@ def scaffold_templates(
     if coll is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
-    root = (coll.default_category_slug or "").split(".")[0]
-    seeds = _SCAFFOLD.get(root, [])
-
-    existing_names = set(
-        db.scalars(
-            select(ItemTemplate.name).where(ItemTemplate.collection_id == collection_id)
-        ).all()
-    )
-
-    created: list[ItemTemplate] = []
-    for seed in seeds:
-        if seed["name"] in existing_names:
-            continue
-        tmpl = ItemTemplate(
-            collection_id=collection_id,
-            name=seed["name"],
-            category_slug=seed["category_slug"],
-            fields=seed["fields"],
-            created_by=auth.user.id,
-        )
-        db.add(tmpl)
-        created.append(tmpl)
-
+    _do_scaffold(db, collection_id, coll.default_category_slug, auth.user.id)
     db.commit()
-    for tmpl in created:
-        db.refresh(tmpl)
 
-    return [ItemTemplateRead.model_validate(t) for t in created]
+    rows = db.scalars(
+        select(ItemTemplate)
+        .where(ItemTemplate.collection_id == collection_id)
+        .order_by(ItemTemplate.name)
+    ).all()
+    return [ItemTemplateRead.model_validate(t) for t in rows]
 
 
 # ---------------------------------------------------------------------------
