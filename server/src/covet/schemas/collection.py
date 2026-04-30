@@ -37,6 +37,7 @@ class CollectionRead(CollectionBase):
     owner_id: str
     created_at: datetime
     updated_at: datetime
+    my_role: Role | None = None  # populated by get_collection for the requesting user
 
 
 class MembershipRead(BaseModel):

@@ -15,6 +15,14 @@
     let didSeedDefaults = $state(false);
     let viewMode = $state<'list' | 'grid'>('list');
 
+    // Inline item editing
+    let editingId = $state<string | null>(null);
+    let editTitle = $state('');
+    let editCreator = $state('');
+    let editSubtitle = $state('');
+    let editCondition = $state('');
+    let editQuantity = $state(1);
+
     // Inline create form: cascading root → leaf.
     let newRoot = $state('other');
     let newLeaf = $state('other.generic');
@@ -45,6 +53,9 @@
 
     const cid = $derived(page.params.id ?? '');
     const roots = $derived(rootCategories(categories));
+    const canEdit = $derived(
+        collection?.my_role === 'editor' || collection?.my_role === 'owner'
+    );
     const leaves = $derived.by(() => {
         const root = categories.find((c) => c.slug === newRoot);
         if (!root) return [];
@@ -188,6 +199,34 @@
         await load();
     }
 
+    function startEdit(i: Item) {
+        editingId = i.id;
+        editTitle = i.title;
+        editCreator = String(i.attrs?.creator ?? '');
+        editSubtitle = i.subtitle ?? '';
+        editCondition = i.condition ?? '';
+        editQuantity = i.quantity;
+    }
+
+    function cancelEdit() {
+        editingId = null;
+    }
+
+    async function saveEdit() {
+        if (!editingId) return;
+        const attrsPayload: Record<string, string> = {};
+        if (editCreator.trim()) attrsPayload.creator = editCreator.trim();
+        await api.patch(`/items/${editingId}`, {
+            title: editTitle.trim(),
+            subtitle: editSubtitle.trim() || null,
+            condition: editCondition.trim() || null,
+            quantity: editQuantity,
+            attrs: attrsPayload,
+        });
+        editingId = null;
+        await load();
+    }
+
     async function deleteCollection() {
         if (!collection) return;
         const name = collection.name;
@@ -223,9 +262,12 @@
         <a class="tab tab-active" href="/collections/{cid}" aria-current="page">Items</a>
         <a class="tab" href="/collections/{cid}/templates">Templates</a>
         <a class="tab" href="/collections/{cid}/members">Members</a>
-        <button type="button" class="tab tab-danger" onclick={deleteCollection}>Delete</button>
+        {#if collection.my_role === 'owner'}
+            <button type="button" class="tab tab-danger" onclick={deleteCollection}>Delete</button>
+        {/if}
     </nav>
 
+    {#if canEdit}
     <form onsubmit={addItem} class="card add-form">
         <label class="add-label" for="addq">
             Add an item
@@ -288,6 +330,7 @@
         </div>
         {#if error}<p class="error">{error}</p>{/if}
     </form>
+    {/if}
 
     <div class="filters">
         <input
@@ -329,25 +372,46 @@
     {:else if viewMode === 'grid'}
         <div class="item-grid">
             {#each items as i (i.id)}
-                <div class="item-card">
-                    <div class="item-card-body">
-                        {#if !isFocused && i.category_slug}
-                            <span class="category-badge">{i.category_slug.split('.').at(-1) ?? i.category_slug}</span>
-                        {/if}
-                        {#if i.attrs?.creator}
-                            <p class="item-creator">{String(i.attrs.creator)}</p>
-                        {/if}
-                        <p class="item-title">{i.title}</p>
-                        {#if i.subtitle}
-                            <p class="item-subtitle">{i.subtitle}</p>
-                        {/if}
-                        <div class="item-meta">
-                            {#if i.condition}<span>{i.condition}</span>{/if}
-                            {#if i.quantity > 1}<span>×{i.quantity}</span>{/if}
+                {#if editingId === i.id}
+                    <div class="item-card item-card-edit">
+                        <div class="item-card-body">
+                            <input bind:value={editTitle} placeholder="Title" class="edit-input" />
+                            <input bind:value={editCreator} placeholder="Creator" class="edit-input" />
+                            <input bind:value={editSubtitle} placeholder="Series / subtitle" class="edit-input" />
+                            <input bind:value={editCondition} placeholder="Condition" class="edit-input" />
+                            <input type="number" bind:value={editQuantity} min="0" placeholder="Qty" class="edit-input" style="width:5rem" />
+                        </div>
+                        <div class="item-card-actions">
+                            <button onclick={saveEdit}>Save</button>
+                            <button type="button" class="secondary" onclick={cancelEdit}>Cancel</button>
                         </div>
                     </div>
-                    <button class="danger item-card-delete" onclick={() => removeItem(i.id)}>Delete</button>
-                </div>
+                {:else}
+                    <div class="item-card">
+                        <div class="item-card-body">
+                            {#if !isFocused && i.category_slug}
+                                <span class="category-badge">{i.category_slug.split('.').at(-1) ?? i.category_slug}</span>
+                            {/if}
+                            {#if i.attrs?.creator}
+                                <p class="item-creator">{String(i.attrs.creator)}</p>
+                            {/if}
+                            <p class="item-title">{i.title}</p>
+                            {#if i.subtitle}
+                                <p class="item-subtitle">{i.subtitle}</p>
+                            {/if}
+                            <div class="item-meta">
+                                {#if i.condition}<span>{i.condition}</span>{/if}
+                                {#if i.quantity > 1}<span>×{i.quantity}</span>{/if}
+                            </div>
+                        </div>
+                        {#if canEdit}
+                            <div class="item-card-actions">
+                                <button type="button" class="secondary" onclick={() => startEdit(i)}>Edit</button>
+                                <button class="danger item-card-delete" onclick={() => removeItem(i.id)}>Delete</button>
+                            </div>
+                        {/if}
+                    </div>
+                {/if}
             {/each}
         </div>
     {:else}
@@ -358,23 +422,42 @@
                     <th>Title</th>
                     <th>Qty</th>
                     <th>Condition</th>
-                    <th></th>
+                    {#if canEdit}<th></th>{/if}
                 </tr>
             </thead>
             <tbody>
                 {#each items as i (i.id)}
-                    <tr>
-                        {#if !isFocused}<td class="muted">{i.category_slug ?? ''}</td>{/if}
-                        <td>
-                            {#if i.attrs?.creator}<span class="creator-tag">{i.attrs.creator} — </span>{/if}{i.title}
-                            {#if i.subtitle}<span class="muted"> · {i.subtitle}</span>{/if}
-                        </td>
-                        <td>{i.quantity}</td>
-                        <td>{i.condition ?? ''}</td>
-                        <td>
-                            <button class="danger" onclick={() => removeItem(i.id)}>Delete</button>
-                        </td>
-                    </tr>
+                    {#if editingId === i.id}
+                        <tr class="editing-row">
+                            <td colspan="{isFocused ? 3 : 4}" style="padding:0.5rem">
+                                <div class="inline-edit">
+                                    <input bind:value={editTitle} placeholder="Title" class="edit-input title-field" />
+                                    <input bind:value={editCreator} placeholder="Creator" class="edit-input creator-field" />
+                                    <input bind:value={editSubtitle} placeholder="Series / subtitle" class="edit-input subtitle-field" />
+                                    <input bind:value={editCondition} placeholder="Condition" class="edit-input" style="flex:0 0 120px" />
+                                    <input type="number" bind:value={editQuantity} min="0" placeholder="Qty" class="edit-input" style="flex:0 0 60px" />
+                                    <button onclick={saveEdit}>Save</button>
+                                    <button type="button" class="secondary" onclick={cancelEdit}>Cancel</button>
+                                </div>
+                            </td>
+                        </tr>
+                    {:else}
+                        <tr>
+                            {#if !isFocused}<td class="muted">{i.category_slug ?? ''}</td>{/if}
+                            <td>
+                                {#if i.attrs?.creator}<span class="creator-tag">{i.attrs.creator} — </span>{/if}{i.title}
+                                {#if i.subtitle}<span class="muted"> · {i.subtitle}</span>{/if}
+                            </td>
+                            <td>{i.quantity}</td>
+                            <td>{i.condition ?? ''}</td>
+                            {#if canEdit}
+                                <td class="row-actions">
+                                    <button class="secondary" onclick={() => startEdit(i)}>Edit</button>
+                                    <button class="danger" onclick={() => removeItem(i.id)}>Delete</button>
+                                </td>
+                            {/if}
+                        </tr>
+                    {/if}
                 {/each}
             </tbody>
         </table>
@@ -421,6 +504,42 @@
     .tab-danger:hover {
         background: var(--danger);
         color: white;
+    }
+    /* Inline edit */
+    .inline-edit {
+        display: flex;
+        gap: 0.4rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .edit-input {
+        padding: 0.3rem 0.5rem;
+        font: inherit;
+        font-size: 0.875rem;
+    }
+    .editing-row td {
+        background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+    }
+    .row-actions {
+        white-space: nowrap;
+        display: flex;
+        gap: 0.35rem;
+    }
+    .item-card-actions {
+        display: flex;
+        gap: 0;
+        border-top: 1px solid var(--border);
+    }
+    .item-card-actions button {
+        flex: 1;
+        border-radius: 0;
+        font-size: 0.8rem;
+        padding: 0.4rem;
+        border: none;
+        border-right: 1px solid var(--border);
+    }
+    .item-card-actions button:last-child {
+        border-right: none;
     }
     .add-form {
         margin: 1rem 0;

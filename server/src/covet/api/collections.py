@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session as DBSession
 
 from covet.auth.deps import (
     AuthContext,
+    collection_role,
     require_collection_role,
     require_user,
 )
@@ -66,12 +67,13 @@ def create_collection(
 def get_collection(
     collection_id: str,
     db: DBSession = Depends(get_session),
-    _: AuthContext = Depends(require_collection_role("viewer")),
+    auth: AuthContext = Depends(require_collection_role("viewer")),
 ) -> CollectionRead:
     collection = db.get(Collection, collection_id)
     if collection is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
-    return CollectionRead.model_validate(collection)
+    role = collection_role(db, auth.user, collection_id)
+    return CollectionRead.model_validate(collection).model_copy(update={"my_role": role})
 
 
 @router.patch("/{collection_id}", response_model=CollectionRead)

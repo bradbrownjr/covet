@@ -21,6 +21,17 @@
     let advancedOpen = $state(false);
     let advancedJson = $state('[]');
 
+    // Inline template editing
+    let editingTemplateId = $state<string | null>(null);
+    let editName = $state('');
+    let editFields = $state<TemplateField[]>([]);
+    let editAdvancedOpen = $state(false);
+    let editAdvancedJson = $state('[]');
+
+    const canEdit = $derived(
+        collection?.my_role === 'editor' || collection?.my_role === 'owner'
+    );
+
     const cid = $derived(page.params.id ?? '');
     const targetCategory = $derived(collection?.default_category_slug || 'other.generic');
 
@@ -126,6 +137,77 @@
         }
     }
 
+    function startEditTemplate(t: ItemTemplate) {
+        editingTemplateId = t.id;
+        editName = t.name;
+        editFields = t.fields.map((f) => ({ ...f }));
+        editAdvancedOpen = false;
+        editAdvancedJson = JSON.stringify(editFields, null, 2);
+    }
+
+    function cancelEditTemplate() {
+        editingTemplateId = null;
+    }
+
+    function addEditField() {
+        editFields = [...editFields, { key: '', label: '', type: 'text', required: false }];
+    }
+
+    function removeEditField(idx: number) {
+        editFields = editFields.filter((_, i) => i !== idx);
+    }
+
+    function updateEditField(idx: number, patch: Partial<TemplateField>) {
+        editFields = editFields.map((f, i) => (i === idx ? { ...f, ...patch } : f));
+    }
+
+    function syncEditJsonFromFields() {
+        editAdvancedJson = JSON.stringify(editFields, null, 2);
+    }
+
+    function syncEditFieldsFromJson() {
+        try {
+            const parsed = JSON.parse(editAdvancedJson);
+            if (Array.isArray(parsed)) editFields = parsed as TemplateField[];
+        } catch (e) {
+            error = `Invalid JSON: ${(e as Error).message}`;
+        }
+    }
+
+    async function saveTemplate() {
+        if (!editingTemplateId || !editName.trim()) return;
+        let payloadFields = editFields;
+        if (editAdvancedOpen) {
+            try {
+                payloadFields = JSON.parse(editAdvancedJson);
+                if (!Array.isArray(payloadFields)) throw new Error('must be a JSON array');
+            } catch (e) {
+                error = `Invalid JSON: ${(e as Error).message}`;
+                return;
+            }
+        }
+        payloadFields = payloadFields.filter((f) => f.key && f.key.trim());
+        try {
+            await api.patch(`/templates/${editingTemplateId}`, {
+                name: editName.trim(),
+                fields: payloadFields
+            });
+            editingTemplateId = null;
+            await load();
+        } catch (e) {
+            error = (e as Error).message;
+        }
+    }
+
+    async function cloneTemplate(t: ItemTemplate) {
+        try {
+            await api.post(`/templates/${t.id}/clone`, {});
+            await load();
+        } catch (e) {
+            error = (e as Error).message;
+        }
+    }
+
     onMount(load);
 </script>
 
@@ -149,6 +231,7 @@
 
     {#if error}<p class="error">{error}</p>{/if}
 
+    {#if canEdit}
     <form onsubmit={createTemplate} class="card stack">
         <div class="field">
             <label for="tname">Template name</label>
@@ -276,11 +359,12 @@
 
         <div><button type="submit">Create template</button></div>
     </form>
+    {/if}
 
     {#if loading}
         <p class="muted">Loading…</p>
     {:else if templates.length === 0}
-        <p class="muted">No templates yet.</p>
+        <p class="muted">{canEdit ? 'No templates yet. Create one above.' : 'No templates yet.'}</p>
     {:else}
         <table>
             <thead>
@@ -288,23 +372,79 @@
                     <th>Name</th>
                     <th>Category</th>
                     <th>Fields</th>
-                    <th></th>
+                    {#if canEdit}<th></th>{/if}
                 </tr>
             </thead>
             <tbody>
                 {#each templates as t (t.id)}
                     <tr>
-                        <td>{t.name}</td>
+                        <td><strong>{t.name}</strong></td>
                         <td><code>{t.category_slug}</code></td>
                         <td class="muted">
                             {t.fields
                                 .map((f) => `${f.key}:${f.type}${f.required ? '*' : ''}`)
-                                .join(', ')}
+                                .join(', ') || '—'}
                         </td>
-                        <td>
-                            <button class="danger" onclick={() => removeTemplate(t)}>Delete</button>
-                        </td>
+                        {#if canEdit}
+                            <td class="row-actions">
+                                <button class="secondary" onclick={() => {
+                                    if (editingTemplateId === t.id) cancelEditTemplate();
+                                    else startEditTemplate(t);
+                                }}>{editingTemplateId === t.id ? 'Cancel' : 'Edit'}</button>
+                                <button class="secondary" onclick={() => cloneTemplate(t)}>Clone</button>
+                                <button class="danger" onclick={() => removeTemplate(t)}>Delete</button>
+                            </td>
+                        {/if}
                     </tr>
+                    {#if editingTemplateId === t.id}
+                        <tr class="editing-row">
+                            <td colspan="{canEdit ? 4 : 3}" style="padding:0.75rem">
+                                <div class="stack">
+                                    <div class="field">
+                                        <label>Template name</label>
+                                        <input bind:value={editName} placeholder="e.g. Vinyl LP" />
+                                    </div>
+                                    <div class="field">
+                                        <div class="row-head">
+                                            <span>Custom fields</span>
+                                            <button type="button" class="link" onclick={() => {
+                                                if (!editAdvancedOpen) syncEditJsonFromFields();
+                                                editAdvancedOpen = !editAdvancedOpen;
+                                            }}>{editAdvancedOpen ? 'Use simple editor' : 'Advanced (JSON)'}</button>
+                                        </div>
+                                        {#if editAdvancedOpen}
+                                            <textarea rows="6" bind:value={editAdvancedJson} onblur={syncEditFieldsFromJson} spellcheck="false" style="font-family:var(--mono,monospace);width:100%"></textarea>
+                                        {:else}
+                                            {#if editFields.length === 0}
+                                                <p class="muted" style="margin:.25rem 0">No custom fields.</p>
+                                            {:else}
+                                                <table class="fields">
+                                                    <thead><tr><th>Key</th><th>Label</th><th>Type</th><th>Req</th><th>Options</th><th></th></tr></thead>
+                                                    <tbody>
+                                                        {#each editFields as f, idx (idx)}
+                                                            <tr>
+                                                                <td><input value={f.key} placeholder="key" oninput={(e) => updateEditField(idx, { key: (e.target as HTMLInputElement).value })} /></td>
+                                                                <td><input value={f.label} placeholder="Label" oninput={(e) => updateEditField(idx, { label: (e.target as HTMLInputElement).value })} /></td>
+                                                                <td><select value={f.type} onchange={(e) => updateEditField(idx, { type: (e.target as HTMLSelectElement).value as TemplateFieldType })}>{#each FIELD_TYPES as ft}<option value={ft}>{ft}</option>{/each}</select></td>
+                                                                <td style="text-align:center"><input type="checkbox" checked={f.required ?? false} onchange={(e) => updateEditField(idx, { required: (e.target as HTMLInputElement).checked })} /></td>
+                                                                <td>{#if f.type === 'select'}<input value={(f.options ?? []).join(', ')} placeholder="A, B, C" oninput={(e) => updateEditField(idx, { options: (e.target as HTMLInputElement).value.split(',').map((s) => s.trim()).filter(Boolean) })} />{:else}<span class="muted">—</span>{/if}</td>
+                                                                <td><button type="button" class="danger" onclick={() => removeEditField(idx)}>×</button></td>
+                                                            </tr>
+                                                        {/each}
+                                                    </tbody>
+                                                </table>
+                                            {/if}
+                                            <button type="button" onclick={addEditField}>+ Add field</button>
+                                        {/if}
+                                    </div>
+                                    <div style="display:flex;gap:0.5rem">
+                                        <button onclick={saveTemplate} disabled={!editName.trim()}>Save changes</button>
+                                        <button type="button" class="secondary" onclick={cancelEditTemplate}>Cancel</button>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    {/if}
                 {/each}
             </tbody>
         </table>
@@ -370,5 +510,13 @@
     .fields input,
     .fields select {
         width: 100%;
+    }
+    .row-actions {
+        white-space: nowrap;
+        display: flex;
+        gap: 0.35rem;
+    }
+    .editing-row td {
+        background: color-mix(in srgb, var(--accent) 6%, var(--surface));
     }
 </style>

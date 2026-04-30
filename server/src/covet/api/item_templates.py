@@ -129,6 +129,35 @@ def delete_template(
     db.commit()
 
 
+@router.post(
+    "/templates/{template_id}/clone",
+    response_model=ItemTemplateRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def clone_template(
+    template_id: str,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> ItemTemplateRead:
+    """Duplicate a template within the same collection."""
+    tmpl = db.get(ItemTemplate, template_id)
+    if tmpl is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    _require_role(db, auth, tmpl.collection_id, _EDITOR_ROLES)
+    clone = ItemTemplate(
+        collection_id=tmpl.collection_id,
+        name=f"{tmpl.name} (copy)",
+        category_slug=tmpl.category_slug,
+        description=tmpl.description,
+        fields=list(tmpl.fields),
+        created_by=auth.user.id,
+    )
+    db.add(clone)
+    db.commit()
+    db.refresh(clone)
+    return ItemTemplateRead.model_validate(clone)
+
+
 # ---------------------------------------------------------------------------
 # Validation helpers (used by items API)
 # ---------------------------------------------------------------------------
