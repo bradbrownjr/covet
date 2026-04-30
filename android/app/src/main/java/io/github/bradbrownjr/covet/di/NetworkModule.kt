@@ -6,8 +6,6 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -15,6 +13,7 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 import io.github.bradbrownjr.covet.BuildConfig
 import io.github.bradbrownjr.covet.data.auth.SessionStore
 import io.github.bradbrownjr.covet.data.remote.AuthInterceptor
+import io.github.bradbrownjr.covet.data.remote.BaseUrlInterceptor
 import io.github.bradbrownjr.covet.data.remote.CovetApi
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
@@ -33,6 +32,7 @@ object NetworkModule {
                     else HttpLoggingInterceptor.Level.NONE
         }
         return OkHttpClient.Builder()
+            .addInterceptor(BaseUrlInterceptor(session))
             .addInterceptor(AuthInterceptor(session))
             .addInterceptor(log)
             .connectTimeout(15, TimeUnit.SECONDS)
@@ -41,15 +41,15 @@ object NetworkModule {
     }
 
     /**
-     * The bound base URL is read once at injection time. After login or sign-out
-     * the user must restart the activity (or we rebuild via [retrofitFor]).
+     * The base URL is a placeholder; [BaseUrlInterceptor] rewrites the scheme,
+     * host, and port on every request from the URL stored in [SessionStore].
+     * This lets the singleton survive from app start through login without
+     * needing an Activity restart.
      */
     @Provides @Singleton
-    fun retrofit(client: OkHttpClient, moshi: Moshi, session: SessionStore): Retrofit {
-        val base = runBlocking { session.baseUrl.firstOrNull() } ?: "https://covet.invalid/"
-        val apiBase = "${base.trimEnd('/')}/api/"
+    fun retrofit(client: OkHttpClient, moshi: Moshi): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(apiBase)
+            .baseUrl("http://localhost/api/")
             .client(client)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
             .build()

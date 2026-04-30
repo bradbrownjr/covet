@@ -1,9 +1,11 @@
 package io.github.bradbrownjr.covet.ui.screen.collection
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -45,12 +47,15 @@ data class DetailUi(
     val refreshing: Boolean = false,
     // Add-item dialog
     val showCreate: Boolean = false,
+    val allCategories: List<CategoryDto> = emptyList(),
     val rootCategories: List<CategoryDto> = emptyList(),
     val leafCategories: List<CategoryDto> = emptyList(),
     val selectedRoot: CategoryDto? = null,
     val selectedLeaf: CategoryDto? = null,
     val newTitle: String = "",
     val scraping: Boolean = false,
+    // Active category filter for the items list (null = show all).
+    val activeFilter: CategoryDto? = null,
     // Barcode candidate picker
     val showCandidatePicker: Boolean = false,
     val candidates: List<BarcodeCandidateDto> = emptyList(),
@@ -92,6 +97,7 @@ class CollectionDetailViewModel @Inject constructor(
                     collection = c,
                     items = list,
                     loading = false,
+                    allCategories = cats,
                     rootCategories = roots,
                     leafCategories = leaves,
                     selectedRoot = defaultRoot,
@@ -104,7 +110,31 @@ class CollectionDetailViewModel @Inject constructor(
     }
 
     fun showCreate(show: Boolean) {
-        _state.value = _state.value.copy(showCreate = show, newTitle = "", scraping = false)
+        val s = _state.value
+        // When opening the dialog, pre-select the active filter category (if any).
+        val (root, leaf, leaves) = if (show && s.activeFilter != null) {
+            val filter = s.activeFilter
+            if (filter.parent_id != null) {
+                // Leaf category: resolve parent root and sibling leaves.
+                val r = s.rootCategories.firstOrNull { it.id == filter.parent_id }
+                val l = s.allCategories.filter { it.parent_id == filter.parent_id }
+                Triple(r, filter, l)
+            } else {
+                // Root category: expand its leaves, no leaf pre-selected.
+                val l = s.allCategories.filter { it.parent_id == filter.id }
+                Triple(filter, null, l)
+            }
+        } else {
+            Triple(s.selectedRoot, s.selectedLeaf, s.leafCategories)
+        }
+        _state.value = s.copy(
+            showCreate = show,
+            newTitle = "",
+            scraping = false,
+            selectedRoot = root,
+            selectedLeaf = leaf,
+            leafCategories = leaves,
+        )
     }
 
     fun setSelectedRoot(root: CategoryDto) {
@@ -121,6 +151,10 @@ class CollectionDetailViewModel @Inject constructor(
 
     fun setSelectedLeaf(leaf: CategoryDto) {
         _state.value = _state.value.copy(selectedLeaf = leaf)
+    }
+
+    fun setFilter(cat: CategoryDto?) {
+        _state.value = _state.value.copy(activeFilter = cat)
     }
 
     fun setNewTitle(v: String) { _state.value = _state.value.copy(newTitle = v) }
@@ -275,6 +309,17 @@ fun CollectionDetailScreen(
             }
         },
     ) { padding ->
+        // Categories present in this collection's items, used for the filter bar.
+        val filterCats = remember(s.items, s.allCategories) {
+            val slugs = s.items.mapNotNull { it.category_slug }.toSet()
+            s.allCategories.filter { it.slug in slugs }
+        }
+        val displayItems = remember(s.items, s.activeFilter) {
+            val filter = s.activeFilter
+            if (filter == null) s.items
+            else s.items.filter { it.category_slug == filter.slug }
+        }
+
         PullToRefreshBox(
             isRefreshing = s.refreshing,
             onRefresh = vm::pullRefresh,
@@ -294,17 +339,36 @@ fun CollectionDetailScreen(
                     "No items yet.", Modifier.align(Alignment.Center).padding(16.dp),
                 )
                 else -> LazyColumn(Modifier.fillMaxSize()) {
-                    items(s.items, key = { it.id }) { item ->
-                        ListItem(
-                            headlineContent = { Text(item.title) },
-                            supportingContent = item.category_slug?.let { { Text(it) } },
-                            trailingContent = {
-                                IconButton(onClick = { vm.delete(item.id) }) {
-                                    Icon(Icons.Default.Delete, contentDescription = "Delete")
-                                }
-                            },
-                        )
-                        HorizontalDivider()
+                    if (filterCats.size > 1) {
+                        item {
+                            CategoryFilterBar(
+                                categories = filterCats,
+                                allCategories = s.allCategories,
+                                activeFilter = s.activeFilter,
+                                onFilter = vm::setFilter,
+                            )
+                        }
+                    }
+                    if (displayItems.isEmpty()) {
+                        item {
+                            Text(
+                                "No items in this category.",
+                                modifier = Modifier.padding(16.dp),
+                            )
+                        }
+                    } else {
+                        items(displayItems, key = { it.id }) { item ->
+                            ListItem(
+                                headlineContent = { Text(item.title) },
+                                supportingContent = item.category_slug?.let { { Text(it) } },
+                                trailingContent = {
+                                    IconButton(onClick = { vm.delete(item.id) }) {
+                                        Icon(Icons.Default.Delete, contentDescription = "Delete")
+                                    }
+                                },
+                            )
+                            HorizontalDivider()
+                        }
                     }
                 }
             }
@@ -452,3 +516,32 @@ private fun CategoryDropdown(
     }
 }
 
+@Composable
+private fun CategoryFilterBar(
+    categories: List<CategoryDto>,
+    allCategories: List<CategoryDto>,
+    activeFilter: CategoryDto?,
+    onFilter: (CategoryDto?) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        categories.forEach { cat ->
+            val label = if (cat.parent_id != null) {
+                val parent = allCategories.firstOrNull { it.id == cat.parent_id }
+                if (parent != null) "${parent.name} > ${cat.name}" else cat.name
+            } else {
+                cat.name
+            }
+            FilterChip(
+                selected = activeFilter?.slug == cat.slug,
+                onClick = { onFilter(if (activeFilter?.slug == cat.slug) null else cat) },
+                label = { Text(label) },
+            )
+        }
+    }
+}

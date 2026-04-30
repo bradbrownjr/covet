@@ -81,7 +81,26 @@ jobs:
           retention-days: 7
 
       - name: Assemble debug APK
-        run: ./gradlew :app:assembleDebug --no-daemon
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          # When release signing secrets are configured, sign the debug APK with
+          # them too so that Obtanium (and other update managers) can perform
+          # over-the-air updates without a conflict error. Without a consistent
+          # keystore every CI run produces a differently-signed APK.
+          if [ -n "${KEYSTORE_BASE64:-}" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > /tmp/ci.keystore
+            ./gradlew :app:assembleDebug --no-daemon \
+              -Pandroid.injected.signing.store.file=/tmp/ci.keystore \
+              -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+              -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+              -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
+          else
+            ./gradlew :app:assembleDebug --no-daemon
+          fi
 
       - name: Rename debug APK
         run: |
