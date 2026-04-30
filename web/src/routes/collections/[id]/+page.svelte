@@ -399,9 +399,13 @@
                 {#if editingId === i.id}
                     <div class="item-card item-card-edit">
                         <div class="item-card-body">
+                            {#if collectionCreatorLabel}
+                                <input bind:value={editCreator} placeholder={collectionCreatorLabel} class="edit-input" />
+                            {/if}
                             <input bind:value={editTitle} placeholder="Title" class="edit-input" />
-                            <input bind:value={editCreator} placeholder="Creator" class="edit-input" />
-                            <input bind:value={editSubtitle} placeholder="Series / subtitle" class="edit-input" />
+                            {#if showCollectionSubtitle}
+                                <input bind:value={editSubtitle} placeholder="Series / subtitle" class="edit-input" />
+                            {/if}
                             <input bind:value={editCondition} placeholder="Condition" class="edit-input" />
                             <input type="number" bind:value={editQuantity} min="0" placeholder="Qty" class="edit-input" style="width:5rem" />
                         </div>
@@ -457,10 +461,10 @@
                         <tr class="editing-row">
                             <td colspan={totalItemCols} style="padding:0.5rem">
                                 <div class="inline-edit">
-                                    <input bind:value={editTitle} placeholder="Title" class="edit-input title-field" />
                                     {#if collectionCreatorLabel}
                                         <input bind:value={editCreator} placeholder={collectionCreatorLabel} class="edit-input creator-field" />
                                     {/if}
+                                    <input bind:value={editTitle} placeholder="Title" class="edit-input title-field" />
                                     {#if showCollectionSubtitle}
                                         <input bind:value={editSubtitle} placeholder="Series / subtitle" class="edit-input subtitle-field" />
                                     {/if}
