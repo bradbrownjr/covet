@@ -4,6 +4,38 @@ All notable changes to **Covet** are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); this project uses
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.1] — 2026-04-30
+
+### Fixed
+
+- **Android: "Unable to resolve host covet.invalid" after login.** Retrofit
+  was built once at app start; if no server URL had been saved yet it used a
+  placeholder host. After login the singleton was never rebuilt so every API
+  call until the next app restart would fail. A new `BaseUrlInterceptor`
+  rewrites the host on every request from the saved URL, so API calls work
+  immediately after login without restarting the app.
+- **Android: category pre-selection in the add-item dialog.** When a category
+  filter chip is active, opening the add dialog now pre-selects that category
+  (root + leaf) so new items land in the right place.
+- **Android: Obtanium update conflict.** CI now signs every APK (debug and
+  release) with the same keystore, giving Android a consistent signature to
+  verify against across updates.
+- **Android: collection delete wiped entire local cache.** `deleteById` now
+  removes only the targeted collection from the Room cache instead of clearing
+  everything.
+
+### Added
+
+- **Android: item detail & edit screen.** Tap any item to see all its fields
+  (subtitle, notes, condition, quantity, purchase price, current value,
+  currency, location). Tap the pencil icon to edit inline; Save sends a PATCH
+  to the server and updates the local cache.
+- **Android: search bar on collection detail screen.** Type and press Search
+  to filter items server-side; tap ✕ to return to the full list.
+- **Android: category filter chips on collection detail screen.** A horizontal
+  row of chips appears when a collection has items in 2+ categories. Tapping
+  a chip filters the list and pre-selects that category in the add-item dialog.
+
 ## [0.15.0] — 2026-04-30
 
 ### Added
