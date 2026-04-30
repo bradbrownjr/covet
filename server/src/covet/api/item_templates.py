@@ -312,6 +312,24 @@ def _do_scaffold(
         ))
 
 
+@router.get(
+    "/collections/{collection_id}/scaffold-templates",
+    response_model=list[str],
+)
+def scaffold_template_names(
+    collection_id: str,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> list[str]:
+    """Return the names of default templates available for this collection's type."""
+    _require_role(db, auth, collection_id, _VIEWER_ROLES)
+    coll = db.get(Collection, collection_id)
+    if coll is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    root = (coll.default_category_slug or "").split(".")[0]
+    return [s["name"] for s in _SCAFFOLD.get(root, [])]
+
+
 @router.post(
     "/collections/{collection_id}/scaffold-templates",
     response_model=list[ItemTemplateRead],

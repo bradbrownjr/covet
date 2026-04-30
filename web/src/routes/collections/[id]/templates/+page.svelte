@@ -13,6 +13,7 @@
 
     let collection = $state<Collection | null>(null);
     let templates = $state<ItemTemplate[]>([]);
+    let scaffoldNames = $state<string[]>([]);
     let loading = $state(true);
     let error = $state('');
 
@@ -31,6 +32,11 @@
     const canEdit = $derived(
         collection?.my_role === 'editor' || collection?.my_role === 'owner'
     );
+    const hasMissingDefaults = $derived.by(() => {
+        if (!canEdit || scaffoldNames.length === 0) return false;
+        const existing = new Set(templates.map((t) => t.name));
+        return scaffoldNames.some((n) => !existing.has(n));
+    });
 
     const cid = $derived(page.params.id ?? '');
     const targetCategory = $derived(collection?.default_category_slug || 'other.generic');
@@ -86,8 +92,11 @@
         loading = true;
         error = '';
         try {
-            collection = await api.get<Collection>(`/collections/${cid}`);
-            templates = await api.get<ItemTemplate[]>(`/collections/${cid}/templates`);
+            [collection, templates, scaffoldNames] = await Promise.all([
+                api.get<Collection>(`/collections/${cid}`),
+                api.get<ItemTemplate[]>(`/collections/${cid}/templates`),
+                api.get<string[]>(`/collections/${cid}/scaffold-templates`),
+            ]);
         } catch (e) {
             error = (e as Error).message;
         } finally {
@@ -208,6 +217,15 @@
         }
     }
 
+    async function createDefaults() {
+        try {
+            await api.post(`/collections/${cid}/scaffold-templates`, {});
+            await load();
+        } catch (e) {
+            error = (e as Error).message;
+        }
+    }
+
     onMount(load);
 </script>
 
@@ -230,6 +248,12 @@
     </p>
 
     {#if error}<p class="error">{error}</p>{/if}
+
+    {#if hasMissingDefaults}
+        <div style="margin-bottom:0.75rem">
+            <button type="button" class="secondary" onclick={createDefaults}>Create defaults</button>
+        </div>
+    {/if}
 
     {#if canEdit}
     <form onsubmit={createTemplate} class="card stack">
