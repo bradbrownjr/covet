@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,6 +35,7 @@ enum class WizardStep { CLOSED, PICK_PRESET, CONFIRM }
 data class CollectionsUi(
     val items: List<CollectionDto> = emptyList(),
     val loading: Boolean = false,
+    val refreshing: Boolean = false,
     val error: String? = null,
     val wizardStep: WizardStep = WizardStep.CLOSED,
     val presets: List<CategoryDto> = emptyList(),
@@ -52,8 +54,15 @@ class CollectionListViewModel @Inject constructor(
 
     init { refresh() }
 
-    fun refresh() {
-        _state.value = _state.value.copy(loading = true, error = null)
+    fun refresh() = load(isRefresh = false)
+    fun pullRefresh() = load(isRefresh = true)
+
+    private fun load(isRefresh: Boolean) {
+        if (isRefresh) {
+            _state.value = _state.value.copy(refreshing = true, error = null)
+        } else {
+            _state.value = _state.value.copy(loading = true, error = null)
+        }
         viewModelScope.launch {
             try {
                 val collections = repo.list()
@@ -61,10 +70,11 @@ class CollectionListViewModel @Inject constructor(
                 _state.value = _state.value.copy(
                     items = collections,
                     loading = false,
+                    refreshing = false,
                     presets = cats.filter { it.parent_id == null },
                 )
             } catch (t: Throwable) {
-                _state.value = _state.value.copy(loading = false, error = t.message)
+                _state.value = _state.value.copy(loading = false, refreshing = false, error = t.message)
             }
         }
     }
@@ -129,14 +139,21 @@ fun CollectionListScreen(
             }
         },
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
+        PullToRefreshBox(
+            isRefreshing = s.refreshing,
+            onRefresh = vm::pullRefresh,
+            modifier = Modifier.fillMaxSize().padding(padding),
+        ) {
             when {
                 s.loading && s.items.isEmpty() -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                s.error != null && s.items.isEmpty() -> Text(
-                    s.error!!,
+                s.error != null && s.items.isEmpty() -> Column(
                     Modifier.align(Alignment.Center).padding(16.dp),
-                    color = MaterialTheme.colorScheme.error,
-                )
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(s.error!!, color = MaterialTheme.colorScheme.error)
+                    OutlinedButton(onClick = vm::refresh) { Text("Retry") }
+                }
                 s.items.isEmpty() -> Text(
                     "No collections yet. Tap + to create one.",
                     Modifier.align(Alignment.Center).padding(16.dp),

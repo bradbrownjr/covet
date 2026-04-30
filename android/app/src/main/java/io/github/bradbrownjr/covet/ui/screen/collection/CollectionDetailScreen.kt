@@ -237,10 +237,14 @@ fun CollectionDetailScreen(
         ) {
             when {
                 s.loading && s.items.isEmpty() -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                s.error != null && s.items.isEmpty() -> Text(
-                    s.error!!, Modifier.align(Alignment.Center).padding(16.dp),
-                    color = MaterialTheme.colorScheme.error,
-                )
+                s.error != null && s.items.isEmpty() -> Column(
+                        Modifier.align(Alignment.Center).padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(s.error!!, color = MaterialTheme.colorScheme.error)
+                        OutlinedButton(onClick = vm::refresh) { Text("Retry") }
+                    }
                 s.items.isEmpty() -> Text(
                     "No items yet.", Modifier.align(Alignment.Center).padding(16.dp),
                 )
