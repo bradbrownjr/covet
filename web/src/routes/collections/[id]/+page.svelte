@@ -69,6 +69,30 @@
         return !!c;
     });
 
+    // Column headers for the items table based on the collection's root category.
+    const collectionCreatorLabel = $derived.by(() => {
+        const root = (collection?.default_category_slug ?? '').split('.')[0];
+        if (root === 'music') return 'Artist / Band';
+        if (root === 'books') return 'Author';
+        if (root === 'movies') return 'Director';
+        if (root === 'games') return 'Developer';
+        if (root === 'tabletop') return 'Designer';
+        return null;
+    });
+    const showCollectionSubtitle = $derived.by(() => {
+        const root = (collection?.default_category_slug ?? '').split('.')[0];
+        return root === 'books' || root === 'movies' || root === 'games';
+    });
+    // Total column count for the edit row colspan.
+    const totalItemCols = $derived(
+        (isFocused ? 0 : 1) +
+        (collectionCreatorLabel ? 1 : 0) +
+        1 + // Title
+        (showCollectionSubtitle ? 1 : 0) +
+        2 + // Qty + Condition
+        (canEdit ? 1 : 0)
+    );
+
     $effect(() => {
         if (leaves.length && !leaves.some((l) => l.slug === newLeaf)) {
             newLeaf = leaves[0].slug;
@@ -419,7 +443,9 @@
             <thead>
                 <tr>
                     {#if !isFocused}<th>Category</th>{/if}
+                    {#if collectionCreatorLabel}<th>{collectionCreatorLabel}</th>{/if}
                     <th>Title</th>
+                    {#if showCollectionSubtitle}<th>Subtitle</th>{/if}
                     <th>Qty</th>
                     <th>Condition</th>
                     {#if canEdit}<th></th>{/if}
@@ -429,11 +455,15 @@
                 {#each items as i (i.id)}
                     {#if editingId === i.id}
                         <tr class="editing-row">
-                            <td colspan="{isFocused ? 3 : 4}" style="padding:0.5rem">
+                            <td colspan={totalItemCols} style="padding:0.5rem">
                                 <div class="inline-edit">
                                     <input bind:value={editTitle} placeholder="Title" class="edit-input title-field" />
-                                    <input bind:value={editCreator} placeholder="Creator" class="edit-input creator-field" />
-                                    <input bind:value={editSubtitle} placeholder="Series / subtitle" class="edit-input subtitle-field" />
+                                    {#if collectionCreatorLabel}
+                                        <input bind:value={editCreator} placeholder={collectionCreatorLabel} class="edit-input creator-field" />
+                                    {/if}
+                                    {#if showCollectionSubtitle}
+                                        <input bind:value={editSubtitle} placeholder="Series / subtitle" class="edit-input subtitle-field" />
+                                    {/if}
                                     <input bind:value={editCondition} placeholder="Condition" class="edit-input" style="flex:0 0 120px" />
                                     <input type="number" bind:value={editQuantity} min="0" placeholder="Qty" class="edit-input" style="flex:0 0 60px" />
                                     <button onclick={saveEdit}>Save</button>
@@ -444,10 +474,9 @@
                     {:else}
                         <tr>
                             {#if !isFocused}<td class="muted">{i.category_slug ?? ''}</td>{/if}
-                            <td>
-                                {#if i.attrs?.creator}<span class="creator-tag">{i.attrs.creator} — </span>{/if}{i.title}
-                                {#if i.subtitle}<span class="muted"> · {i.subtitle}</span>{/if}
-                            </td>
+                            {#if collectionCreatorLabel}<td class="muted">{String(i.attrs?.creator ?? '')}</td>{/if}
+                            <td>{i.title}{#if i.subtitle && !showCollectionSubtitle}<span class="muted"> · {i.subtitle}</span>{/if}</td>
+                            {#if showCollectionSubtitle}<td class="muted">{i.subtitle ?? ''}</td>{/if}
                             <td>{i.quantity}</td>
                             <td>{i.condition ?? ''}</td>
                             {#if canEdit}

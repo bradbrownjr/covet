@@ -15,7 +15,7 @@ from covet.auth.deps import (
     require_user,
 )
 from covet.db import get_session
-from covet.models import ItemTemplate
+from covet.models import Collection, ItemTemplate
 from covet.schemas import (
     ItemTemplateCreate,
     ItemTemplateRead,
@@ -27,6 +27,121 @@ router = APIRouter(tags=["item-templates"])
 
 _EDITOR_ROLES = {"editor", "owner"}
 _VIEWER_ROLES = {"viewer", "editor", "owner"}
+
+# Seed templates offered per root category slug.
+_SCAFFOLD: dict[str, list[dict]] = {
+    "music": [
+        {"name": "Vinyl", "category_slug": "music.vinyl", "fields": [
+            {"key": "label", "label": "Label", "type": "text"},
+            {"key": "catalog_no", "label": "Catalog #", "type": "text"},
+            {"key": "pressing_year", "label": "Pressing year", "type": "number"},
+            {"key": "matrix", "label": "Matrix / runout", "type": "text"},
+        ]},
+        {"name": "Compact Disc", "category_slug": "music.cd", "fields": [
+            {"key": "label", "label": "Label", "type": "text"},
+            {"key": "catalog_no", "label": "Catalog #", "type": "text"},
+            {"key": "release_year", "label": "Release year", "type": "number"},
+            {"key": "barcode", "label": "Barcode", "type": "text"},
+        ]},
+        {"name": "Cassette", "category_slug": "music.cassette", "fields": [
+            {"key": "label", "label": "Label", "type": "text"},
+            {"key": "year", "label": "Year", "type": "number"},
+            {"key": "tape_type", "label": "Tape type", "type": "select",
+             "options": ["Type I", "Type II", "Type IV"]},
+        ]},
+        {"name": "8-Track", "category_slug": "music.eight_track", "fields": [
+            {"key": "label", "label": "Label", "type": "text"},
+            {"key": "year", "label": "Year", "type": "number"},
+        ]},
+        {"name": "Reel-to-Reel", "category_slug": "music.reel", "fields": [
+            {"key": "label", "label": "Label", "type": "text"},
+            {"key": "year", "label": "Year", "type": "number"},
+            {"key": "speed", "label": "Speed (IPS)", "type": "select",
+             "options": ["1⅞", "3¾", "7½", "15"]},
+        ]},
+    ],
+    "movies": [
+        {"name": "Blu-ray / 4K UHD", "category_slug": "movies.bluray", "fields": [
+            {"key": "studio", "label": "Studio", "type": "text"},
+            {"key": "release_year", "label": "Release year", "type": "number"},
+            {"key": "region", "label": "Region", "type": "select",
+             "options": ["A", "B", "C", "Free"]},
+            {"key": "aspect_ratio", "label": "Aspect ratio", "type": "text"},
+        ]},
+        {"name": "DVD", "category_slug": "movies.dvd", "fields": [
+            {"key": "studio", "label": "Studio", "type": "text"},
+            {"key": "release_year", "label": "Release year", "type": "number"},
+            {"key": "region", "label": "Region", "type": "select",
+             "options": ["0", "1", "2", "3", "4", "5", "6"]},
+        ]},
+        {"name": "VHS", "category_slug": "movies.vhs", "fields": [
+            {"key": "studio", "label": "Studio", "type": "text"},
+            {"key": "year", "label": "Year", "type": "number"},
+            {"key": "format", "label": "Format", "type": "select",
+             "options": ["NTSC", "PAL", "SECAM"]},
+        ]},
+    ],
+    "books": [
+        {"name": "Book", "category_slug": "books.print", "fields": [
+            {"key": "publisher", "label": "Publisher", "type": "text"},
+            {"key": "year", "label": "Year", "type": "number"},
+            {"key": "edition", "label": "Edition", "type": "text"},
+            {"key": "format", "label": "Format", "type": "select",
+             "options": ["Hardcover", "Paperback", "Trade"]},
+            {"key": "isbn", "label": "ISBN", "type": "text"},
+        ]},
+        {"name": "Comic / Graphic Novel", "category_slug": "books.comic", "fields": [
+            {"key": "publisher", "label": "Publisher", "type": "text"},
+            {"key": "issue_no", "label": "Issue #", "type": "text"},
+            {"key": "year", "label": "Year", "type": "number"},
+            {"key": "grade", "label": "Grade", "type": "text"},
+        ]},
+    ],
+    "games": [
+        {"name": "Game", "category_slug": "games.software", "fields": [
+            {"key": "platform", "label": "Platform", "type": "text"},
+            {"key": "year", "label": "Year", "type": "number"},
+            {"key": "region", "label": "Region", "type": "select",
+             "options": ["NTSC", "PAL", "NTSC-J"]},
+            {"key": "rating", "label": "Rating", "type": "select",
+             "options": ["E", "E10+", "T", "M", "AO", "RP"]},
+            {"key": "upc", "label": "UPC", "type": "text"},
+        ]},
+        {"name": "Console / Hardware", "category_slug": "games.console", "fields": [
+            {"key": "manufacturer", "label": "Manufacturer", "type": "text"},
+            {"key": "model", "label": "Model #", "type": "text"},
+            {"key": "region", "label": "Region", "type": "select",
+             "options": ["NTSC", "PAL", "NTSC-J"]},
+        ]},
+    ],
+    "tabletop": [
+        {"name": "Board Game", "category_slug": "tabletop.board_game", "fields": [
+            {"key": "publisher", "label": "Publisher", "type": "text"},
+            {"key": "year", "label": "Year", "type": "number"},
+            {"key": "players", "label": "Players", "type": "text"},
+            {"key": "bgg_id", "label": "BGG ID", "type": "text"},
+        ]},
+        {"name": "RPG Book", "category_slug": "tabletop.rpg_book", "fields": [
+            {"key": "publisher", "label": "Publisher", "type": "text"},
+            {"key": "year", "label": "Year", "type": "number"},
+            {"key": "edition", "label": "Edition", "type": "text"},
+        ]},
+    ],
+    "collectibles": [
+        {"name": "Trading Card", "category_slug": "collectibles.trading_card", "fields": [
+            {"key": "set", "label": "Set", "type": "text"},
+            {"key": "card_number", "label": "Card #", "type": "text"},
+            {"key": "grade", "label": "Grade", "type": "text"},
+            {"key": "graded_by", "label": "Graded by", "type": "select",
+             "options": ["PSA", "BGS", "CGC", "SGC", "Raw"]},
+        ]},
+        {"name": "Action Figure / Funko", "category_slug": "collectibles.action_figure", "fields": [
+            {"key": "manufacturer", "label": "Manufacturer", "type": "text"},
+            {"key": "year", "label": "Year", "type": "number"},
+            {"key": "box_condition", "label": "Box condition", "type": "text"},
+        ]},
+    ],
+}
 
 
 def _require_role(
@@ -156,6 +271,56 @@ def clone_template(
     db.commit()
     db.refresh(clone)
     return ItemTemplateRead.model_validate(clone)
+
+
+@router.post(
+    "/collections/{collection_id}/scaffold-templates",
+    response_model=list[ItemTemplateRead],
+    status_code=status.HTTP_201_CREATED,
+)
+def scaffold_templates(
+    collection_id: str,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> list[ItemTemplateRead]:
+    """Create sensible default templates for the collection's root category.
+
+    Skips any template whose name already exists in the collection, so the
+    endpoint is safe to call multiple times.
+    """
+    _require_role(db, auth, collection_id, _EDITOR_ROLES)
+    coll = db.get(Collection, collection_id)
+    if coll is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
+    root = (coll.default_category_slug or "").split(".")[0]
+    seeds = _SCAFFOLD.get(root, [])
+
+    existing_names = set(
+        db.scalars(
+            select(ItemTemplate.name).where(ItemTemplate.collection_id == collection_id)
+        ).all()
+    )
+
+    created: list[ItemTemplate] = []
+    for seed in seeds:
+        if seed["name"] in existing_names:
+            continue
+        tmpl = ItemTemplate(
+            collection_id=collection_id,
+            name=seed["name"],
+            category_slug=seed["category_slug"],
+            fields=seed["fields"],
+            created_by=auth.user.id,
+        )
+        db.add(tmpl)
+        created.append(tmpl)
+
+    db.commit()
+    for tmpl in created:
+        db.refresh(tmpl)
+
+    return [ItemTemplateRead.model_validate(t) for t in created]
 
 
 # ---------------------------------------------------------------------------

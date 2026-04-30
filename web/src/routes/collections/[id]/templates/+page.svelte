@@ -31,6 +31,10 @@
     const canEdit = $derived(
         collection?.my_role === 'editor' || collection?.my_role === 'owner'
     );
+    const hasScaffold = $derived.by(() => {
+        const root = (collection?.default_category_slug ?? '').split('.')[0];
+        return ['music', 'movies', 'books', 'games', 'tabletop', 'collectibles'].includes(root);
+    });
 
     const cid = $derived(page.params.id ?? '');
     const targetCategory = $derived(collection?.default_category_slug || 'other.generic');
@@ -208,6 +212,15 @@
         }
     }
 
+    async function scaffoldTemplates() {
+        try {
+            await api.post(`/collections/${cid}/scaffold-templates`, {});
+            await load();
+        } catch (e) {
+            error = (e as Error).message;
+        }
+    }
+
     onMount(load);
 </script>
 
@@ -364,7 +377,14 @@
     {#if loading}
         <p class="muted">Loading…</p>
     {:else if templates.length === 0}
-        <p class="muted">{canEdit ? 'No templates yet. Create one above.' : 'No templates yet.'}</p>
+        <div class="empty-state">
+            <p class="muted">No templates yet.{canEdit ? ' Create one above' : ''}</p>
+            {#if canEdit && hasScaffold}
+                <button type="button" class="secondary" onclick={scaffoldTemplates}>
+                    Scaffold default templates for this collection type
+                </button>
+            {/if}
+        </div>
     {:else}
         <table>
             <thead>
@@ -518,5 +538,12 @@
     }
     .editing-row td {
         background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+    }
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+        margin-top: 0.5rem;
     }
 </style>
