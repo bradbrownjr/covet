@@ -462,14 +462,14 @@
                             <td colspan={totalItemCols} style="padding:0.5rem">
                                 <div class="inline-edit">
                                     {#if collectionCreatorLabel}
-                                        <input bind:value={editCreator} placeholder={collectionCreatorLabel} class="edit-input creator-field" />
+                                        <input bind:value={editCreator} placeholder={collectionCreatorLabel} class="edit-input" style="flex:1 1 140px;min-width:100px;max-width:200px" />
                                     {/if}
-                                    <input bind:value={editTitle} placeholder="Title" class="edit-input title-field" />
+                                    <input bind:value={editTitle} placeholder="Title" class="edit-input" style="flex:2 1 160px;min-width:120px;max-width:340px" />
                                     {#if showCollectionSubtitle}
-                                        <input bind:value={editSubtitle} placeholder="Series / subtitle" class="edit-input subtitle-field" />
+                                        <input bind:value={editSubtitle} placeholder="Series / subtitle" class="edit-input" style="flex:2 1 140px;min-width:100px;max-width:260px" />
                                     {/if}
-                                    <input bind:value={editCondition} placeholder="Condition" class="edit-input" style="flex:0 0 120px" />
-                                    <input type="number" bind:value={editQuantity} min="0" placeholder="Qty" class="edit-input" style="flex:0 0 60px" />
+                                    <input type="number" bind:value={editQuantity} min="0" placeholder="Qty" class="edit-input" style="flex:0 0 60px;width:60px" />
+                                    <input bind:value={editCondition} placeholder="Condition" class="edit-input" style="flex:0 0 110px;width:110px" />
                                     <button onclick={saveEdit}>Save</button>
                                     <button type="button" class="secondary" onclick={cancelEdit}>Cancel</button>
                                 </div>
