@@ -78,16 +78,16 @@ class CollectionDetailViewModel @Inject constructor(
                 val list = items.list(collectionId)
                 val cats = categories.load()
                 val roots = cats.filter { it.parent_id == null }
-                // Pre-select root matching the collection's default category.
+                // Only pre-select a category when the collection has an explicit default.
+                // Collections without a default get no pre-selection so the user must choose.
                 val defaultRoot = c.default_category_slug?.let { slug ->
-                    // Find the leaf with that slug, then its root parent.
                     val leaf = cats.firstOrNull { it.slug == slug }
-                    cats.firstOrNull { it.id == leaf?.parent_id } ?: roots.firstOrNull()
-                } ?: roots.firstOrNull()
+                    cats.firstOrNull { it.id == leaf?.parent_id }
+                }
                 val leaves = if (defaultRoot != null) cats.filter { it.parent_id == defaultRoot.id } else emptyList()
                 val defaultLeaf = c.default_category_slug?.let { slug ->
                     leaves.firstOrNull { it.slug == slug }
-                } ?: leaves.firstOrNull()
+                }
                 _state.value = _state.value.copy(
                     collection = c,
                     items = list,
@@ -309,7 +309,28 @@ fun CollectionDetailScreen(
                 }
             }
         }
-
+        // Barcode lookup in progress — show a non-blocking overlay before any dialog opens.
+        if (s.scraping && !s.showCreate && !s.showCandidatePicker) {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentAlignment = Alignment.Center,
+            ) {
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    tonalElevation = 8.dp,
+                    modifier = Modifier.padding(32.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                        Text("Looking up barcode…")
+                    }
+                }
+            }
+        }
         if (s.showCandidatePicker) {
             AlertDialog(
                 onDismissRequest = vm::dismissCandidatePicker,
@@ -384,7 +405,8 @@ fun CollectionDetailScreen(
                 confirmButton = {
                     TextButton(
                         onClick = vm::create,
-                        enabled = !s.scraping && s.newTitle.isNotBlank(),
+                        enabled = !s.scraping && s.newTitle.isNotBlank()
+                            && (s.selectedLeaf != null || s.selectedRoot != null),
                     ) { Text("Add") }
                 },
                 dismissButton = { TextButton(onClick = { vm.showCreate(false) }) { Text("Cancel") } },
@@ -411,7 +433,9 @@ private fun CategoryDropdown(
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
+            placeholder = { Text("Select…") },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            isError = selected == null,
             modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
         )
         ExposedDropdownMenu(
