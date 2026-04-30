@@ -249,19 +249,8 @@
 
     {#if error}<p class="error">{error}</p>{/if}
 
-    {#if hasMissingDefaults}
-        <div style="margin-bottom:0.75rem">
-            <button type="button" class="secondary" onclick={createDefaults}>Create defaults</button>
-        </div>
-    {/if}
-
     {#if canEdit}
     <form onsubmit={createTemplate} class="card stack">
-        <div class="field">
-            <label for="tname">Template name</label>
-            <input id="tname" bind:value={newName} placeholder="e.g. Vinyl LP" required />
-        </div>
-
         <div class="field">
             <div class="row-head">
                 <span>Custom fields</span>
@@ -383,6 +372,12 @@
 
         <div><button type="submit">Create template</button></div>
     </form>
+    {/if}
+
+    {#if hasMissingDefaults}
+        <div style="margin-bottom:0.75rem">
+            <button type="button" class="secondary" onclick={createDefaults}>Create defaults</button>
+        </div>
     {/if}
 
     {#if loading}

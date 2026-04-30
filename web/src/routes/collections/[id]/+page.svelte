@@ -83,15 +83,6 @@
         const root = (collection?.default_category_slug ?? '').split('.')[0];
         return root === 'books' || root === 'movies' || root === 'games';
     });
-    // Total column count for the edit row colspan.
-    const totalItemCols = $derived(
-        (isFocused ? 0 : 1) +
-        (collectionCreatorLabel ? 1 : 0) +
-        1 + // Title
-        (showCollectionSubtitle ? 1 : 0) +
-        2 + // Qty + Condition
-        (canEdit ? 1 : 0)
-    );
 
     $effect(() => {
         if (leaves.length && !leaves.some((l) => l.slug === newLeaf)) {
@@ -459,21 +450,22 @@
                 {#each items as i (i.id)}
                     {#if editingId === i.id}
                         <tr class="editing-row">
-                            <td colspan={totalItemCols} style="padding:0.5rem">
-                                <div class="inline-edit">
-                                    {#if collectionCreatorLabel}
-                                        <input bind:value={editCreator} placeholder={collectionCreatorLabel} class="edit-input" style="flex:1 1 140px;min-width:100px;max-width:200px" />
-                                    {/if}
-                                    <input bind:value={editTitle} placeholder="Title" class="edit-input" style="flex:2 1 160px;min-width:120px;max-width:340px" />
-                                    {#if showCollectionSubtitle}
-                                        <input bind:value={editSubtitle} placeholder="Series / subtitle" class="edit-input" style="flex:2 1 140px;min-width:100px;max-width:260px" />
-                                    {/if}
-                                    <input type="number" bind:value={editQuantity} min="0" placeholder="Qty" class="edit-input" style="flex:0 0 60px;width:60px" />
-                                    <input bind:value={editCondition} placeholder="Condition" class="edit-input" style="flex:0 0 110px;width:110px" />
+                            {#if !isFocused}<td></td>{/if}
+                            {#if collectionCreatorLabel}
+                                <td><input bind:value={editCreator} placeholder={collectionCreatorLabel} class="edit-input" /></td>
+                            {/if}
+                            <td><input bind:value={editTitle} placeholder="Title" class="edit-input" /></td>
+                            {#if showCollectionSubtitle}
+                                <td><input bind:value={editSubtitle} placeholder="Series / subtitle" class="edit-input" /></td>
+                            {/if}
+                            <td><input type="number" bind:value={editQuantity} min="0" placeholder="Qty" class="edit-input qty-input" /></td>
+                            <td><input bind:value={editCondition} placeholder="Condition" class="edit-input" /></td>
+                            {#if canEdit}
+                                <td class="row-actions">
                                     <button onclick={saveEdit}>Save</button>
                                     <button type="button" class="secondary" onclick={cancelEdit}>Cancel</button>
-                                </div>
-                            </td>
+                                </td>
+                            {/if}
                         </tr>
                     {:else}
                         <tr>
@@ -538,17 +530,15 @@
         background: var(--danger);
         color: white;
     }
-    /* Inline edit */
-    .inline-edit {
-        display: flex;
-        gap: 0.4rem;
-        align-items: center;
-        flex-wrap: wrap;
-    }
     .edit-input {
+        width: 100%;
+        box-sizing: border-box;
         padding: 0.3rem 0.5rem;
         font: inherit;
         font-size: 0.875rem;
+    }
+    .qty-input {
+        width: 4rem;
     }
     .editing-row td {
         background: color-mix(in srgb, var(--accent) 6%, var(--surface));
