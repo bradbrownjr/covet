@@ -127,6 +127,11 @@ eventually makes and then stops maintaining.
 - **Phase 11 kickoff** ✅ — added a new **Home Equipment** root category
   with starter leaves: Appliance, Generator, HVAC/Furnace/Air Handler,
   Water Heater, Refrigerator, Water Service Filtration, and Sump Pump.
+- **Phase 11 wave 1 (ordered slices)** ✅ — completed in order:
+  1) appliance-focused template defaults (server + web defaults UX),
+  2) Fuel & Chemicals category set + scaffold templates aligned to
+  consumable/date workflows, 3) Vehicles category set + maintenance-minded
+  scaffold templates (oil/change interval, registration/insurance fields).
 
 - **Manual/asset bundles (planned)** — beyond per-item document uploads,
   add a reusable manual library that can store a primary manual plus

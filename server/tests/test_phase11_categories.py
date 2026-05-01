@@ -12,6 +12,23 @@ PHASE11_HOME_EQUIPMENT_SLUGS = {
     "home_equipment.sump_pump",
 }
 
+PHASE11_FUEL_AND_CHEMICALS_SLUGS = {
+    "fuel_chemicals",
+    "fuel_chemicals.stored_fuel",
+    "fuel_chemicals.lubricants_fluids",
+    "fuel_chemicals.chemicals_cleaning",
+}
+
+PHASE11_VEHICLES_SLUGS = {
+    "vehicles",
+    "vehicles.car_truck_suv",
+    "vehicles.motorcycle_atv_utv",
+    "vehicles.lawn_garden_equipment",
+    "vehicles.boat_pwc",
+    "vehicles.trailer",
+    "vehicles.bicycle_ebike",
+}
+
 
 def _signup_and_login(client, username: str, password: str = "hunter22-secure") -> None:
     client.post(
@@ -30,3 +47,5 @@ def test_phase11_home_equipment_categories_available(client) -> None:
 
     slugs = {row["slug"] for row in r.json()}
     assert PHASE11_HOME_EQUIPMENT_SLUGS.issubset(slugs)
+    assert PHASE11_FUEL_AND_CHEMICALS_SLUGS.issubset(slugs)
+    assert PHASE11_VEHICLES_SLUGS.issubset(slugs)

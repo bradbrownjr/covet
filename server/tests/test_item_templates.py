@@ -90,6 +90,62 @@ def test_template_crud_and_attr_validation(client) -> None:
     )
     assert r.status_code == 422
 
+def test_scaffold_templates_for_home_equipment_root(client) -> None:
+    _register(client, "homeeq")
+    _login(client, "homeeq")
+    cid = client.post(
+        "/api/collections",
+        json={"name": "Home", "default_category_slug": "home_equipment"},
+    ).json()["id"]
+
+    templates = client.get(f"/api/collections/{cid}/templates").json()
+    names = {t["name"] for t in templates}
+    assert "Appliance" in names
+
+    appliance = next(t for t in templates if t["name"] == "Appliance")
+    keys = {f["key"] for f in appliance["fields"]}
+    assert {"brand", "model", "serial_number", "service_interval_days"}.issubset(keys)
+
+
+def test_scaffold_templates_for_fuel_chemicals_root(client) -> None:
+    _register(client, "fuelcat")
+    _login(client, "fuelcat")
+    cid = client.post(
+        "/api/collections",
+        json={"name": "Fuel", "default_category_slug": "fuel_chemicals"},
+    ).json()["id"]
+
+    templates = client.get(f"/api/collections/{cid}/templates").json()
+    names = {t["name"] for t in templates}
+    assert {"Stored Fuel", "Lubricants & Fluids", "Chemicals & Cleaning"}.issubset(names)
+
+    stored_fuel = next(t for t in templates if t["name"] == "Stored Fuel")
+    keys = {f["key"] for f in stored_fuel["fields"]}
+    assert {"fuel_type", "quantity_on_hand_gal", "treat_by_date"}.issubset(keys)
+
+
+def test_scaffold_templates_for_vehicles_root_include_maintenance_fields(client) -> None:
+    _register(client, "vehicles")
+    _login(client, "vehicles")
+    cid = client.post(
+        "/api/collections",
+        json={"name": "Vehicles", "default_category_slug": "vehicles"},
+    ).json()["id"]
+
+    templates = client.get(f"/api/collections/{cid}/templates").json()
+    names = {t["name"] for t in templates}
+    assert {"Car / Truck / SUV", "Motorcycle / ATV / UTV", "Lawn & Garden Equipment"}.issubset(names)
+
+    car = next(t for t in templates if t["name"] == "Car / Truck / SUV")
+    keys = {f["key"] for f in car["fields"]}
+    assert {
+        "last_oil_change_date",
+        "last_oil_change_miles",
+        "oil_change_interval_miles",
+        "registration_expiry_date",
+        "insurance_expiry_date",
+    }.issubset(keys)
+
 
 def test_template_update_and_delete(client) -> None:
     _register(client, "carol")

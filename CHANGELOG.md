@@ -89,6 +89,10 @@ All notable changes to **Covet** are documented here. Format follows
   `home_equipment` category root and starter leaf categories:
   appliance, generator, HVAC/furnace/air-handler, water heater,
   refrigerator, water service filtration, and sump pump.
+- **Phase 11 wave 1 defaults (API + web templates).** Added `fuel_chemicals`
+  and `vehicles` category roots with starter leaves, and expanded scaffold
+  template defaults for `home_equipment`, `fuel_chemicals`, and `vehicles`
+  so new collections get practical appliance/fuel/vehicle fields out of the box.
 - **Grocery list page.** A new "Grocery List" link in the navigation shows all
   depleted items across every collection you have access to — ideal for shared
   household pantry collections where multiple members need to see what to restock.

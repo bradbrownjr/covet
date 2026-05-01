@@ -54,6 +54,15 @@
 
     const cid = $derived(page.params.id ?? '');
     const targetCategory = $derived(collection?.default_category_slug || 'other.generic');
+    const scaffoldRoot = $derived((collection?.default_category_slug || '').split('.')[0]);
+    const scaffoldRootLabel = $derived(
+        scaffoldRoot
+            ? scaffoldRoot
+                  .split('_')
+                  .map((part) => part[0]?.toUpperCase() + part.slice(1))
+                  .join(' ')
+            : 'default'
+    );
 
     function addField() {
         fields = [...fields, { key: '', label: '', type: 'text', required: false }];
@@ -484,7 +493,9 @@
 
     {#if hasMissingDefaults}
         <div style="margin-bottom:0.75rem">
-            <button type="button" class="secondary" onclick={createDefaults}>Create defaults</button>
+            <button type="button" class="secondary" onclick={createDefaults}>
+                Create {scaffoldRootLabel} defaults
+            </button>
         </div>
     {/if}
 

@@ -68,6 +68,11 @@ Phase 11 has started with a new **Home Equipment** root in the category
 picker (Appliance, Generator, HVAC/Furnace/Air Handler, Water Heater,
 Refrigerator, Water Service Filtration, and Sump Pump).
 
+Phase 11 wave 1 also adds **Fuel & Chemicals** and **Vehicles** roots.
+When you create a collection using one of these roots, Covet now scaffolds
+starter templates automatically so you can begin with practical fields
+instead of building every template from scratch.
+
 Depending on the category, extra fields appear:
 
 - **Creator** — Artist/Band for music, Author for books, Director for

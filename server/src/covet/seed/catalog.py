@@ -144,6 +144,29 @@ CATEGORY_TREE: list[CategorySeed] = [
         ],
     },
     {
+        "slug": "fuel_chemicals",
+        "name": "Fuel & Chemicals",
+        "description": "Stored fuels, lubricants, and household/shop chemicals.",
+        "children": [
+            {"slug": "fuel_chemicals.stored_fuel", "name": "Stored Fuel"},
+            {"slug": "fuel_chemicals.lubricants_fluids", "name": "Lubricants & Fluids"},
+            {"slug": "fuel_chemicals.chemicals_cleaning", "name": "Chemicals & Cleaning"},
+        ],
+    },
+    {
+        "slug": "vehicles",
+        "name": "Vehicles",
+        "description": "Road, outdoor, and recreational vehicles/equipment.",
+        "children": [
+            {"slug": "vehicles.car_truck_suv", "name": "Car / Truck / SUV"},
+            {"slug": "vehicles.motorcycle_atv_utv", "name": "Motorcycle / ATV / UTV"},
+            {"slug": "vehicles.lawn_garden_equipment", "name": "Lawn & Garden Equipment"},
+            {"slug": "vehicles.boat_pwc", "name": "Boat / PWC"},
+            {"slug": "vehicles.trailer", "name": "Trailer"},
+            {"slug": "vehicles.bicycle_ebike", "name": "Bicycle / E-Bike"},
+        ],
+    },
+    {
         "slug": "other",
         "name": "Other",
         "description": "Anything not covered above.",
