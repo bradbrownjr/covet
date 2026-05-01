@@ -302,3 +302,96 @@ def test_item_wanted_flag_and_filter(client) -> None:
     listed_after = client.get("/api/items", params={"collection_id": cid, "wanted": "true"})
     assert listed_after.status_code == 200, listed_after.text
     assert listed_after.json() == []
+
+
+def test_item_bulk_patch_and_delete(client) -> None:
+    _signup_and_login(client, "bulkowner")
+    cid = client.post("/api/collections", json={"name": "Bulk ops"}).json()["id"]
+    other_cid = client.post("/api/collections", json={"name": "Elsewhere"}).json()["id"]
+
+    first = client.post(
+        "/api/items",
+        json={"collection_id": cid, "category": "movies.dvd", "title": "Bulk A"},
+    )
+    second = client.post(
+        "/api/items",
+        json={"collection_id": cid, "category": "movies.dvd", "title": "Bulk B"},
+    )
+    outside = client.post(
+        "/api/items",
+        json={"collection_id": other_cid, "category": "movies.dvd", "title": "Outside"},
+    )
+    assert first.status_code == 201 and second.status_code == 201 and outside.status_code == 201
+    id_a = first.json()["id"]
+    id_b = second.json()["id"]
+    outside_id = outside.json()["id"]
+
+    patched = client.post(
+        "/api/items/bulk-patch",
+        json={"collection_id": cid, "item_ids": [id_a, id_b], "depleted": True, "wanted": True},
+    )
+    assert patched.status_code == 200, patched.text
+    assert [x["id"] for x in patched.json()] == [id_a, id_b]
+    assert all(x["depleted"] is True for x in patched.json())
+    assert all(x["wanted"] is True for x in patched.json())
+
+    wanted = client.get("/api/items", params={"collection_id": cid, "wanted": "true"})
+    assert wanted.status_code == 200, wanted.text
+    assert sorted(x["id"] for x in wanted.json()) == sorted([id_a, id_b])
+
+    denied = client.post(
+        "/api/items/bulk-patch",
+        json={"collection_id": cid, "item_ids": [id_a, outside_id], "wanted": False},
+    )
+    assert denied.status_code == 404
+
+    deleted = client.post(
+        "/api/items/bulk-delete",
+        json={"collection_id": cid, "item_ids": [id_a]},
+    )
+    assert deleted.status_code == 200, deleted.text
+    assert deleted.json()["deleted"] == 1
+
+    remaining = client.get("/api/items", params={"collection_id": cid})
+    assert remaining.status_code == 200
+    assert [x["id"] for x in remaining.json()] == [id_b]
+
+
+def test_item_bulk_actions_require_editor_role(client) -> None:
+    _signup_and_login(client, "bulkowner2")
+    cid = client.post("/api/collections", json={"name": "Shared bulk"}).json()["id"]
+    created = client.post(
+        "/api/items",
+        json={"collection_id": cid, "category": "movies.dvd", "title": "Shared item"},
+    )
+    assert created.status_code == 201, created.text
+    item_id = created.json()["id"]
+
+    client.post(
+        "/api/auth/register",
+        json={"username": "bulkviewer", "password": "hunter22-secure", "email": "bulkviewer@x.io"},
+    )
+    add_viewer = client.post(
+        f"/api/collections/{cid}/members",
+        json={"user_identifier": "bulkviewer", "role": "viewer"},
+    )
+    assert add_viewer.status_code == 201, add_viewer.text
+
+    client.post("/api/auth/logout")
+    login = client.post(
+        "/api/auth/login",
+        json={"username": "bulkviewer", "password": "hunter22-secure"},
+    )
+    assert login.status_code == 200, login.text
+
+    denied_patch = client.post(
+        "/api/items/bulk-patch",
+        json={"collection_id": cid, "item_ids": [item_id], "depleted": True},
+    )
+    assert denied_patch.status_code == 403
+
+    denied_delete = client.post(
+        "/api/items/bulk-delete",
+        json={"collection_id": cid, "item_ids": [item_id]},
+    )
+    assert denied_delete.status_code == 403

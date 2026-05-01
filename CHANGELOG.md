@@ -56,6 +56,9 @@ All notable changes to **Covet** are documented here. Format follows
   `GET /items?wanted=true/false`, and toggle Wanted/Owned inline from web
   list and grid views. Converting Wanted → Owned now captures acquisition
   date and optional purchase price.
+- **Bulk item actions (web + API).** Collection views now support multi-select
+  with bulk status updates (wanted/owned, depleted/in-stock) and bulk delete.
+  The server adds `POST /items/bulk-patch` and `POST /items/bulk-delete`.
 - **Grocery list page.** A new "Grocery List" link in the navigation shows all
   depleted items across every collection you have access to — ideal for shared
   household pantry collections where multiple members need to see what to restock.

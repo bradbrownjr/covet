@@ -18,7 +18,15 @@ from covet.auth.deps import (
 )
 from covet.db import get_session
 from covet.models import Category, Collection, CollectionMembership, Item, ItemTemplate
-from covet.schemas import ItemCreate, ItemFlagUpdate, ItemRead, ItemUpdate
+from covet.schemas import (
+    ItemBulkDeleteRequest,
+    ItemBulkDeleteResponse,
+    ItemBulkPatchRequest,
+    ItemCreate,
+    ItemFlagUpdate,
+    ItemRead,
+    ItemUpdate,
+)
 from covet.services.categories import resolve_slug, subtree_ids
 
 router = APIRouter(prefix="/items", tags=["items"])
@@ -297,6 +305,79 @@ def create_item(
     db.commit()
     db.refresh(item)
     return ItemRead.model_validate(item)
+
+
+@router.post("/bulk-patch", response_model=list[ItemRead])
+def bulk_patch_items(
+    payload: ItemBulkPatchRequest,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> list[ItemRead]:
+    _require_role(db, auth, payload.collection_id, _EDITOR_ROLES)
+
+    updates: dict[str, bool] = {}
+    if payload.depleted is not None:
+        updates["depleted"] = payload.depleted
+    if payload.wanted is not None:
+        updates["wanted"] = payload.wanted
+    if not updates:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="At least one mutable field is required",
+        )
+
+    ids = list(dict.fromkeys(payload.item_ids))
+    rows = db.scalars(
+        select(Item)
+        .where(Item.collection_id == payload.collection_id)
+        .where(Item.id.in_(ids))
+        .options(selectinload(Item.photos))
+    ).all()
+    if len(rows) != len(ids):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="One or more items not found in collection",
+        )
+
+    for item in rows:
+        for key, value in updates.items():
+            setattr(item, key, value)
+        # Keep semantics aligned with single-item edits.
+        item.flagged_note = None
+        item.flagged_at = None
+
+    db.commit()
+    for item in rows:
+        db.refresh(item)
+    rollups = _compute_rollup_values(db, payload.collection_id)
+    by_id = {item.id: item for item in rows}
+    return [_to_item_read(by_id[item_id], rollups) for item_id in ids]
+
+
+@router.post("/bulk-delete", response_model=ItemBulkDeleteResponse)
+def bulk_delete_items(
+    payload: ItemBulkDeleteRequest,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> ItemBulkDeleteResponse:
+    _require_role(db, auth, payload.collection_id, _EDITOR_ROLES)
+
+    ids = list(dict.fromkeys(payload.item_ids))
+    rows = db.scalars(
+        select(Item)
+        .where(Item.collection_id == payload.collection_id)
+        .where(Item.id.in_(ids))
+    ).all()
+    if len(rows) != len(ids):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="One or more items not found in collection",
+        )
+
+    for item in rows:
+        db.delete(item)
+    db.commit()
+    return ItemBulkDeleteResponse(deleted=len(rows))
 
 
 @router.get("/{item_id}", response_model=ItemRead)

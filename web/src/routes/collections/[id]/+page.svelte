@@ -16,6 +16,7 @@
     let sortBy = $state<'title' | 'value' | 'acquired_at' | 'attr'>('title');
     let sortDir = $state<'asc' | 'desc'>('asc');
     let sortAttr = $state('');
+    let selectedItemIds = $state<string[]>([]);
     let loading = $state(true);
     let error = $state('');
     let didSeedDefaults = $state(false);
@@ -42,6 +43,7 @@
     let pendingOwnedItemTitle = $state('');
     let ownedAtInput = $state('');
     let ownedPriceInput = $state('');
+    let bulkBusy = $state(false);
 
     // Inline create form: cascading root → leaf.
     let newRoot = $state('other');
@@ -176,6 +178,26 @@
         return relatedItemTitles[targetId] ?? targetId;
     }
 
+    function isSelected(itemId: string): boolean {
+        return selectedItemIds.includes(itemId);
+    }
+
+    function toggleSelected(itemId: string) {
+        if (isSelected(itemId)) {
+            selectedItemIds = selectedItemIds.filter((id) => id !== itemId);
+        } else {
+            selectedItemIds = [...selectedItemIds, itemId];
+        }
+    }
+
+    function selectVisibleItems() {
+        selectedItemIds = items.map((i) => i.id);
+    }
+
+    function clearSelection() {
+        selectedItemIds = [];
+    }
+
     async function hydrateRelatedItemTitles(currentItems: Item[]) {
         const wanted = new Set<string>();
         for (const i of currentItems) {
@@ -235,11 +257,49 @@
             ]);
             items = fetchedItems;
             templates = fetchedTemplates;
+            selectedItemIds = selectedItemIds.filter((id) => fetchedItems.some((i) => i.id === id));
             await hydrateRelatedItemTitles(fetchedItems);
         } catch (e) {
             error = (e as Error).message;
         } finally {
             loading = false;
+        }
+    }
+
+    async function bulkPatch(payload: { depleted?: boolean; wanted?: boolean }) {
+        if (!selectedItemIds.length) return;
+        bulkBusy = true;
+        error = '';
+        try {
+            await api.post('/items/bulk-patch', {
+                collection_id: cid,
+                item_ids: selectedItemIds,
+                ...payload,
+            });
+            await load();
+            clearSelection();
+        } catch (e) {
+            error = (e as Error).message;
+        } finally {
+            bulkBusy = false;
+        }
+    }
+
+    async function bulkDelete() {
+        if (!selectedItemIds.length) return;
+        bulkBusy = true;
+        error = '';
+        try {
+            await api.post('/items/bulk-delete', {
+                collection_id: cid,
+                item_ids: selectedItemIds,
+            });
+            await load();
+            clearSelection();
+        } catch (e) {
+            error = (e as Error).message;
+        } finally {
+            bulkBusy = false;
         }
     }
 
@@ -683,6 +743,19 @@
         {/if}
     </div>
 
+    {#if canEdit}
+        <div class="bulk-toolbar">
+            <span class="muted">Selected: {selectedItemIds.length}</span>
+            <button type="button" class="secondary" onclick={selectVisibleItems} disabled={!items.length || bulkBusy}>Select visible</button>
+            <button type="button" class="secondary" onclick={clearSelection} disabled={!selectedItemIds.length || bulkBusy}>Clear</button>
+            <button type="button" class="secondary" onclick={() => bulkPatch({ depleted: true })} disabled={!selectedItemIds.length || bulkBusy}>Bulk depleted</button>
+            <button type="button" class="secondary" onclick={() => bulkPatch({ depleted: false })} disabled={!selectedItemIds.length || bulkBusy}>Bulk in stock</button>
+            <button type="button" class="secondary" onclick={() => bulkPatch({ wanted: true })} disabled={!selectedItemIds.length || bulkBusy}>Bulk wanted</button>
+            <button type="button" class="secondary" onclick={() => bulkPatch({ wanted: false })} disabled={!selectedItemIds.length || bulkBusy}>Bulk owned</button>
+            <button type="button" class="danger" onclick={bulkDelete} disabled={!selectedItemIds.length || bulkBusy}>Bulk delete</button>
+        </div>
+    {/if}
+
     {#if loading}
         <p class="muted">Loading…</p>
     {:else if items.length === 0}
@@ -717,6 +790,16 @@
                 {:else}
                     <div class="item-card" class:depleted-card={i.depleted} class:wanted-card={i.wanted}>
                         <div class="item-card-body">
+                            {#if canEdit}
+                                <label class="select-chip">
+                                    <input
+                                        type="checkbox"
+                                        checked={isSelected(i.id)}
+                                        onchange={() => toggleSelected(i.id)}
+                                    />
+                                    Select
+                                </label>
+                            {/if}
                             {#if !isFocused && i.category_slug}
                                 <span class="category-badge">{i.category_slug.split('.').at(-1) ?? i.category_slug}</span>
                             {/if}
@@ -784,6 +867,7 @@
         <table>
             <thead>
                 <tr>
+                    {#if canEdit}<th style="width:1%"><input type="checkbox" checked={items.length > 0 && selectedItemIds.length === items.length} onchange={(e) => ((e.target as HTMLInputElement).checked ? selectVisibleItems() : clearSelection())} /></th>{/if}
                     {#if !isFocused}<th>Category</th>{/if}
                     {#if collectionCreatorLabel}<th>{collectionCreatorLabel}</th>{/if}
                     <th>Title</th>
@@ -798,6 +882,7 @@
                 {#each items as i (i.id)}
                     {#if editingId === i.id}
                         <tr class="editing-row">
+                            {#if canEdit}<td></td>{/if}
                             {#if !isFocused}<td></td>{/if}
                             {#if collectionCreatorLabel}
                                 <td><input bind:value={editCreator} placeholder={collectionCreatorLabel} class="edit-input" /></td>
@@ -830,6 +915,15 @@
                         {/if}
                     {:else}
                         <tr class:depleted-row={i.depleted} class:wanted-row={i.wanted}>
+                            {#if canEdit}
+                                <td>
+                                    <input
+                                        type="checkbox"
+                                        checked={isSelected(i.id)}
+                                        onchange={() => toggleSelected(i.id)}
+                                    />
+                                </td>
+                            {/if}
                             {#if !isFocused}<td class="muted">{i.category_slug ?? ''}</td>{/if}
                             {#if collectionCreatorLabel}<td class="muted">{String(i.attrs?.creator ?? '')}</td>{/if}
                             <td>
@@ -1095,6 +1189,20 @@
     }
     .filters > input {
         flex: 1;
+    }
+    .bulk-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+    .select-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.75rem;
+        color: var(--text-muted, #888);
     }
     .view-toggle {
         display: flex;

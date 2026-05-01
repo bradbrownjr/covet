@@ -105,3 +105,19 @@ class ItemRead(ItemBase):
 
 class ItemFlagUpdate(BaseModel):
     note: str | None = Field(default=None, max_length=256)
+
+
+class ItemBulkPatchRequest(BaseModel):
+    collection_id: str
+    item_ids: list[str] = Field(min_length=1, max_length=500)
+    depleted: bool | None = None
+    wanted: bool | None = None
+
+
+class ItemBulkDeleteRequest(BaseModel):
+    collection_id: str
+    item_ids: list[str] = Field(min_length=1, max_length=500)
+
+
+class ItemBulkDeleteResponse(BaseModel):
+    deleted: int

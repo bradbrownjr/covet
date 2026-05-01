@@ -188,6 +188,9 @@ ready-to-use templates for that collection.
   and wanted-only rows/cards. Editors/owners can toggle an item between
   **Wanted** and **Owned** inline. Converting to **Owned** prompts for
   acquisition date and optional purchase price.
+- Editors/owners can also **select multiple items** and run bulk actions
+  from the collection toolbar: set wanted/owned, set depleted/in-stock,
+  or delete selected rows/cards.
 - Filter by tag from the collection page.
 
 ## Importing your existing inventory

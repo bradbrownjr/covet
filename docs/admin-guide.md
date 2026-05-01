@@ -204,6 +204,8 @@ require new environment variables or reverse-proxy changes:
 - Wanted-item tracking (`wanted` boolean on items) plus
    `GET /items?wanted=true/false` filtering and inline Wanted/Owned toggles in web
    with acquisition-date / purchase-price capture when marking owned.
+- Bulk item actions via `POST /items/bulk-patch` and `POST /items/bulk-delete`,
+   with collection-scoped item-id validation and editor/owner role enforcement.
 - Web item sort controls (title, value, acquisition date, custom field).
 - Web + Android barcode scanning from still images.
 - Parent/container value rollups exposed as `rollup_current_value` on item reads.
