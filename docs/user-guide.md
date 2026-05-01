@@ -64,6 +64,10 @@ Movies, Books, Games, Tabletop, Tools, Collectibles, …) then a
 sub-category (Vinyl LP, Cassette, Blu-ray, …). Collections created with
 the setup wizard pre-select the right root for you.
 
+Phase 11 has started with a new **Home Equipment** root in the category
+picker (Appliance, Generator, HVAC/Furnace/Air Handler, Water Heater,
+Refrigerator, Water Service Filtration, and Sump Pump).
+
 Depending on the category, extra fields appear:
 
 - **Creator** — Artist/Band for music, Author for books, Director for

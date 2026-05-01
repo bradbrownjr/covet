@@ -85,6 +85,10 @@ All notable changes to **Covet** are documented here. Format follows
   (`GET /items/search`) now includes indexed attachment text from item
   documents. Text files/PDF text are indexed, and image attachments are
   OCR'd when Tesseract is available.
+- **Phase 11 category kickoff (API + web picker).** Added a new
+  `home_equipment` category root and starter leaf categories:
+  appliance, generator, HVAC/furnace/air-handler, water heater,
+  refrigerator, water service filtration, and sump pump.
 - **Grocery list page.** A new "Grocery List" link in the navigation shows all
   depleted items across every collection you have access to — ideal for shared
   household pantry collections where multiple members need to see what to restock.

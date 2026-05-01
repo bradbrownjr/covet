@@ -117,12 +117,16 @@ bottleneck. This phase is about scaling the UX.
 
 ---
 
-## Phase 11 — Become the whole-home database (planned)
+## Phase 11 — Become the whole-home database (in progress)
 
 Covet starts as a collectibles tracker. This phase broadens it into a
 complete home inventory: every room, every appliance, every tool, every
 consumable. The goal is to replace the spreadsheet every homeowner
 eventually makes and then stops maintaining.
+
+- **Phase 11 kickoff** ✅ — added a new **Home Equipment** root category
+  with starter leaves: Appliance, Generator, HVAC/Furnace/Air Handler,
+  Water Heater, Refrigerator, Water Service Filtration, and Sump Pump.
 
 - **Manual/asset bundles (planned)** — beyond per-item document uploads,
   add a reusable manual library that can store a primary manual plus

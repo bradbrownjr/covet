@@ -130,6 +130,20 @@ CATEGORY_TREE: list[CategorySeed] = [
         ],
     },
     {
+        "slug": "home_equipment",
+        "name": "Home Equipment",
+        "description": "Appliances and household infrastructure.",
+        "children": [
+            {"slug": "home_equipment.appliance", "name": "Appliance"},
+            {"slug": "home_equipment.generator", "name": "Generator"},
+            {"slug": "home_equipment.hvac", "name": "HVAC / Furnace / Air Handler"},
+            {"slug": "home_equipment.water_heater", "name": "Water Heater"},
+            {"slug": "home_equipment.refrigerator", "name": "Refrigerator"},
+            {"slug": "home_equipment.water_filtration", "name": "Water Service Filtration"},
+            {"slug": "home_equipment.sump_pump", "name": "Sump Pump"},
+        ],
+    },
+    {
         "slug": "other",
         "name": "Other",
         "description": "Anything not covered above.",
