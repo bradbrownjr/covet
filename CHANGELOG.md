@@ -34,6 +34,10 @@ All notable changes to **Covet** are documented here. Format follows
   follow-up with an optional note (`POST /items/{id}/flag`) and clear the flag
   (`DELETE /items/{id}/flag`). Flags are also cleared automatically on the next
   normal item edit.
+- **Dynamic dropdown template fields (web + API).** Template `select` fields
+  can now use `select_source: "dynamic"` to populate choices from values
+  already used in that field across the collection, reducing static-option
+  maintenance. Added `GET /collections/{collection_id}/template-field-options/{field_key}`.
 - **Grocery list page.** A new "Grocery List" link in the navigation shows all
   depleted items across every collection you have access to — ideal for shared
   household pantry collections where multiple members need to see what to restock.

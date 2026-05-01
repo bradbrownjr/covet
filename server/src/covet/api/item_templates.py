@@ -15,7 +15,7 @@ from covet.auth.deps import (
     require_user,
 )
 from covet.db import get_session
-from covet.models import Collection, ItemTemplate
+from covet.models import Collection, Item, ItemTemplate
 from covet.schemas import (
     ItemTemplateCreate,
     ItemTemplateRead,
@@ -361,6 +361,52 @@ def scaffold_templates(
     return [ItemTemplateRead.model_validate(t) for t in rows]
 
 
+@router.get(
+    "/collections/{collection_id}/template-field-options/{field_key}",
+    response_model=list[str],
+)
+def template_field_options(
+    collection_id: str,
+    field_key: str,
+    template_id: str,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> list[str]:
+    """Return dropdown options for a template select field.
+
+    - Static fields return their declared options.
+    - Dynamic fields return distinct values already used in item attrs.
+    """
+    _require_role(db, auth, collection_id, _VIEWER_ROLES)
+    tmpl = db.get(ItemTemplate, template_id)
+    if tmpl is None or tmpl.collection_id != collection_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template not found")
+
+    fields = [TemplateField.model_validate(f) for f in tmpl.fields]
+    spec = next((f for f in fields if f.key == field_key), None)
+    if spec is None or spec.type != "select":
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Field is not a select field in this template",
+        )
+
+    if spec.select_source == "static":
+        return list(spec.options or [])
+
+    attr_rows = db.scalars(select(Item.attrs).where(Item.collection_id == collection_id)).all()
+    seen: set[str] = set()
+    for attrs in attr_rows:
+        if not isinstance(attrs, dict):
+            continue
+        raw = attrs.get(field_key)
+        if raw is None:
+            continue
+        sval = str(raw).strip()
+        if sval:
+            seen.add(sval)
+    return sorted(seen, key=str.casefold)
+
+
 # ---------------------------------------------------------------------------
 # Validation helpers (used by items API)
 # ---------------------------------------------------------------------------
@@ -408,7 +454,7 @@ def _coerce(spec: TemplateField, value: Any) -> Any:
             return str(value)
         if t == "select":
             sval = str(value)
-            if spec.options and sval not in spec.options:
+            if spec.select_source == "static" and spec.options and sval not in spec.options:
                 raise ValueError(
                     f"value '{sval}' not in allowed options for '{spec.key}'"
                 )

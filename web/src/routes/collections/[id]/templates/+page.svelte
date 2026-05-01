@@ -64,6 +64,7 @@
                     type: f.type
                 };
                 if (f.required) out.required = true;
+                if (f.type === 'select') out.select_source = f.select_source ?? 'static';
                 if (f.options && f.options.length) out.options = f.options;
                 if (f.default !== undefined && f.default !== '') out.default = f.default;
                 return out;
@@ -277,7 +278,7 @@
                     style="font-family: var(--mono, monospace); width:100%"
                 ></textarea>
                 <p class="muted">
-                    JSON array of <code>&#123;key,label,type,required?,options?,default?&#125;</code>.
+                    JSON array of <code>&#123;key,label,type,required?,select_source?,options?,default?&#125;</code>.
                     Allowed types: {FIELD_TYPES.join(', ')}.
                 </p>
             {:else}
@@ -291,6 +292,7 @@
                                 <th>Label</th>
                                 <th>Type</th>
                                 <th>Required</th>
+                                <th>Source (select)</th>
                                 <th>Options (select only)</th>
                                 <th></th>
                             </tr>
@@ -345,6 +347,23 @@
                                     </td>
                                     <td>
                                         {#if f.type === 'select'}
+                                            <select
+                                                value={f.select_source ?? 'static'}
+                                                onchange={(e) =>
+                                                    updateField(idx, {
+                                                        select_source: (e.target as HTMLSelectElement)
+                                                            .value as 'static' | 'dynamic'
+                                                    })}
+                                            >
+                                                <option value="static">Static list</option>
+                                                <option value="dynamic">Dynamic from used values</option>
+                                            </select>
+                                        {:else}
+                                            <span class="muted">—</span>
+                                        {/if}
+                                    </td>
+                                    <td>
+                                        {#if f.type === 'select' && (f.select_source ?? 'static') === 'static'}
                                             <input
                                                 value={(f.options ?? []).join(', ')}
                                                 placeholder="A, B, C"
@@ -357,6 +376,8 @@
                                                             .filter(Boolean)
                                                     })}
                                             />
+                                        {:else if f.type === 'select'}
+                                            <span class="muted">Auto from existing item values</span>
                                         {:else}
                                             <span class="muted">—</span>
                                         {/if}
@@ -447,7 +468,7 @@
                                                 <p class="muted" style="margin:.25rem 0">No custom fields.</p>
                                             {:else}
                                                 <table class="fields">
-                                                    <thead><tr><th>Key</th><th>Label</th><th>Type</th><th>Req</th><th>Options</th><th></th></tr></thead>
+                                                    <thead><tr><th>Key</th><th>Label</th><th>Type</th><th>Req</th><th>Source</th><th>Options</th><th></th></tr></thead>
                                                     <tbody>
                                                         {#each editFields as f, idx (idx)}
                                                             <tr>
@@ -455,7 +476,8 @@
                                                                 <td><input value={f.label} placeholder="Label" oninput={(e) => updateEditField(idx, { label: (e.target as HTMLInputElement).value })} /></td>
                                                                 <td><select value={f.type} onchange={(e) => updateEditField(idx, { type: (e.target as HTMLSelectElement).value as TemplateFieldType })}>{#each FIELD_TYPES as ft}<option value={ft}>{ft}</option>{/each}</select></td>
                                                                 <td style="text-align:center"><input type="checkbox" checked={f.required ?? false} onchange={(e) => updateEditField(idx, { required: (e.target as HTMLInputElement).checked })} /></td>
-                                                                <td>{#if f.type === 'select'}<input value={(f.options ?? []).join(', ')} placeholder="A, B, C" oninput={(e) => updateEditField(idx, { options: (e.target as HTMLInputElement).value.split(',').map((s) => s.trim()).filter(Boolean) })} />{:else}<span class="muted">—</span>{/if}</td>
+                                                                <td>{#if f.type === 'select'}<select value={f.select_source ?? 'static'} onchange={(e) => updateEditField(idx, { select_source: (e.target as HTMLSelectElement).value as 'static' | 'dynamic' })}><option value="static">Static list</option><option value="dynamic">Dynamic from used values</option></select>{:else}<span class="muted">—</span>{/if}</td>
+                                                                <td>{#if f.type === 'select' && (f.select_source ?? 'static') === 'static'}<input value={(f.options ?? []).join(', ')} placeholder="A, B, C" oninput={(e) => updateEditField(idx, { options: (e.target as HTMLInputElement).value.split(',').map((s) => s.trim()).filter(Boolean) })} />{:else if f.type === 'select'}<span class="muted">Auto from existing item values</span>{:else}<span class="muted">—</span>{/if}</td>
                                                                 <td><button type="button" class="danger" onclick={() => removeEditField(idx)}>×</button></td>
                                                             </tr>
                                                         {/each}

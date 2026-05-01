@@ -163,7 +163,9 @@ Condition grade, …) to items of a particular category.
 - **Viewers** can see templates but not modify them.
 
 Field types: `text`, `number`, `boolean`, `date`, `url`, `select` (with
-an option list). Each field can be marked **required**. An Advanced JSON
+an option list). `select` fields can also use a **dynamic** source that
+pulls values already used in that field across the collection. Each field can
+be marked **required**. An Advanced JSON
 editor is available for bulk editing.
 
 ## Tags and search

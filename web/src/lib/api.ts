@@ -186,11 +186,13 @@ export interface AuditLogEntry {
 }
 
 export type TemplateFieldType = 'text' | 'number' | 'boolean' | 'date' | 'url' | 'select';
+export type TemplateSelectSource = 'static' | 'dynamic';
 
 export interface TemplateField {
     key: string;
     label: string;
     type: TemplateFieldType;
+    select_source?: TemplateSelectSource;
     required?: boolean;
     default?: unknown;
     options?: string[] | null;

@@ -8,6 +8,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 FieldType = Literal["text", "number", "boolean", "date", "url", "select"]
+SelectSource = Literal["static", "dynamic"]
 
 
 class TemplateField(BaseModel):
@@ -17,6 +18,7 @@ class TemplateField(BaseModel):
     required: bool = False
     default: Any = None
     options: list[str] | None = None  # for type="select"
+    select_source: SelectSource = "static"
     help: str | None = Field(default=None, max_length=256)
 
 

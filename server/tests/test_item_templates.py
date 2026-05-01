@@ -187,3 +187,103 @@ def test_viewer_cannot_create_template(client) -> None:
         json={"name": "T", "category_slug": "other.generic", "fields": []},
     )
     assert r.status_code == 403
+
+
+def test_dynamic_select_field_options_and_validation(client) -> None:
+    _register(client, "dyn")
+    _login(client, "dyn")
+    cid = client.post("/api/collections", json={"name": "Garage"}).json()["id"]
+
+    tmpl = client.post(
+        f"/api/collections/{cid}/templates",
+        json={
+            "name": "Tool",
+            "category_slug": "tools.hand",
+            "fields": [
+                {
+                    "key": "bin_location",
+                    "label": "Bin location",
+                    "type": "select",
+                    "select_source": "dynamic",
+                }
+            ],
+        },
+    )
+    assert tmpl.status_code == 201, tmpl.text
+    tmpl_id = tmpl.json()["id"]
+
+    first = client.post(
+        "/api/items",
+        json={
+            "collection_id": cid,
+            "category": "tools.hand",
+            "title": "Socket set",
+            "template_id": tmpl_id,
+            "attrs": {"bin_location": "Shelf A"},
+        },
+    )
+    assert first.status_code == 201, first.text
+
+    second = client.post(
+        "/api/items",
+        json={
+            "collection_id": cid,
+            "category": "tools.hand",
+            "title": "Pliers",
+            "template_id": tmpl_id,
+            "attrs": {"bin_location": "Drawer 2"},
+        },
+    )
+    assert second.status_code == 201, second.text
+
+    opts = client.get(
+        f"/api/collections/{cid}/template-field-options/bin_location",
+        params={"template_id": tmpl_id},
+    )
+    assert opts.status_code == 200, opts.text
+    assert opts.json() == ["Drawer 2", "Shelf A"]
+
+    # Dynamic select accepts newly introduced values.
+    third = client.post(
+        "/api/items",
+        json={
+            "collection_id": cid,
+            "category": "tools.hand",
+            "title": "Wrench",
+            "template_id": tmpl_id,
+            "attrs": {"bin_location": "Pegboard"},
+        },
+    )
+    assert third.status_code == 201, third.text
+
+
+def test_static_select_field_options_endpoint_returns_declared_values(client) -> None:
+    _register(client, "stat")
+    _login(client, "stat")
+    cid = client.post("/api/collections", json={"name": "Library"}).json()["id"]
+
+    tmpl = client.post(
+        f"/api/collections/{cid}/templates",
+        json={
+            "name": "Book",
+            "category_slug": "books.print",
+            "fields": [
+                {
+                    "key": "shelf",
+                    "label": "Shelf",
+                    "type": "select",
+                    "options": ["A", "B", "C"],
+                    "select_source": "static",
+                }
+            ],
+        },
+    )
+    assert tmpl.status_code == 201, tmpl.text
+    tmpl_id = tmpl.json()["id"]
+
+    opts = client.get(
+        f"/api/collections/{cid}/template-field-options/shelf",
+        params={"template_id": tmpl_id},
+    )
+    assert opts.status_code == 200, opts.text
+    assert opts.json() == ["A", "B", "C"]

@@ -99,7 +99,7 @@ bottleneck. This phase is about scaling the UX.
   another item in the same (or any) collection. Enables "sequel to",
   "accessory for", "compatible battery", "intended fuel container"
   relationships without freeform text. Renders as a linked item card.
-- **Dynamic dropdown fields** — in addition to static enum lists,
+- **Dynamic dropdown fields** ✅ — in addition to static enum lists,
   allow a select field to pull its options from existing values already
   in use for that field across the collection. Removes the "add to
   list first" friction that frustrates users of static templates.
