@@ -20,9 +20,11 @@ from covet.db import get_session
 from covet.models import Category, Collection, CollectionMembership, Item, ItemTemplate
 from covet.schemas import (
     ItemArchiveUpdate,
+    ItemBulkArchiveRequest,
     ItemBulkDeleteRequest,
     ItemBulkDeleteResponse,
     ItemBulkPatchRequest,
+    ItemBulkRestoreRequest,
     ItemCreate,
     ItemFlagUpdate,
     ItemRead,
@@ -403,6 +405,86 @@ def bulk_delete_items(
         db.delete(item)
     db.commit()
     return ItemBulkDeleteResponse(deleted=len(rows))
+
+
+@router.post("/bulk-archive", response_model=list[ItemRead])
+def bulk_archive_items(
+    payload: ItemBulkArchiveRequest,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> list[ItemRead]:
+    _require_role(db, auth, payload.collection_id, _EDITOR_ROLES)
+
+    ids = list(dict.fromkeys(payload.item_ids))
+    rows = db.scalars(
+        select(Item)
+        .where(Item.collection_id == payload.collection_id)
+        .where(Item.id.in_(ids))
+        .options(selectinload(Item.photos))
+    ).all()
+    if len(rows) != len(ids):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="One or more items not found in collection",
+        )
+
+    archived_at = datetime.now(UTC)
+    disposition_at = payload.disposition_at or archived_at
+    disposition_buyer = (payload.disposition_buyer or "").strip() or None
+    disposition_note = (payload.disposition_note or "").strip() or None
+    for item in rows:
+        item.archived_at = archived_at
+        item.disposition_type = payload.disposition_type
+        item.disposition_at = disposition_at
+        item.disposition_amount = payload.disposition_amount
+        item.disposition_buyer = disposition_buyer
+        item.disposition_note = disposition_note
+        item.wanted = False
+        item.depleted = False
+
+    db.commit()
+    for item in rows:
+        db.refresh(item)
+    rollups = _compute_rollup_values(db, payload.collection_id)
+    by_id = {item.id: item for item in rows}
+    return [_to_item_read(by_id[item_id], rollups) for item_id in ids]
+
+
+@router.post("/bulk-restore", response_model=list[ItemRead])
+def bulk_restore_items(
+    payload: ItemBulkRestoreRequest,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> list[ItemRead]:
+    _require_role(db, auth, payload.collection_id, _EDITOR_ROLES)
+
+    ids = list(dict.fromkeys(payload.item_ids))
+    rows = db.scalars(
+        select(Item)
+        .where(Item.collection_id == payload.collection_id)
+        .where(Item.id.in_(ids))
+        .options(selectinload(Item.photos))
+    ).all()
+    if len(rows) != len(ids):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="One or more items not found in collection",
+        )
+
+    for item in rows:
+        item.archived_at = None
+        item.disposition_type = None
+        item.disposition_at = None
+        item.disposition_amount = None
+        item.disposition_buyer = None
+        item.disposition_note = None
+
+    db.commit()
+    for item in rows:
+        db.refresh(item)
+    rollups = _compute_rollup_values(db, payload.collection_id)
+    by_id = {item.id: item for item in rows}
+    return [_to_item_read(by_id[item_id], rollups) for item_id in ids]
 
 
 @router.get("/{item_id}", response_model=ItemRead)

@@ -58,8 +58,10 @@ All notable changes to **Covet** are documented here. Format follows
   list and grid views. Converting Wanted → Owned now captures acquisition
   date and optional purchase price.
 - **Bulk item actions (web + API).** Collection views now support multi-select
-  with bulk status updates (wanted/owned, depleted/in-stock) and bulk delete.
-  The server adds `POST /items/bulk-patch` and `POST /items/bulk-delete`.
+  with bulk status updates (wanted/owned, depleted/in-stock), bulk
+  archive/restore, and bulk delete. The server adds `POST /items/bulk-patch`,
+  `POST /items/bulk-archive`, `POST /items/bulk-restore`, and
+  `POST /items/bulk-delete`.
 - **CSV hierarchy round-trip (web + API).** You can now export a collection as
   CSV with stable item/parent references (`GET /imports/csv/export`) and
   re-import it while preserving parent/child relationships using

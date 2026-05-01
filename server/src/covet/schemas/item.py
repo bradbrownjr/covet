@@ -134,6 +134,21 @@ class ItemBulkPatchRequest(BaseModel):
     wanted: bool | None = None
 
 
+class ItemBulkArchiveRequest(BaseModel):
+    collection_id: str
+    item_ids: list[str] = Field(min_length=1, max_length=500)
+    disposition_type: Literal["sold", "disposed", "donated", "archived"] = "archived"
+    disposition_at: datetime | None = None
+    disposition_amount: Decimal | None = None
+    disposition_buyer: str | None = Field(default=None, max_length=256)
+    disposition_note: str | None = Field(default=None, max_length=512)
+
+
+class ItemBulkRestoreRequest(BaseModel):
+    collection_id: str
+    item_ids: list[str] = Field(min_length=1, max_length=500)
+
+
 class ItemBulkDeleteRequest(BaseModel):
     collection_id: str
     item_ids: list[str] = Field(min_length=1, max_length=500)

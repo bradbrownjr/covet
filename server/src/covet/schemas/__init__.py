@@ -38,9 +38,11 @@ from covet.schemas.invitation import (
 )
 from covet.schemas.item import (
     ItemArchiveUpdate,
+    ItemBulkArchiveRequest,
     ItemBulkDeleteRequest,
     ItemBulkDeleteResponse,
     ItemBulkPatchRequest,
+    ItemBulkRestoreRequest,
     ItemCreate,
     ItemFlagUpdate,
     ItemRead,
@@ -89,9 +91,11 @@ __all__ = [
     "InvitationPreview",
     "InvitationRead",
     "ItemArchiveUpdate",
+    "ItemBulkArchiveRequest",
     "ItemBulkDeleteRequest",
     "ItemBulkDeleteResponse",
     "ItemBulkPatchRequest",
+    "ItemBulkRestoreRequest",
     "ItemCreate",
     "ItemFlagUpdate",
     "ItemLotCreate",

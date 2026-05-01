@@ -205,8 +205,9 @@ require new environment variables or reverse-proxy changes:
 - Wanted-item tracking (`wanted` boolean on items) plus
    `GET /items?wanted=true/false` filtering and inline Wanted/Owned toggles in web
    with acquisition-date / purchase-price capture when marking owned.
-- Bulk item actions via `POST /items/bulk-patch` and `POST /items/bulk-delete`,
-   with collection-scoped item-id validation and editor/owner role enforcement.
+- Bulk item actions via `POST /items/bulk-patch`, `POST /items/bulk-archive`,
+   `POST /items/bulk-restore`, and `POST /items/bulk-delete`, with
+   collection-scoped item-id validation and editor/owner role enforcement.
 - CSV hierarchy round-trip via `GET /imports/csv/export` plus CSV import
    mapping targets `category_slug`, `ref:item_ref`, and `ref:parent_ref`
    to preserve parent/child links.

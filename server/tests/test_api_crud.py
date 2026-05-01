@@ -427,6 +427,87 @@ def test_item_bulk_actions_require_editor_role(client) -> None:
     )
     assert denied_delete.status_code == 403
 
+    denied_archive = client.post(
+        "/api/items/bulk-archive",
+        json={"collection_id": cid, "item_ids": [item_id], "disposition_type": "archived"},
+    )
+    assert denied_archive.status_code == 403
+
+    denied_restore = client.post(
+        "/api/items/bulk-restore",
+        json={"collection_id": cid, "item_ids": [item_id]},
+    )
+    assert denied_restore.status_code == 403
+
+
+def test_item_bulk_archive_and_restore(client) -> None:
+    _signup_and_login(client, "bulkarchive")
+    cid = client.post("/api/collections", json={"name": "Bulk archive"}).json()["id"]
+
+    first = client.post(
+        "/api/items",
+        json={
+            "collection_id": cid,
+            "category": "movies.dvd",
+            "title": "Archived A",
+            "wanted": True,
+            "depleted": True,
+        },
+    )
+    second = client.post(
+        "/api/items",
+        json={
+            "collection_id": cid,
+            "category": "movies.dvd",
+            "title": "Archived B",
+            "wanted": True,
+            "depleted": True,
+        },
+    )
+    assert first.status_code == 201 and second.status_code == 201
+    id_a = first.json()["id"]
+    id_b = second.json()["id"]
+
+    archived = client.post(
+        "/api/items/bulk-archive",
+        json={
+            "collection_id": cid,
+            "item_ids": [id_a, id_b],
+            "disposition_type": "sold",
+            "disposition_amount": "9.99",
+            "disposition_buyer": "Bulk buyer",
+        },
+    )
+    assert archived.status_code == 200, archived.text
+    assert [x["id"] for x in archived.json()] == [id_a, id_b]
+    assert all(x["archived_at"] is not None for x in archived.json())
+    assert all(x["disposition_type"] == "sold" for x in archived.json())
+    assert all(x["wanted"] is False for x in archived.json())
+    assert all(x["depleted"] is False for x in archived.json())
+
+    active = client.get("/api/items", params={"collection_id": cid})
+    assert active.status_code == 200
+    assert active.json() == []
+
+    archived_only = client.get(
+        "/api/items",
+        params={"collection_id": cid, "include_archived": "true", "archived": "true"},
+    )
+    assert archived_only.status_code == 200, archived_only.text
+    assert sorted(x["id"] for x in archived_only.json()) == sorted([id_a, id_b])
+
+    restored = client.post(
+        "/api/items/bulk-restore",
+        json={"collection_id": cid, "item_ids": [id_a, id_b]},
+    )
+    assert restored.status_code == 200, restored.text
+    assert all(x["archived_at"] is None for x in restored.json())
+    assert all(x["disposition_type"] is None for x in restored.json())
+
+    active_again = client.get("/api/items", params={"collection_id": cid})
+    assert active_again.status_code == 200
+    assert sorted(x["id"] for x in active_again.json()) == sorted([id_a, id_b])
+
 
 def test_item_archive_restore_workflow(client) -> None:
     _signup_and_login(client, "archive")

@@ -318,6 +318,43 @@
         }
     }
 
+    async function bulkArchive() {
+        if (!selectedItemIds.length) return;
+        bulkBusy = true;
+        error = '';
+        try {
+            await api.post('/items/bulk-archive', {
+                collection_id: cid,
+                item_ids: selectedItemIds,
+                disposition_type: 'archived',
+            });
+            await load();
+            clearSelection();
+        } catch (e) {
+            error = (e as Error).message;
+        } finally {
+            bulkBusy = false;
+        }
+    }
+
+    async function bulkRestore() {
+        if (!selectedItemIds.length) return;
+        bulkBusy = true;
+        error = '';
+        try {
+            await api.post('/items/bulk-restore', {
+                collection_id: cid,
+                item_ids: selectedItemIds,
+            });
+            await load();
+            clearSelection();
+        } catch (e) {
+            error = (e as Error).message;
+        } finally {
+            bulkBusy = false;
+        }
+    }
+
     function applyScrapeResult(res: { title?: string; category?: string; attrs?: Record<string, unknown> }) {
         if (res.title) newQuery = res.title;
         if (res.attrs?.authors) newCreator = String(res.attrs.authors);
@@ -816,6 +853,8 @@
             <button type="button" class="secondary" onclick={() => bulkPatch({ depleted: false })} disabled={!selectedItemIds.length || bulkBusy}>Bulk in stock</button>
             <button type="button" class="secondary" onclick={() => bulkPatch({ wanted: true })} disabled={!selectedItemIds.length || bulkBusy}>Bulk wanted</button>
             <button type="button" class="secondary" onclick={() => bulkPatch({ wanted: false })} disabled={!selectedItemIds.length || bulkBusy}>Bulk owned</button>
+            <button type="button" class="secondary" onclick={bulkArchive} disabled={!selectedItemIds.length || bulkBusy}>Bulk archive</button>
+            <button type="button" class="secondary" onclick={bulkRestore} disabled={!selectedItemIds.length || bulkBusy}>Bulk restore</button>
             <button type="button" class="danger" onclick={bulkDelete} disabled={!selectedItemIds.length || bulkBusy}>Bulk delete</button>
         </div>
     {/if}
