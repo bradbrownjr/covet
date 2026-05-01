@@ -29,9 +29,12 @@
     let editUseByDate = $state('');
     let editDateFrozen = $state('');
     let editDateOpened = $state('');
-    let confirmDialog = $state<'delete-item' | 'delete-collection' | null>(null);
+    let confirmDialog = $state<'delete-item' | 'delete-collection' | 'flag-item' | null>(null);
     let pendingDeleteItemId = $state<string | null>(null);
     let pendingDeleteItemTitle = $state('');
+    let pendingFlagItemId = $state<string | null>(null);
+    let pendingFlagItemTitle = $state('');
+    let flagNoteInput = $state('');
 
     // Inline create form: cascading root → leaf.
     let newRoot = $state('other');
@@ -218,24 +221,20 @@
     async function decodeBarcodeFromImage(file: File): Promise<string> {
         const { BrowserMultiFormatReader } = await import('@zxing/browser');
         const reader = new BrowserMultiFormatReader();
-        try {
-            const dataUrl = await new Promise<string>((resolve, reject) => {
-                const fr = new FileReader();
-                fr.onload = () => resolve(String(fr.result));
-                fr.onerror = () => reject(new Error('Could not read image file'));
-                fr.readAsDataURL(file);
-            });
-            const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-                const el = new Image();
-                el.onload = () => resolve(el);
-                el.onerror = () => reject(new Error('Could not decode image'));
-                el.src = dataUrl;
-            });
-            const result = await reader.decodeFromImageElement(img);
-            return result.getText();
-        } finally {
-            reader.reset();
-        }
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+            const fr = new FileReader();
+            fr.onload = () => resolve(String(fr.result));
+            fr.onerror = () => reject(new Error('Could not read image file'));
+            fr.readAsDataURL(file);
+        });
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+            const el = new Image();
+            el.onload = () => resolve(el);
+            el.onerror = () => reject(new Error('Could not decode image'));
+            el.src = dataUrl;
+        });
+        const result = await reader.decodeFromImageElement(img);
+        return result.getText();
     }
 
     function triggerBarcodeImagePicker() {
@@ -361,6 +360,28 @@
 
     async function toggleDepleted(item: Item) {
         await api.patch(`/items/${item.id}`, { depleted: !item.depleted });
+        await load();
+    }
+
+    function requestFlagItem(item: Item) {
+        pendingFlagItemId = item.id;
+        pendingFlagItemTitle = item.title;
+        flagNoteInput = item.flagged_note ?? '';
+        confirmDialog = 'flag-item';
+    }
+
+    async function flagItemConfirmed() {
+        if (!pendingFlagItemId) return;
+        await api.post(`/items/${pendingFlagItemId}/flag`, { note: flagNoteInput });
+        pendingFlagItemId = null;
+        pendingFlagItemTitle = '';
+        flagNoteInput = '';
+        confirmDialog = null;
+        await load();
+    }
+
+    async function clearFlag(item: Item) {
+        await api.delete(`/items/${item.id}/flag`);
         await load();
     }
 
@@ -608,6 +629,11 @@
                                 {#if i.quantity > 1}<span>×{i.quantity}</span>{/if}
                                 {#if displayValue(i) != null}<span>{formatValue(i)}</span>{/if}
                                 {#if i.depleted}<span class="depleted-badge">Depleted</span>{/if}
+                                {#if i.flagged_at}
+                                    <span class="flagged-badge" title={i.flagged_note ?? 'Flagged for review'}>
+                                        Flagged
+                                    </span>
+                                {/if}
                                 {#if isConsumable(i.category_slug)}
                                     {#if i.use_by_date}<span class="date-badge use-by">Use by {new Date(i.use_by_date).toLocaleDateString()}</span>{/if}
                                     {#if i.date_opened}<span class="date-badge opened">Opened {new Date(i.date_opened).toLocaleDateString()}</span>{/if}
@@ -623,6 +649,11 @@
                                     class={i.depleted ? 'secondary' : 'warn'}
                                     onclick={() => toggleDepleted(i)}
                                 >{i.depleted ? 'In stock' : 'Depleted'}</button>
+                                <button
+                                    type="button"
+                                    class="secondary"
+                                    onclick={() => (i.flagged_at ? clearFlag(i) : requestFlagItem(i))}
+                                >{i.flagged_at ? 'Unflag' : 'Flag'}</button>
                                 <button class="danger item-card-delete" onclick={() => requestRemoveItem(i)}>Delete</button>
                             </div>
                         {/if}
@@ -682,7 +713,13 @@
                         <tr class:depleted-row={i.depleted}>
                             {#if !isFocused}<td class="muted">{i.category_slug ?? ''}</td>{/if}
                             {#if collectionCreatorLabel}<td class="muted">{String(i.attrs?.creator ?? '')}</td>{/if}
-                            <td>{i.title}{#if i.subtitle && !showCollectionSubtitle}<span class="muted"> · {i.subtitle}</span>{/if}</td>
+                            <td>
+                                {i.title}
+                                {#if i.subtitle && !showCollectionSubtitle}<span class="muted"> · {i.subtitle}</span>{/if}
+                                {#if i.flagged_at}
+                                    <span class="flagged-inline" title={i.flagged_note ?? 'Flagged for review'}>Flagged</span>
+                                {/if}
+                            </td>
                             {#if showCollectionSubtitle}<td class="muted">{i.subtitle ?? ''}</td>{/if}
                             <td>{i.quantity}</td>
                             <td>{i.condition ?? ''}</td>
@@ -697,6 +734,11 @@
                                         onclick={() => toggleDepleted(i)}
                                         title={i.depleted ? 'Mark as in stock' : 'Mark as depleted'}
                                     >{i.depleted ? 'In stock' : 'Depleted'}</button>
+                                    <button
+                                        type="button"
+                                        class="secondary"
+                                        onclick={() => (i.flagged_at ? clearFlag(i) : requestFlagItem(i))}
+                                    >{i.flagged_at ? 'Unflag' : 'Flag'}</button>
                                     <button class="danger" onclick={() => requestRemoveItem(i)}>Delete</button>
                                 </td>
                             {/if}
@@ -733,6 +775,23 @@
             <div class="modal-actions">
                 <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>Cancel</button>
                 <button type="button" class="danger" onclick={deleteCollectionConfirmed}>Delete collection</button>
+            </div>
+        </div>
+    </div>
+{/if}
+
+{#if confirmDialog === 'flag-item'}
+    <div class="modal-backdrop" role="presentation" onclick={() => (confirmDialog = null)}>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="flag-item-title" onclick={(e) => e.stopPropagation()}>
+            <h3 id="flag-item-title">Flag item for review</h3>
+            <p class="muted">{pendingFlagItemTitle || 'This item'} will be marked for follow-up.</p>
+            <label>
+                Note (optional)
+                <input bind:value={flagNoteInput} maxlength="256" placeholder="e.g. verify location" />
+            </label>
+            <div class="modal-actions">
+                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>Cancel</button>
+                <button type="button" onclick={flagItemConfirmed}>Flag item</button>
             </div>
         </div>
     </div>
@@ -976,6 +1035,23 @@
         opacity: 0.55;
         text-decoration: line-through;
         text-decoration-color: var(--danger, #c00);
+    }
+    .flagged-badge {
+        display: inline-flex;
+        align-items: center;
+        background: color-mix(in srgb, var(--warn, #c67a00) 18%, transparent);
+        color: var(--warn, #c67a00);
+        border: 1px solid color-mix(in srgb, var(--warn, #c67a00) 45%, transparent);
+        border-radius: 999px;
+        padding: 0.05rem 0.45rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+    }
+    .flagged-inline {
+        margin-left: 0.4rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--warn, #c67a00);
     }
     .depleted-card {
         opacity: 0.6;

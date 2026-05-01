@@ -30,6 +30,10 @@ All notable changes to **Covet** are documented here. Format follows
 - **Parent item value rollup (web + Android + API).** Container/kit items now
   expose a computed `rollup_current_value` equal to the summed value of their
   nested contents, and both clients display that effective value in item lists.
+- **Item review flags (web + API).** Editors/owners can now flag items for
+  follow-up with an optional note (`POST /items/{id}/flag`) and clear the flag
+  (`DELETE /items/{id}/flag`). Flags are also cleared automatically on the next
+  normal item edit.
 - **Grocery list page.** A new "Grocery List" link in the navigation shows all
   depleted items across every collection you have access to — ideal for shared
   household pantry collections where multiple members need to see what to restock.

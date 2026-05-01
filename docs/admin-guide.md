@@ -190,6 +190,8 @@ The following recent features are client/API behavior only and do **not**
 require new environment variables or reverse-proxy changes:
 
 - Web duplicate-item action.
+- Web + API item review flags (`POST /items/{id}/flag`, `DELETE /items/{id}/flag`)
+   with automatic flag clear on the next standard item edit.
 - Web item sort controls (title, value, acquisition date, custom field).
 - Web + Android barcode scanning from still images.
 - Parent/container value rollups exposed as `rollup_current_value` on item reads.

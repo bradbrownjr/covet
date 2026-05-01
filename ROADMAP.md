@@ -92,7 +92,7 @@ bottleneck. This phase is about scaling the UX.
   hard-delete; record sale price, sale date, buyer (contact), or
   disposal method. Archived items roll off the active list but stay in
   reports and audit log.
-- **Item flagging** — mark items for review ("verify location",
+- **Item flagging** ✅ — mark items for review ("verify location",
   "needs photo", "check warranty") without editing them; flag is
   cleared on next edit or explicit dismiss.
 - **Relation field type** — a new template field type that points to

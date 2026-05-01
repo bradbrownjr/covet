@@ -79,6 +79,8 @@ class ItemRead(ItemBase):
     category_id: str
     category_slug: str | None = None
     primary_photo_id: str | None = None
+    flagged_note: str | None = None
+    flagged_at: datetime | None = None
     rollup_current_value: Decimal | None = None
     created_at: datetime
     updated_at: datetime
@@ -97,3 +99,7 @@ class ItemRead(ItemBase):
             if primary is not None:
                 instance.primary_photo_id = primary.id
         return instance
+
+
+class ItemFlagUpdate(BaseModel):
+    note: str | None = Field(default=None, max_length=256)

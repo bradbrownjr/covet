@@ -50,6 +50,10 @@ class Item(ULIDPrimaryKey, TimestampMixin, Base):
     date_frozen: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     date_opened: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
+    # Optional review flag (cleared on the next edit or explicit dismiss).
+    flagged_note: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    flagged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
     # JSON blobs for type-specific fields and external identifiers
     identifiers: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
     attrs: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)

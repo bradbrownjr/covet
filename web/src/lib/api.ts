@@ -116,6 +116,8 @@ export interface Item {
     identifiers: Record<string, unknown>;
     attrs: Record<string, unknown>;
     depleted: boolean;
+    flagged_note: string | null;
+    flagged_at: string | null;
     purchased_at: string | null;
     use_by_date: string | null;
     date_frozen: string | null;

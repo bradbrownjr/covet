@@ -36,7 +36,7 @@ from covet.schemas.inventory import (
     ItemLotUpdate,
     RestockRequest,
 )
-from covet.schemas.item import ItemCreate, ItemRead, ItemUpdate
+from covet.schemas.item import ItemCreate, ItemFlagUpdate, ItemRead, ItemUpdate
 from covet.schemas.item_template import (
     ItemTemplateCreate,
     ItemTemplateRead,
@@ -82,6 +82,7 @@ __all__ = [
     "ItemLotRead",
     "ItemLotUpdate",
     "ItemCreate",
+    "ItemFlagUpdate",
     "ItemRead",
     "ItemTemplateCreate",
     "ItemTemplateRead",

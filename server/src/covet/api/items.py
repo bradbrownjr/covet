@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -17,7 +18,7 @@ from covet.auth.deps import (
 )
 from covet.db import get_session
 from covet.models import Category, Collection, CollectionMembership, Item, ItemTemplate
-from covet.schemas import ItemCreate, ItemRead, ItemUpdate
+from covet.schemas import ItemCreate, ItemFlagUpdate, ItemRead, ItemUpdate
 from covet.services.categories import resolve_slug, subtree_ids
 
 router = APIRouter(prefix="/items", tags=["items"])
@@ -150,6 +151,7 @@ def list_items(
     ),
     search: str | None = None,
     depleted: bool | None = Query(default=None, description="Filter by depleted status."),
+    flagged: bool | None = Query(default=None, description="Filter by review flag status."),
     sort_by: str = Query(
         default="title",
         description="Sort key: title, value (current_value), acquired_at, or attr.",
@@ -188,6 +190,11 @@ def list_items(
         stmt = stmt.where(Item.title.ilike(like))
     if depleted is not None:
         stmt = stmt.where(Item.depleted.is_(depleted))
+    if flagged is not None:
+        if flagged:
+            stmt = stmt.where(Item.flagged_at.is_not(None))
+        else:
+            stmt = stmt.where(Item.flagged_at.is_(None))
     if sort_dir not in {"asc", "desc"}:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -335,8 +342,50 @@ def update_item(
             )
         base_attrs = updates.get("attrs") if "attrs" in updates else item.attrs
         updates["attrs"] = validate_attrs(tmpl, base_attrs or {})
+
+    # Any standard edit implicitly resolves the review flag.
+    if updates:
+        updates["flagged_note"] = None
+        updates["flagged_at"] = None
+
     for key, value in updates.items():
         setattr(item, key, value)
+    db.commit()
+    db.refresh(item)
+    return ItemRead.model_validate(item)
+
+
+@router.post("/{item_id}/flag", response_model=ItemRead)
+def flag_item(
+    item_id: str,
+    payload: ItemFlagUpdate,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> ItemRead:
+    item = db.get(Item, item_id)
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    _require_role(db, auth, item.collection_id, _EDITOR_ROLES)
+    note = (payload.note or "").strip()
+    item.flagged_note = note or None
+    item.flagged_at = datetime.now(UTC)
+    db.commit()
+    db.refresh(item)
+    return ItemRead.model_validate(item)
+
+
+@router.delete("/{item_id}/flag", response_model=ItemRead)
+def unflag_item(
+    item_id: str,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> ItemRead:
+    item = db.get(Item, item_id)
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    _require_role(db, auth, item.collection_id, _EDITOR_ROLES)
+    item.flagged_note = None
+    item.flagged_at = None
     db.commit()
     db.refresh(item)
     return ItemRead.model_validate(item)

@@ -189,3 +189,67 @@ def test_parent_item_value_rollup(client) -> None:
     r = client.get(f"/api/items/{parent_id}")
     assert r.status_code == 200
     assert r.json()["rollup_current_value"] == "12.50"
+
+
+def test_item_flagging_and_auto_clear_on_edit(client) -> None:
+    _signup_and_login(client, "flags")
+    cid = client.post("/api/collections", json={"name": "Review queue"}).json()["id"]
+
+    created = client.post(
+        "/api/items",
+        json={"collection_id": cid, "category": "movies.dvd", "title": "Blade Runner"},
+    )
+    assert created.status_code == 201, created.text
+    item_id = created.json()["id"]
+
+    flagged = client.post(f"/api/items/{item_id}/flag", json={"note": "verify location"})
+    assert flagged.status_code == 200, flagged.text
+    assert flagged.json()["flagged_note"] == "verify location"
+    assert flagged.json()["flagged_at"] is not None
+
+    listed = client.get("/api/items", params={"collection_id": cid, "flagged": "true"})
+    assert listed.status_code == 200
+    assert [x["id"] for x in listed.json()] == [item_id]
+
+    unflagged = client.delete(f"/api/items/{item_id}/flag")
+    assert unflagged.status_code == 200, unflagged.text
+    assert unflagged.json()["flagged_note"] is None
+    assert unflagged.json()["flagged_at"] is None
+
+    client.post(f"/api/items/{item_id}/flag", json={"note": "needs photo"})
+    edited = client.patch(f"/api/items/{item_id}", json={"condition": "NM"})
+    assert edited.status_code == 200, edited.text
+    assert edited.json()["condition"] == "NM"
+    assert edited.json()["flagged_note"] is None
+    assert edited.json()["flagged_at"] is None
+
+
+def test_item_flagging_requires_editor_role(client) -> None:
+    _signup_and_login(client, "owner")
+    cid = client.post("/api/collections", json={"name": "Shared"}).json()["id"]
+    item_id = client.post(
+        "/api/items",
+        json={"collection_id": cid, "category": "movies.dvd", "title": "Alien"},
+    ).json()["id"]
+    client.post(
+        "/api/auth/register",
+        json={"username": "viewer", "password": "hunter22-secure", "email": "viewer@x.io"},
+    )
+    add_viewer = client.post(
+        f"/api/collections/{cid}/members",
+        json={"user_identifier": "viewer", "role": "viewer"},
+    )
+    assert add_viewer.status_code == 201, add_viewer.text
+
+    client.post("/api/auth/logout")
+    login = client.post(
+        "/api/auth/login",
+        json={"username": "viewer", "password": "hunter22-secure"},
+    )
+    assert login.status_code == 200, login.text
+
+    denied_flag = client.post(f"/api/items/{item_id}/flag", json={"note": "check"})
+    assert denied_flag.status_code == 403
+
+    denied_unflag = client.delete(f"/api/items/{item_id}/flag")
+    assert denied_unflag.status_code == 403

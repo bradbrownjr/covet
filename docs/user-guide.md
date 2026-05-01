@@ -87,6 +87,11 @@ quantity. Viewers see the collection read-only.
 - **Duplicate** creates a copy of an item in the same collection and
   category, carrying over identifiers and custom attributes so you can
   make small edits instead of re-entering everything.
+- **Flag** marks an item for review without changing any other fields
+  (for example: `verify location`, `needs photo`, `check warranty`).
+  Flagged items show a badge in list and grid views. The flag clears
+  automatically on the next item edit, or you can clear it directly with
+  **Unflag**.
 - Parent / container items can show a computed **rollup value**. If a
   kit or container has child items, Covet shows the summed value of its
   nested contents instead of only the parent row's own `current_value`.
