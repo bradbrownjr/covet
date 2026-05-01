@@ -363,6 +363,77 @@ def test_scaffold_templates_for_art_decor_root(client) -> None:
     assert {"type", "material", "origin", "era", "condition"}.issubset(keys)
 
 
+def test_scaffold_templates_for_tools_root_with_maintenance_fields(client) -> None:
+    _register(client, "toolcol")
+    _login(client, "toolcol")
+    cid = client.post(
+        "/api/collections",
+        json={"name": "Tool Shop", "default_category_slug": "tools"},
+    ).json()["id"]
+
+    templates = client.get(f"/api/collections/{cid}/templates").json()
+    names = {t["name"] for t in templates}
+    assert {"Hand Tool", "Power Tool", "Shop Equipment"}.issubset(names)
+
+    hand_tool = next(t for t in templates if t["name"] == "Hand Tool")
+    keys = {f["key"] for f in hand_tool["fields"]}
+    assert {"brand", "model", "purchase_date", "warranty_expiry", "storage_location"}.issubset(keys)
+
+    power_tool = next(t for t in templates if t["name"] == "Power Tool")
+    keys = {f["key"] for f in power_tool["fields"]}
+    assert {"brand", "model", "serial_number", "voltage_amperage", "battery_system", "last_service_date"}.issubset(keys)
+
+    shop_eq = next(t for t in templates if t["name"] == "Shop Equipment")
+    keys = {f["key"] for f in shop_eq["fields"]}
+    assert {"brand", "model", "serial_number", "service_interval_months"}.issubset(keys)
+
+
+def test_scaffold_templates_for_spices_pantry_root_with_consumable_fields(client) -> None:
+    _register(client, "pantry")
+    _login(client, "pantry")
+    cid = client.post(
+        "/api/collections",
+        json={"name": "Pantry", "default_category_slug": "spices"},
+    ).json()["id"]
+
+    templates = client.get(f"/api/collections/{cid}/templates").json()
+    names = {t["name"] for t in templates}
+    assert {"Spice", "Pantry Item"}.issubset(names)
+
+    spice = next(t for t in templates if t["name"] == "Spice")
+    keys = {f["key"] for f in spice["fields"]}
+    assert {"product_name", "category", "quantity_on_hand", "unit", "best_by_date", "bloom_date"}.issubset(keys)
+
+    pantry_item = next(t for t in templates if t["name"] == "Pantry Item")
+    keys = {f["key"] for f in pantry_item["fields"]}
+    assert {"product_name", "category", "minimum_stock_qty", "quantity_on_hand", "best_by_date", "storage_location"}.issubset(keys)
+
+
+def test_scaffold_templates_for_sports_root(client) -> None:
+    _register(client, "sports")
+    _login(client, "sports")
+    cid = client.post(
+        "/api/collections",
+        json={"name": "Sports", "default_category_slug": "sports"},
+    ).json()["id"]
+
+    templates = client.get(f"/api/collections/{cid}/templates").json()
+    names = {t["name"] for t in templates}
+    assert {"Fitness Equipment", "Outdoor Gear", "Sports Equipment"}.issubset(names)
+
+    fitness = next(t for t in templates if t["name"] == "Fitness Equipment")
+    keys = {f["key"] for f in fitness["fields"]}
+    assert {"type", "brand", "weight_spec", "condition", "last_maintenance_date"}.issubset(keys)
+
+    outdoor = next(t for t in templates if t["name"] == "Outdoor Gear")
+    keys = {f["key"] for f in outdoor["fields"]}
+    assert {"type", "brand", "packed_weight", "capacity", "condition", "last_inspection_date"}.issubset(keys)
+
+    sports_eq = next(t for t in templates if t["name"] == "Sports Equipment")
+    keys = {f["key"] for f in sports_eq["fields"]}
+    assert {"sport", "type", "brand", "dominant_hand", "condition", "last_restring_date"}.issubset(keys)
+
+
 def test_static_select_field_options_endpoint_returns_declared_values(client) -> None:
     _register(client, "stat")
     _login(client, "stat")

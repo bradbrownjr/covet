@@ -139,17 +139,22 @@ eventually makes and then stops maintaining.
   footwear with size system variants, accessories), 3) Art & Décor category set
   + scaffold templates (artwork with provenance/appraisal, framed prints, 
   decorative objects with origin/era).
+- **Phase 11 wave 3 (ordered slices)** ✅ — completed in order:
+  1) Tools category enhancements + scaffold templates (hand tools, power tools
+  with battery/service tracking, shop equipment), 2) Pantry category enhancements
+  + scaffold templates (spices with bloom tracking, pantry items with minimum
+  stock/storage location), 3) Sports & Recreation category set + scaffold
+  templates (fitness equipment, outdoor gear with packed weight/inspection, 
+  sports equipment with sport/dominant hand/restring tracking).
 
-- **Phase 11 wave 3 (planned, pending)** — Sports & Recreation + remaining
-  vehicle subcategories (Boat/PWC, Trailer, Bicycle/E-Bike) + enhancements to
-  Tools (power/hand/shop split) and Pantry (consumable-aware template fields).
+- **Remaining Phase 11 work (pending)** — Vehicle subcategories (Boat/PWC,
+  Trailer, Bicycle/E-Bike scaffolds if desired) are already seeded but don't
+  yet have dedicated scaffold templates. Location hierarchy (Home → Floor → Room
+  → Zone → Container) is planned as a post-Phase-11 enhancement.
 - **Manual/asset bundles (planned)** — beyond per-item document uploads,
   add a reusable manual library that can store a primary manual plus
   related assets (diagrams, firmware, service sheets, parts lists), then
   link one bundle to multiple items.
-- **Location hierarchy (planned)** — replace flat location text with true
-  location tree: `Home → Floor → Room → Zone → Container`. Each node is an
-  entity with its own photo and QR label. Moving a container moves contents.
 
 ### New top-level category roots
 

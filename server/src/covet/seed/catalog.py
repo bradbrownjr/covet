@@ -197,6 +197,16 @@ CATEGORY_TREE: list[CategorySeed] = [
         ],
     },
     {
+        "slug": "sports",
+        "name": "Sports & Recreation",
+        "description": "Fitness, outdoor, and recreational sports equipment.",
+        "children": [
+            {"slug": "sports.fitness", "name": "Fitness Equipment"},
+            {"slug": "sports.outdoor", "name": "Outdoor Gear"},
+            {"slug": "sports.sports_equipment", "name": "Sports Equipment"},
+        ],
+    },
+    {
         "slug": "other",
         "name": "Other",
         "description": "Anything not covered above.",

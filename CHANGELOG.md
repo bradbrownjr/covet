@@ -8,19 +8,20 @@ All notable changes to **Covet** are documented here. Format follows
 
 ### Added
 
-- **Phase 11 wave 2 categories (API + web picker).** Added three new category
-  roots: `batteries` (rechargeable, disposable, smoke detector batteries),
-  `clothing` (clothing items, footwear, accessories), and `art_decor` (artwork,
-  framed prints, decorative objects).
-- **Phase 11 wave 2 scaffold templates (API + web defaults).** Batteries root
-  includes Rechargeable Battery (chemistry, form factor, capacity, voltage),
-  Disposable Battery (chemistry, form factor, expiry), and Smoke Detector
-  Battery Program (install tracking, test intervals). Clothing root includes
-  Clothing Item (type, size system, season, occasion, wear tracking), Footwear
-  (size variants, sole type, insole replacement), and Accessories. Art & Décor
-  root includes Artwork (artist, medium, dimensions, provenance, appraisal),
-  Framed Print/Poster (frame/glass type), and Decorative Object (material,
-  origin, era).
+- **Phase 11 wave 3 categories (API + web picker).** Sports & Recreation root
+  added with Fitness Equipment, Outdoor Gear, and Sports Equipment leaves.
+  No new roots for Tools and Pantry (already existed), but scaffold templates
+  now available.
+- **Phase 11 wave 3 scaffold templates (API + web defaults).** Tools root now
+  includes Hand Tool (brand, model, size, purchase/warranty tracking, storage),
+  Power Tool (serial, voltage/amperage, battery system, service/blade change),
+  and Shop Equipment (service interval). Pantry (spices) root now includes
+  Spice (product, category, quantity, unit, best-by, bloom date) and Pantry
+  Item (product, category, minimum stock, quantity, unit, best-by, storage
+  location). Sports & Recreation root includes Fitness Equipment (type, brand,
+  weight, condition, maintenance), Outdoor Gear (type, brand, packed weight,
+  capacity, inspection), and Sports Equipment (sport, type, dominant hand,
+  restring/reshaft/regrip tracking).
 
 ### Changed
 

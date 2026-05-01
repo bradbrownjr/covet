@@ -50,6 +50,13 @@ PHASE11_ART_DECOR_SLUGS = {
     "art_decor.decorative_object",
 }
 
+PHASE11_SPORTS_SLUGS = {
+    "sports",
+    "sports.fitness",
+    "sports.outdoor",
+    "sports.sports_equipment",
+}
+
 
 def _signup_and_login(client, username: str, password: str = "hunter22-secure") -> None:
     client.post(
@@ -73,3 +80,4 @@ def test_phase11_home_equipment_categories_available(client) -> None:
     assert PHASE11_BATTERIES_SLUGS.issubset(slugs)
     assert PHASE11_CLOTHING_SLUGS.issubset(slugs)
     assert PHASE11_ART_DECOR_SLUGS.issubset(slugs)
+    assert PHASE11_SPORTS_SLUGS.issubset(slugs)
