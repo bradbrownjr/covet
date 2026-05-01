@@ -280,6 +280,7 @@
                 <p class="muted">
                     JSON array of <code>&#123;key,label,type,required?,select_source?,options?,default?&#125;</code>.
                     Allowed types: {FIELD_TYPES.join(', ')}.
+                    Use <code>multi_value</code> for ordered lists like URLs, ISBNs, or cast members.
                 </p>
             {:else}
                 {#if fields.length === 0}

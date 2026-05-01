@@ -287,3 +287,49 @@ def test_static_select_field_options_endpoint_returns_declared_values(client) ->
     )
     assert opts.status_code == 200, opts.text
     assert opts.json() == ["A", "B", "C"]
+
+
+def test_multi_value_field_coercion_and_order(client) -> None:
+    _register(client, "mval")
+    _login(client, "mval")
+    cid = client.post("/api/collections", json={"name": "Movies"}).json()["id"]
+
+    tmpl = client.post(
+        f"/api/collections/{cid}/templates",
+        json={
+            "name": "Movie",
+            "category_slug": "movies.dvd",
+            "fields": [
+                {
+                    "key": "cast",
+                    "label": "Cast",
+                    "type": "multi_value",
+                }
+            ],
+        },
+    )
+    assert tmpl.status_code == 201, tmpl.text
+    tmpl_id = tmpl.json()["id"]
+
+    # Array input preserves ordering.
+    created = client.post(
+        "/api/items",
+        json={
+            "collection_id": cid,
+            "category": "movies.dvd",
+            "title": "The Matrix",
+            "template_id": tmpl_id,
+            "attrs": {"cast": ["Keanu Reeves", "Carrie-Anne Moss", "Laurence Fishburne"]},
+        },
+    )
+    assert created.status_code == 201, created.text
+    item = created.json()
+    assert item["attrs"]["cast"] == ["Keanu Reeves", "Carrie-Anne Moss", "Laurence Fishburne"]
+
+    # Comma-delimited input is coerced to ordered list.
+    patched = client.patch(
+        f"/api/items/{item['id']}",
+        json={"attrs": {"cast": "Hugo Weaving, Joe Pantoliano"}},
+    )
+    assert patched.status_code == 200, patched.text
+    assert patched.json()["attrs"]["cast"] == ["Hugo Weaving", "Joe Pantoliano"]

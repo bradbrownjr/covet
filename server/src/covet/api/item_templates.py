@@ -452,6 +452,13 @@ def _coerce(spec: TemplateField, value: Any) -> Any:
             if isinstance(value, datetime):
                 return value.isoformat()
             return str(value)
+        if t == "multi_value":
+            if isinstance(value, (list, tuple)):
+                return [str(v).strip() for v in value if str(v).strip()]
+            if isinstance(value, str):
+                # Accept comma-delimited text for compatibility with simple clients.
+                return [v.strip() for v in value.split(",") if v.strip()]
+            raise ValueError("must be an array of values or a comma-separated string")
         if t == "select":
             sval = str(value)
             if spec.select_source == "static" and spec.options and sval not in spec.options:

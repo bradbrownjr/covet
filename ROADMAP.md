@@ -103,7 +103,7 @@ bottleneck. This phase is about scaling the UX.
   allow a select field to pull its options from existing values already
   in use for that field across the collection. Removes the "add to
   list first" friction that frustrates users of static templates.
-- **Multi-value fields** — template field type that holds an ordered
+- **Multi-value fields** ✅ — template field type that holds an ordered
   list (e.g. list of URLs, list of related ISBNs, list of actors).
   Renders as a tagged chip list; sortable; searchable.
 - **Community scraper registry** — a curated, version-controlled

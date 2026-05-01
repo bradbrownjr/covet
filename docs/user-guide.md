@@ -168,6 +168,9 @@ pulls values already used in that field across the collection. Each field can
 be marked **required**. An Advanced JSON
 editor is available for bulk editing.
 
+Templates also support `multi_value` fields for ordered lists (for example,
+multiple URLs, multiple ISBNs, or actor lists).
+
 ## Tags and search
 
 - Add tags from the item editor or the collection's **Tags** page.

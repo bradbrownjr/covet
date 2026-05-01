@@ -195,6 +195,8 @@ require new environment variables or reverse-proxy changes:
 - Dynamic template dropdown sources (`select_source: "dynamic"`) plus
    `GET /collections/{collection_id}/template-field-options/{field_key}` for
    deriving options from values already used across a collection.
+- Multi-value template fields (`type: "multi_value"`) for ordered lists,
+   with server-side coercion from either JSON arrays or comma-separated text.
 - Web item sort controls (title, value, acquisition date, custom field).
 - Web + Android barcode scanning from still images.
 - Parent/container value rollups exposed as `rollup_current_value` on item reads.

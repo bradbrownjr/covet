@@ -7,7 +7,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-FieldType = Literal["text", "number", "boolean", "date", "url", "select"]
+FieldType = Literal["text", "number", "boolean", "date", "url", "select", "multi_value"]
 SelectSource = Literal["static", "dynamic"]
 
 

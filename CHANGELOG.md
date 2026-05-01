@@ -38,6 +38,10 @@ All notable changes to **Covet** are documented here. Format follows
   can now use `select_source: "dynamic"` to populate choices from values
   already used in that field across the collection, reducing static-option
   maintenance. Added `GET /collections/{collection_id}/template-field-options/{field_key}`.
+- **Multi-value template fields (web + API).** Templates now support a
+  `multi_value` field type for ordered lists (for example URLs, related ISBNs,
+  cast lists). Item validation now accepts both JSON arrays and comma-separated
+  strings, coercing values into an ordered list.
 - **Grocery list page.** A new "Grocery List" link in the navigation shows all
   depleted items across every collection you have access to — ideal for shared
   household pantry collections where multiple members need to see what to restock.
