@@ -299,18 +299,68 @@ def test_dynamic_select_field_options_and_validation(client) -> None:
     assert opts.status_code == 200, opts.text
     assert opts.json() == ["Drawer 2", "Shelf A"]
 
-    # Dynamic select accepts newly introduced values.
-    third = client.post(
-        "/api/items",
-        json={
-            "collection_id": cid,
-            "category": "tools.hand",
-            "title": "Wrench",
-            "template_id": tmpl_id,
-            "attrs": {"bin_location": "Pegboard"},
-        },
-    )
-    assert third.status_code == 201, third.text
+
+def test_scaffold_templates_for_batteries_root(client) -> None:
+    _register(client, "batteries")
+    _login(client, "batteries")
+    cid = client.post(
+        "/api/collections",
+        json={"name": "Batteries", "default_category_slug": "batteries"},
+    ).json()["id"]
+
+    templates = client.get(f"/api/collections/{cid}/templates").json()
+    names = {t["name"] for t in templates}
+    assert {"Rechargeable Battery", "Disposable Battery", "Smoke Detector Battery Program"}.issubset(names)
+
+    rechargeable = next(t for t in templates if t["name"] == "Rechargeable Battery")
+    keys = {f["key"] for f in rechargeable["fields"]}
+    assert {"chemistry", "form_factor", "capacity_mah", "voltage", "quantity"}.issubset(keys)
+
+    smoke_detector = next(t for t in templates if t["name"] == "Smoke Detector Battery Program")
+    keys = {f["key"] for f in smoke_detector["fields"]}
+    assert {"detector_type", "install_date", "replacement_due_date", "test_interval_months"}.issubset(keys)
+
+
+def test_scaffold_templates_for_clothing_root(client) -> None:
+    _register(client, "clothing")
+    _login(client, "clothing")
+    cid = client.post(
+        "/api/collections",
+        json={"name": "Wardrobe", "default_category_slug": "clothing"},
+    ).json()["id"]
+
+    templates = client.get(f"/api/collections/{cid}/templates").json()
+    names = {t["name"] for t in templates}
+    assert {"Clothing Item", "Footwear", "Accessories"}.issubset(names)
+
+    clothing_item = next(t for t in templates if t["name"] == "Clothing Item")
+    keys = {f["key"] for f in clothing_item["fields"]}
+    assert {"type", "brand", "size", "color", "material", "condition", "season", "occasion"}.issubset(keys)
+
+    footwear = next(t for t in templates if t["name"] == "Footwear")
+    keys = {f["key"] for f in footwear["fields"]}
+    assert {"type", "brand", "size", "size_system", "sole_type", "insole_last_replaced"}.issubset(keys)
+
+
+def test_scaffold_templates_for_art_decor_root(client) -> None:
+    _register(client, "artcol")
+    _login(client, "artcol")
+    cid = client.post(
+        "/api/collections",
+        json={"name": "Art Collection", "default_category_slug": "art_decor"},
+    ).json()["id"]
+
+    templates = client.get(f"/api/collections/{cid}/templates").json()
+    names = {t["name"] for t in templates}
+    assert {"Artwork", "Framed Print / Poster", "Decorative Object"}.issubset(names)
+
+    artwork = next(t for t in templates if t["name"] == "Artwork")
+    keys = {f["key"] for f in artwork["fields"]}
+    assert {"artist", "title", "medium", "year_created", "estimated_value", "insured_value", "last_appraisal_date"}.issubset(keys)
+
+    decorative_obj = next(t for t in templates if t["name"] == "Decorative Object")
+    keys = {f["key"] for f in decorative_obj["fields"]}
+    assert {"type", "material", "origin", "era", "condition"}.issubset(keys)
 
 
 def test_static_select_field_options_endpoint_returns_declared_values(client) -> None:

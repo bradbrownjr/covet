@@ -167,6 +167,36 @@ CATEGORY_TREE: list[CategorySeed] = [
         ],
     },
     {
+        "slug": "batteries",
+        "name": "Batteries",
+        "description": "Rechargeable and disposable batteries, including specialized types.",
+        "children": [
+            {"slug": "batteries.rechargeable", "name": "Rechargeable Battery"},
+            {"slug": "batteries.disposable", "name": "Disposable Battery"},
+            {"slug": "batteries.smoke_detector", "name": "Smoke Detector Battery Program"},
+        ],
+    },
+    {
+        "slug": "clothing",
+        "name": "Clothing & Wardrobe",
+        "description": "Apparel, footwear, and fashion accessories.",
+        "children": [
+            {"slug": "clothing.clothing_item", "name": "Clothing Item"},
+            {"slug": "clothing.footwear", "name": "Footwear"},
+            {"slug": "clothing.accessories", "name": "Accessories"},
+        ],
+    },
+    {
+        "slug": "art_decor",
+        "name": "Art & Décor",
+        "description": "Artwork, framed prints, decorative objects.",
+        "children": [
+            {"slug": "art_decor.artwork", "name": "Artwork"},
+            {"slug": "art_decor.framed_print", "name": "Framed Print / Poster"},
+            {"slug": "art_decor.decorative_object", "name": "Decorative Object"},
+        ],
+    },
+    {
         "slug": "other",
         "name": "Other",
         "description": "Anything not covered above.",

@@ -6,12 +6,26 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+### Added
+
+- **Phase 11 wave 2 categories (API + web picker).** Added three new category
+  roots: `batteries` (rechargeable, disposable, smoke detector batteries),
+  `clothing` (clothing items, footwear, accessories), and `art_decor` (artwork,
+  framed prints, decorative objects).
+- **Phase 11 wave 2 scaffold templates (API + web defaults).** Batteries root
+  includes Rechargeable Battery (chemistry, form factor, capacity, voltage),
+  Disposable Battery (chemistry, form factor, expiry), and Smoke Detector
+  Battery Program (install tracking, test intervals). Clothing root includes
+  Clothing Item (type, size system, season, occasion, wear tracking), Footwear
+  (size variants, sole type, insole replacement), and Accessories. Art & Décor
+  root includes Artwork (artist, medium, dimensions, provenance, appraisal),
+  Framed Print/Poster (frame/glass type), and Decorative Object (material,
+  origin, era).
+
 ### Changed
 
 - **"Spices & Pantry" category renamed to "Pantry".** The root category slug
   (`spices`) is unchanged; only the display name is updated.
-
-### Added
 
 - **Depleted flag on items.** Any item can be marked as depleted (ran out /
   needs restocking) via the Edit row actions in the collection detail view.

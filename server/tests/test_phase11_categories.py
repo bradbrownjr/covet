@@ -29,6 +29,27 @@ PHASE11_VEHICLES_SLUGS = {
     "vehicles.bicycle_ebike",
 }
 
+PHASE11_BATTERIES_SLUGS = {
+    "batteries",
+    "batteries.rechargeable",
+    "batteries.disposable",
+    "batteries.smoke_detector",
+}
+
+PHASE11_CLOTHING_SLUGS = {
+    "clothing",
+    "clothing.clothing_item",
+    "clothing.footwear",
+    "clothing.accessories",
+}
+
+PHASE11_ART_DECOR_SLUGS = {
+    "art_decor",
+    "art_decor.artwork",
+    "art_decor.framed_print",
+    "art_decor.decorative_object",
+}
+
 
 def _signup_and_login(client, username: str, password: str = "hunter22-secure") -> None:
     client.post(
@@ -49,3 +70,6 @@ def test_phase11_home_equipment_categories_available(client) -> None:
     assert PHASE11_HOME_EQUIPMENT_SLUGS.issubset(slugs)
     assert PHASE11_FUEL_AND_CHEMICALS_SLUGS.issubset(slugs)
     assert PHASE11_VEHICLES_SLUGS.issubset(slugs)
+    assert PHASE11_BATTERIES_SLUGS.issubset(slugs)
+    assert PHASE11_CLOTHING_SLUGS.issubset(slugs)
+    assert PHASE11_ART_DECOR_SLUGS.issubset(slugs)

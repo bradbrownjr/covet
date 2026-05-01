@@ -132,11 +132,24 @@ eventually makes and then stops maintaining.
   2) Fuel & Chemicals category set + scaffold templates aligned to
   consumable/date workflows, 3) Vehicles category set + maintenance-minded
   scaffold templates (oil/change interval, registration/insurance fields).
+- **Phase 11 wave 2 (ordered slices)** ✅ — completed in order:
+  1) Batteries category set + scaffold templates (rechargeable with chemistry/
+  capacity/voltage, disposable with expiry, smoke detector with install tracking),
+  2) Clothing & Wardrobe category set + scaffold templates (clothing items,
+  footwear with size system variants, accessories), 3) Art & Décor category set
+  + scaffold templates (artwork with provenance/appraisal, framed prints, 
+  decorative objects with origin/era).
 
+- **Phase 11 wave 3 (planned, pending)** — Sports & Recreation + remaining
+  vehicle subcategories (Boat/PWC, Trailer, Bicycle/E-Bike) + enhancements to
+  Tools (power/hand/shop split) and Pantry (consumable-aware template fields).
 - **Manual/asset bundles (planned)** — beyond per-item document uploads,
   add a reusable manual library that can store a primary manual plus
   related assets (diagrams, firmware, service sheets, parts lists), then
   link one bundle to multiple items.
+- **Location hierarchy (planned)** — replace flat location text with true
+  location tree: `Home → Floor → Room → Zone → Container`. Each node is an
+  entity with its own photo and QR label. Moving a container moves contents.
 
 ### New top-level category roots
 
