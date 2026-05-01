@@ -50,7 +50,8 @@ All notable changes to **Covet** are documented here. Format follows
 - **Community scraper registry import (web + API).** The Templates page now
   lists curated registry presets from `GET /metadata/registry` and allows
   editors/owners to one-click import them into a collection via
-  `POST /metadata/registry/import`.
+  `POST /metadata/registry/import`. Admins can now override trust status with
+  `PATCH /metadata/registry/{entry_id}/trust`.
 - **Wanted items (web + API).** Items now support a `wanted` flag so you can
   track not-yet-owned targets in the same collection, filter lists with
   `GET /items?wanted=true/false`, and toggle Wanted/Owned inline from web

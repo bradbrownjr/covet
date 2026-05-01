@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session as DBSession
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
-
-from covet.auth.deps import AuthContext, collection_role, require_user
+from covet.auth.deps import AuthContext, collection_role, require_admin, require_user
 from covet.db import get_session
-from covet.models import ItemTemplate
+from covet.models import ItemTemplate, ScraperRegistryPin
 from covet.schemas import ItemTemplateRead
 from covet.services.metadata import ScrapeError, barcode_lookup, scrape
 from covet.services.scraper_registry import get_entry, list_entries
@@ -54,6 +53,10 @@ class RegistryEntryResponse(BaseModel):
 class RegistryImportRequest(BaseModel):
     collection_id: str
     entry_ids: list[str] = Field(min_length=1)
+
+
+class RegistryTrustUpdate(BaseModel):
+    trusted: bool
 
 
 @router.post("/barcode", response_model=BarcodeLookupResponse)
@@ -102,8 +105,12 @@ def scrape_url(
 
 @router.get("/registry", response_model=list[RegistryEntryResponse])
 def scraper_registry(
+    db: DBSession = Depends(get_session),
     _: AuthContext = Depends(require_user),
 ) -> list[RegistryEntryResponse]:
+    overrides = {
+        pin.entry_id: pin.trusted for pin in db.scalars(select(ScraperRegistryPin)).all()
+    }
     return [
         RegistryEntryResponse(
             id=e.id,
@@ -112,11 +119,44 @@ def scraper_registry(
             description=e.description,
             category_slug=e.category_slug,
             homepage=e.homepage,
-            trusted=e.trusted,
+            trusted=overrides.get(e.id, e.trusted),
             fields=e.fields,
         )
         for e in list_entries()
     ]
+
+
+@router.patch("/registry/{entry_id}/trust", response_model=RegistryEntryResponse)
+def set_registry_entry_trust(
+    entry_id: str,
+    payload: RegistryTrustUpdate,
+    db: DBSession = Depends(get_session),
+    admin: AuthContext = Depends(require_admin),
+) -> RegistryEntryResponse:
+    entry = get_entry(entry_id)
+    if entry is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Registry entry not found")
+
+    pin = db.get(ScraperRegistryPin, entry_id)
+    if pin is None:
+        pin = ScraperRegistryPin(entry_id=entry_id, trusted=payload.trusted, updated_by=admin.user.id)
+        db.add(pin)
+    else:
+        pin.trusted = payload.trusted
+        pin.updated_by = admin.user.id
+
+    db.commit()
+
+    return RegistryEntryResponse(
+        id=entry.id,
+        name=entry.name,
+        provider=entry.provider,
+        description=entry.description,
+        category_slug=entry.category_slug,
+        homepage=entry.homepage,
+        trusted=payload.trusted,
+        fields=entry.fields,
+    )
 
 
 @router.post("/registry/import", response_model=list[ItemTemplateRead])

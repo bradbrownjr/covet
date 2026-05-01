@@ -168,3 +168,53 @@ def test_registry_import_requires_editor_role(client) -> None:
         json={"collection_id": cid, "entry_ids": ["openlibrary-books"]},
     )
     assert denied.status_code == 403
+
+
+def test_registry_admin_can_pin_trust(client) -> None:
+    # First registered user is admin.
+    registered = client.post(
+        "/api/auth/register",
+        json={"username": "adminpin", "password": "hunter22-secure", "email": "ap@x.io"},
+    )
+    assert registered.status_code == 201, registered.text
+    assert registered.json()["is_admin"] is True
+    client.post(
+        "/api/auth/login",
+        json={"username": "adminpin", "password": "hunter22-secure"},
+    )
+
+    patched = client.patch(
+        "/api/metadata/registry/openlibrary-books/trust",
+        json={"trusted": False},
+    )
+    assert patched.status_code == 200, patched.text
+    assert patched.json()["id"] == "openlibrary-books"
+    assert patched.json()["trusted"] is False
+
+    listed = client.get("/api/metadata/registry")
+    assert listed.status_code == 200, listed.text
+    by_id = {entry["id"]: entry for entry in listed.json()}
+    assert by_id["openlibrary-books"]["trusted"] is False
+
+
+def test_registry_pin_requires_admin(client) -> None:
+    # Bootstrap first-user admin, then create a non-admin user for denial check.
+    client.post(
+        "/api/auth/register",
+        json={"username": "firstadmin", "password": "hunter22-secure", "email": "fa@x.io"},
+    )
+    client.post("/api/auth/logout")
+
+    client.post(
+        "/api/auth/register",
+        json={"username": "normalpin", "password": "hunter22-secure", "email": "np@x.io"},
+    )
+    client.post(
+        "/api/auth/login",
+        json={"username": "normalpin", "password": "hunter22-secure"},
+    )
+    denied = client.patch(
+        "/api/metadata/registry/openlibrary-books/trust",
+        json={"trusted": False},
+    )
+    assert denied.status_code == 403

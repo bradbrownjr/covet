@@ -17,6 +17,7 @@ from covet.models.loan import Loan
 from covet.models.maintenance import MaintenanceTask
 from covet.models.metadata_cache import MetadataCacheEntry
 from covet.models.photo import Photo
+from covet.models.scraper_registry_pin import ScraperRegistryPin
 from covet.models.share_link import ShareLink
 from covet.models.sync_doc import AutomergeChange, AutomergeDoc
 from covet.models.tag import ItemTag, Tag
@@ -48,6 +49,7 @@ __all__ = [
     "MetadataCacheEntry",
     "OIDCIdentity",
     "Photo",
+    "ScraperRegistryPin",
     "Session",
     "ShareLink",
     "Tag",

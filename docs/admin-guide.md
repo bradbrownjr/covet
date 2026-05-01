@@ -201,6 +201,7 @@ require new environment variables or reverse-proxy changes:
    (`same_collection` / `any_collection`) and server-side target-item validation.
 - Community scraper registry discovery/import endpoints:
    `GET /metadata/registry` and `POST /metadata/registry/import`.
+   Admins can pin trust status via `PATCH /metadata/registry/{entry_id}/trust`.
 - Wanted-item tracking (`wanted` boolean on items) plus
    `GET /items?wanted=true/false` filtering and inline Wanted/Owned toggles in web
    with acquisition-date / purchase-price capture when marking owned.

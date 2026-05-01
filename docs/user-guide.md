@@ -177,6 +177,8 @@ by item ID, with scope controls for same-collection or any-collection links.
 The Templates tab also includes a **Community scraper registry** section with
 curated presets. Editors/owners can import a preset with one click to create
 ready-to-use templates for that collection.
+Registry presets are version-controlled in the project, so community additions
+or fixes can be contributed through pull requests.
 
 ## Tags and search
 
