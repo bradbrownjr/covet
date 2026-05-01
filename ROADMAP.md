@@ -73,10 +73,10 @@ bottleneck. This phase is about scaling the UX.
   bulk archive/restore, bulk delete, bulk tag add/remove,
   bulk move-to-location, and bulk lend-to-contact backed by
   collection-scoped API endpoints.
-- **Better search** 🚧 — search now covers title/subtitle/notes plus
-  custom fields (`attrs`) and identifiers, with web `/` keyboard focus
-  shortcut. Remaining scope: accent-folding, fuzzy ranking, attachment
-  OCR indexing, and full command palette UX.
+- **Better search** ✅ — global command palette search endpoint with
+  accent-folding (`café` matches `cafe`) and fuzzy ranking; searches
+  title/subtitle/notes/custom-fields/identifiers across all user-accessible
+  collections. Remaining scope: OCR indexing for attached documents.
 - **Hierarchical / nested tags** — `electronics > audio > cables`. UI
   shows breadcrumbs; filters cascade.
 - **QR code label sheets** — generate a printable PDF of QR labels for
@@ -92,10 +92,10 @@ bottleneck. This phase is about scaling the UX.
   loaned, returned, maintenance-due) for Home Assistant, n8n, Discord.
 - **i18n scaffold** — moved to Phase 14 where translation rollout is
   tracked as platform work.
-- **Sold / disposed / donated workflow** 🚧 — items can now be archived
-  instead of deleted, with disposition type/date/amount/buyer/note and
-  explicit restore flow; archived items are excluded from default item
-  lists. Remaining scope: buyer contact linkage + report/audit surfacing.
+- **Sold / disposed / donated workflow** ✅ — items can be archived
+  with disposition metadata (type/date/amount/buyer/note). Explicit restore
+  flow available. Buyer contact linkage via `buyer_id` FK. Audit log
+  integration + disposed items report endpoint included.
 - **Item flagging** ✅ — mark items for review ("verify location",
   "needs photo", "check warranty") without editing them; flag is
   cleared on next edit or explicit dismiss.
