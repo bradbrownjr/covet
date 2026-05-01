@@ -22,6 +22,13 @@ All notable changes to **Covet** are documented here. Format follows
   weight, condition, maintenance), Outdoor Gear (type, brand, packed weight,
   capacity, inspection), and Sports Equipment (sport, type, dominant hand,
   restring/reshaft/regrip tracking).
+- **Phase 11 final: remaining vehicle scaffold templates (API + web defaults).**
+  Completed all 6 vehicle roots with templates: Boat/PWC (hull ID, engine type,
+  winterization, mooring location, registration/insurance), Trailer (trailer
+  type, tare/capacity weight, tire replacement, inspection), and Bicycle/E-Bike
+  (bike type, frame material, tune-up/chain/brake service, e-bike battery capacity
+  and service tracking). Phase 11 dictionary and templates now fully complete at
+  all 12 category roots + full scaffold coverage.
 
 ### Changed
 

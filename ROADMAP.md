@@ -117,7 +117,7 @@ bottleneck. This phase is about scaling the UX.
 
 ---
 
-## Phase 11 — Become the whole-home database (in progress)
+## Phase 11 — Become the whole-home database ✅ COMPLETE
 
 Covet starts as a collectibles tracker. This phase broadens it into a
 complete home inventory: every room, every appliance, every tool, every
@@ -146,11 +146,13 @@ eventually makes and then stops maintaining.
   stock/storage location), 3) Sports & Recreation category set + scaffold
   templates (fitness equipment, outdoor gear with packed weight/inspection, 
   sports equipment with sport/dominant hand/restring tracking).
+- **Phase 11 final (remaining vehicles)** ✅ — completed:
+  Boat/PWC, Trailer, and Bicycle/E-Bike scaffold templates for the remaining
+  vehicle subcategories (all 6 vehicles roots now have dedicated templates).
 
-- **Remaining Phase 11 work (pending)** — Vehicle subcategories (Boat/PWC,
-  Trailer, Bicycle/E-Bike scaffolds if desired) are already seeded but don't
-  yet have dedicated scaffold templates. Location hierarchy (Home → Floor → Room
-  → Zone → Container) is planned as a post-Phase-11 enhancement.
+- **Location hierarchy (planned)** — replace flat location text with true
+  location tree: `Home → Floor → Room → Zone → Container`. Each node is an
+  entity with its own photo and QR label. Moving a container moves contents.
 - **Manual/asset bundles (planned)** — beyond per-item document uploads,
   add a reusable manual library that can store a primary manual plus
   related assets (diagrams, firmware, service sheets, parts lists), then

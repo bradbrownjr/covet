@@ -434,6 +434,35 @@ def test_scaffold_templates_for_sports_root(client) -> None:
     assert {"sport", "type", "brand", "dominant_hand", "condition", "last_restring_date"}.issubset(keys)
 
 
+def test_scaffold_templates_for_remaining_vehicles_completion(client) -> None:
+    _register(client, "vehicles_final")
+    _login(client, "vehicles_final")
+    cid = client.post(
+        "/api/collections",
+        json={"name": "All Vehicles", "default_category_slug": "vehicles"},
+    ).json()["id"]
+
+    templates = client.get(f"/api/collections/{cid}/templates").json()
+    names = {t["name"] for t in templates}
+    # Verify all 6 vehicle templates exist (the 3 from wave 1 + 3 new ones)
+    assert {"Car / Truck / SUV", "Motorcycle / ATV / UTV", "Lawn & Garden Equipment", "Boat / PWC", "Trailer", "Bicycle / E-Bike"}.issubset(names)
+
+    # Boat / PWC
+    boat = next(t for t in templates if t["name"] == "Boat / PWC")
+    keys = {f["key"] for f in boat["fields"]}
+    assert {"make", "model", "hull_id", "engine_type", "last_oil_change_hours", "winterization_date", "registration_expiry", "insurance_expiry"}.issubset(keys)
+
+    # Trailer
+    trailer = next(t for t in templates if t["name"] == "Trailer")
+    keys = {f["key"] for f in trailer["fields"]}
+    assert {"trailer_type", "tare_weight_lbs", "capacity_lbs", "last_inspection_date", "last_tire_replacement"}.issubset(keys)
+
+    # Bicycle / E-Bike
+    ebike = next(t for t in templates if t["name"] == "Bicycle / E-Bike")
+    keys = {f["key"] for f in ebike["fields"]}
+    assert {"bike_type", "frame_material", "wheel_size_inches", "last_tune_up_date", "last_chain_clean_lube", "ebike_battery_capacity_wh"}.issubset(keys)
+
+
 def test_static_select_field_options_endpoint_returns_declared_values(client) -> None:
     _register(client, "stat")
     _login(client, "stat")
