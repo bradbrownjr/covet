@@ -197,7 +197,9 @@ fun SettingsScreen(
                     ElevatedCard {
                         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(alert.title, style = MaterialTheme.typography.titleSmall)
-                            Text(alert.due_at, style = MaterialTheme.typography.bodySmall)
+                            if (!alert.due_at.isNullOrBlank()) {
+                                Text(alert.due_at!!, style = MaterialTheme.typography.bodySmall)
+                            }
                             if (!alert.details.isNullOrBlank()) {
                                 Text(alert.details!!, style = MaterialTheme.typography.bodySmall)
                             }

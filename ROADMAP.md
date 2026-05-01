@@ -331,10 +331,9 @@ history, and proactive notifications across every asset.
 - **Completion history with notes** — ✅ each mark-complete records
   odometer/hours reading, cost, technician (free text), and a note.
   History is paginated; exportable to CSV.
-- **Push & email notifications** — opt-in alerts at configurable lead
-  times (e.g. 7 days before, 1 day before, day-of, overdue). Delivery
-  via email (SMTP) and Android push (FCM). Reuses the existing alerts
-  API; adds a notification preferences table. (planned)
+- **Push & email notifications** — ✅ opt-in email digests at configurable lead
+  times per kind. Settings UI in web and managed via `/notifications` API.
+  Android push (FCM) remains planned.
 - **Low-stock alerts** — ✅ when a consumable item's quantity drops below
   its minimum, surface it in the alerts feed. `minimum_quantity` field
   added to Item model.

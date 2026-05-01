@@ -24,6 +24,7 @@ from covet.models.maintenance import (
 )
 from covet.models.manual_bundle import BundleAsset, BundleItem, ManualBundle
 from covet.models.metadata_cache import MetadataCacheEntry
+from covet.models.notification import NotificationPreference
 from covet.models.photo import Photo
 from covet.models.scraper_registry_pin import ScraperRegistryPin
 from covet.models.share_link import ShareLink
@@ -64,6 +65,7 @@ __all__ = [
     "MaintenanceTaskConsumable",
     "ManualBundle",
     "MetadataCacheEntry",
+    "NotificationPreference",
     "OIDCIdentity",
     "Photo",
     "ScraperRegistryPin",

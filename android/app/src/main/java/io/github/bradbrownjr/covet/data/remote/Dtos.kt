@@ -264,7 +264,7 @@ data class DueAlertDto(
     val collection_id: String,
     val item_id: String? = null,
     val lot_id: String? = null,
-    val due_at: String,
+    val due_at: String? = null,
     val details: String? = null,
 )
 

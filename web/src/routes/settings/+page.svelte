@@ -25,8 +25,26 @@
         details: string | null;
     }
 
+    interface NotificationPref {
+        kind: string;
+        enabled: boolean;
+        lead_days: number;
+    }
+
+    const KIND_LABELS: Record<string, string> = {
+        maintenance_due: 'Maintenance due',
+        chore_due: 'Chore due',
+        item_use_by: 'Item use-by',
+        item_expires: 'Item expires',
+        lot_use_by: 'Package use-by',
+        low_stock: 'Low stock'
+    };
+
     let tokens = $state<Token[]>([]);
     let alerts = $state<DueAlert[]>([]);
+    let notifPrefs = $state<NotificationPref[]>([]);
+    let digestQueued = $state(false);
+    let digestMessage = $state('');
     let newName = $state('');
     let issuedRaw = $state('');
     let error = $state('');
@@ -38,8 +56,36 @@
 
     async function load() {
         try {
-            tokens = await api.get<Token[]>('/auth/tokens');
-            alerts = await api.get<DueAlert[]>('/alerts?within_days=14');
+            [tokens, alerts, notifPrefs] = await Promise.all([
+                api.get<Token[]>('/auth/tokens'),
+                api.get<DueAlert[]>('/alerts?within_days=14'),
+                api.get<NotificationPref[]>('/notifications')
+            ]);
+        } catch (e) {
+            error = (e as Error).message;
+        }
+    }
+
+    async function saveNotifPref(kind: string, enabled: boolean, leadDays: number) {
+        try {
+            const updated = await api.put<NotificationPref>(`/notifications/${kind}`, { enabled, lead_days: leadDays });
+            notifPrefs = notifPrefs.map(p => p.kind === kind ? updated : p);
+        } catch (e) {
+            error = (e as Error).message;
+        }
+    }
+
+    async function sendDigest() {
+        digestMessage = '';
+        digestQueued = false;
+        try {
+            const res = await api.post<{ queued: boolean; count?: number; reason?: string }>('/notifications/send-digest', undefined);
+            if (res.queued) {
+                digestQueued = true;
+                digestMessage = `Digest queued — ${res.count} alert${res.count !== 1 ? 's' : ''} will be emailed to you shortly.`;
+            } else {
+                digestMessage = res.reason === 'no_alerts' ? 'No alerts match your enabled preferences right now.' : 'No notification preferences enabled.';
+            }
         } catch (e) {
             error = (e as Error).message;
         }
@@ -126,6 +172,52 @@
                 {opt[0].toUpperCase() + opt.slice(1)}
             </button>
         {/each}
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 1rem">
+    <h3 style="margin-top:0">Email notifications</h3>
+    <p class="muted">Receive an email digest for selected alert types. Requires an email address on your account and SMTP configured on the server.</p>
+    {#if notifPrefs.length > 0}
+        <table class="notif-table">
+            <thead>
+                <tr>
+                    <th>Alert type</th>
+                    <th>Enabled</th>
+                    <th>Lead time (days)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {#each notifPrefs as p (p.kind)}
+                    <tr>
+                        <td>{KIND_LABELS[p.kind] ?? p.kind}</td>
+                        <td>
+                            <input
+                                type="checkbox"
+                                checked={p.enabled}
+                                onchange={(e) => saveNotifPref(p.kind, (e.target as HTMLInputElement).checked, p.lead_days)}
+                            />
+                        </td>
+                        <td>
+                            <input
+                                type="number"
+                                min="1"
+                                max="365"
+                                value={p.lead_days}
+                                style="width:5rem"
+                                onchange={(e) => saveNotifPref(p.kind, p.enabled, parseInt((e.target as HTMLInputElement).value) || 7)}
+                            />
+                        </td>
+                    </tr>
+                {/each}
+            </tbody>
+        </table>
+    {/if}
+    <div style="margin-top:0.75rem;display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap">
+        <button onclick={sendDigest}>Send digest now</button>
+        {#if digestMessage}
+            <span class={digestQueued ? 'ok' : 'muted'}>{digestMessage}</span>
+        {/if}
     </div>
 </div>
 
@@ -283,4 +375,12 @@
         justify-content: flex-end;
         gap: 0.5rem;
     }
+
+    .notif-table th, .notif-table td {
+        padding: 0.4rem 0.6rem;
+        text-align: left;
+        font-size: 0.875rem;
+    }
+    .notif-table { border-collapse: collapse; width: 100%; }
+    .notif-table thead tr { border-bottom: 1px solid var(--border); }
 </style>

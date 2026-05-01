@@ -25,7 +25,7 @@ re-enter it.
 After signing in you land on the **Collections** screen.
 
 - **Pull down** to refresh the list from the server.
-- Tap the **hamburger menu** (top-right) to access Settings, About, and Help.
+- Tap the **hamburger menu** (top-right) to access Grocery List, Maintenance, Settings, About, and Help.
 - Tap the **+** button (bottom-right) to create a new collection.
 
 ### Creating a collection
@@ -113,6 +113,17 @@ of candidates. Choose one to pre-fill the add-item dialog.
 If you already have a product photo or screenshot, tap the **image icon** in
 the same toolbar. Covet scans the saved image for a barcode and runs the same
 candidate lookup flow.
+
+---
+
+## Maintenance
+
+Access **Maintenance** from the hamburger menu on the Collections screen. It shows all upcoming and overdue alerts across every collection:
+
+- **Time window chips** (7d / 14d / 30d / 60d / 90d) — narrow or widen the look-ahead window.
+- **Kind filter chips** — tap any alert kind (Maintenance, Chore, Low stock, etc.) to show only that category.
+- **Overdue** alerts are highlighted in red with the number of days past due.
+- Tap **Refresh** to re-fetch alerts from the server.
 
 ---
 

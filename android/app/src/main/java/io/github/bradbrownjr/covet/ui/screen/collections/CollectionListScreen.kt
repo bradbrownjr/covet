@@ -118,6 +118,7 @@ class CollectionListViewModel @Inject constructor(
 fun CollectionListScreen(
     onOpen: (String) -> Unit,
     onGroceryList: () -> Unit,
+    onMaintenance: () -> Unit,
     onSettings: () -> Unit,
     onAbout: () -> Unit,
     vm: CollectionListViewModel = hiltViewModel(),
@@ -141,6 +142,10 @@ fun CollectionListScreen(
                             DropdownMenuItem(
                                 text = { Text("Grocery List") },
                                 onClick = { menuExpanded = false; onGroceryList() },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Maintenance") },
+                                onClick = { menuExpanded = false; onMaintenance() },
                             )
                             DropdownMenuItem(
                                 text = { Text("Settings") },

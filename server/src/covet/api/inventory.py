@@ -180,6 +180,19 @@ def list_alerts(
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
 ) -> list[DueAlertRead]:
+    if collection_id is not None:
+        _require_role(db, auth, collection_id, _VIEWER_ROLES)
+    return _build_alerts(auth=auth, db=db, within_days=within_days, collection_id=collection_id)  # type: ignore[return-value]
+
+
+def _build_alerts(
+    *,
+    auth: AuthContext,
+    db: DBSession,
+    within_days: int,
+    collection_id: str | None = None,
+) -> list[DueAlertRead]:
+    """Build and return alerts. Called by list_alerts and send_digest."""
     now = datetime.now(UTC)
     horizon = now + timedelta(days=within_days)
 
@@ -197,7 +210,6 @@ def list_alerts(
     ]
 
     if collection_id is not None:
-        _require_role(db, auth, collection_id, _VIEWER_ROLES)
         readable_collection_ids = [collection_id]
 
     if not readable_collection_ids:
