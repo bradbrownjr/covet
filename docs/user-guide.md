@@ -171,6 +171,9 @@ editor is available for bulk editing.
 Templates also support `multi_value` fields for ordered lists (for example,
 multiple URLs, multiple ISBNs, or actor lists).
 
+Templates now also support `relation` fields for linking one item to another
+by item ID, with scope controls for same-collection or any-collection links.
+
 ## Tags and search
 
 - Add tags from the item editor or the collection's **Tags** page.

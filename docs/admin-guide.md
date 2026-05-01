@@ -197,6 +197,8 @@ require new environment variables or reverse-proxy changes:
    deriving options from values already used across a collection.
 - Multi-value template fields (`type: "multi_value"`) for ordered lists,
    with server-side coercion from either JSON arrays or comma-separated text.
+- Relation template fields (`type: "relation"`) with scope control
+   (`same_collection` / `any_collection`) and server-side target-item validation.
 - Web item sort controls (title, value, acquisition date, custom field).
 - Web + Android barcode scanning from still images.
 - Parent/container value rollups exposed as `rollup_current_value` on item reads.

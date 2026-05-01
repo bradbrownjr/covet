@@ -412,7 +412,13 @@ def template_field_options(
 # ---------------------------------------------------------------------------
 
 
-def validate_attrs(template: ItemTemplate, attrs: dict[str, Any]) -> dict[str, Any]:
+def validate_attrs(
+    db: DBSession,
+    template: ItemTemplate,
+    attrs: dict[str, Any],
+    *,
+    collection_id: str,
+) -> dict[str, Any]:
     """Validate ``attrs`` against ``template.fields``.
 
     Returns the (possibly coerced) attrs dict; raises HTTPException on error.
@@ -431,11 +437,11 @@ def validate_attrs(template: ItemTemplate, attrs: dict[str, Any]) -> dict[str, A
             if spec.default is not None and spec.key not in out:
                 out[spec.key] = spec.default
             continue
-        out[spec.key] = _coerce(spec, value)
+        out[spec.key] = _coerce(db, spec, value, collection_id=collection_id)
     return out
 
 
-def _coerce(spec: TemplateField, value: Any) -> Any:
+def _coerce(db: DBSession, spec: TemplateField, value: Any, *, collection_id: str) -> Any:
     t = spec.type
     try:
         if t == "text" or t == "url":
@@ -466,6 +472,16 @@ def _coerce(spec: TemplateField, value: Any) -> Any:
                     f"value '{sval}' not in allowed options for '{spec.key}'"
                 )
             return sval
+        if t == "relation":
+            target_id = str(value).strip()
+            if not target_id:
+                raise ValueError("must reference an item id")
+            target = db.get(Item, target_id)
+            if target is None:
+                raise ValueError("target item not found")
+            if spec.relation_scope == "same_collection" and target.collection_id != collection_id:
+                raise ValueError("target item must be in the same collection")
+            return target_id
     except (TypeError, ValueError) as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

@@ -42,6 +42,10 @@ All notable changes to **Covet** are documented here. Format follows
   `multi_value` field type for ordered lists (for example URLs, related ISBNs,
   cast lists). Item validation now accepts both JSON arrays and comma-separated
   strings, coercing values into an ordered list.
+- **Relation template fields (API + template editor).** Templates now support
+  a `relation` field type with scope control (`same_collection` or
+  `any_collection`) so attrs can point to another item ID with server-side
+  validation.
 - **Grocery list page.** A new "Grocery List" link in the navigation shows all
   depleted items across every collection you have access to — ideal for shared
   household pantry collections where multiple members need to see what to restock.

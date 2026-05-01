@@ -278,7 +278,7 @@
                     style="font-family: var(--mono, monospace); width:100%"
                 ></textarea>
                 <p class="muted">
-                    JSON array of <code>&#123;key,label,type,required?,select_source?,options?,default?&#125;</code>.
+                    JSON array of <code>&#123;key,label,type,required?,select_source?,relation_scope?,options?,default?&#125;</code>.
                     Allowed types: {FIELD_TYPES.join(', ')}.
                     Use <code>multi_value</code> for ordered lists like URLs, ISBNs, or cast members.
                 </p>
@@ -293,7 +293,7 @@
                                 <th>Label</th>
                                 <th>Type</th>
                                 <th>Required</th>
-                                <th>Source (select)</th>
+                                <th>Source (select/relation)</th>
                                 <th>Options (select only)</th>
                                 <th></th>
                             </tr>
@@ -359,6 +359,18 @@
                                                 <option value="static">Static list</option>
                                                 <option value="dynamic">Dynamic from used values</option>
                                             </select>
+                                        {:else if f.type === 'relation'}
+                                            <select
+                                                value={f.relation_scope ?? 'same_collection'}
+                                                onchange={(e) =>
+                                                    updateField(idx, {
+                                                        relation_scope: (e.target as HTMLSelectElement)
+                                                            .value as 'same_collection' | 'any_collection'
+                                                    })}
+                                            >
+                                                <option value="same_collection">Same collection</option>
+                                                <option value="any_collection">Any collection</option>
+                                            </select>
                                         {:else}
                                             <span class="muted">—</span>
                                         {/if}
@@ -379,6 +391,8 @@
                                             />
                                         {:else if f.type === 'select'}
                                             <span class="muted">Auto from existing item values</span>
+                                        {:else if f.type === 'relation'}
+                                            <span class="muted">Resolved by item id</span>
                                         {:else}
                                             <span class="muted">—</span>
                                         {/if}
@@ -477,8 +491,8 @@
                                                                 <td><input value={f.label} placeholder="Label" oninput={(e) => updateEditField(idx, { label: (e.target as HTMLInputElement).value })} /></td>
                                                                 <td><select value={f.type} onchange={(e) => updateEditField(idx, { type: (e.target as HTMLSelectElement).value as TemplateFieldType })}>{#each FIELD_TYPES as ft}<option value={ft}>{ft}</option>{/each}</select></td>
                                                                 <td style="text-align:center"><input type="checkbox" checked={f.required ?? false} onchange={(e) => updateEditField(idx, { required: (e.target as HTMLInputElement).checked })} /></td>
-                                                                <td>{#if f.type === 'select'}<select value={f.select_source ?? 'static'} onchange={(e) => updateEditField(idx, { select_source: (e.target as HTMLSelectElement).value as 'static' | 'dynamic' })}><option value="static">Static list</option><option value="dynamic">Dynamic from used values</option></select>{:else}<span class="muted">—</span>{/if}</td>
-                                                                <td>{#if f.type === 'select' && (f.select_source ?? 'static') === 'static'}<input value={(f.options ?? []).join(', ')} placeholder="A, B, C" oninput={(e) => updateEditField(idx, { options: (e.target as HTMLInputElement).value.split(',').map((s) => s.trim()).filter(Boolean) })} />{:else if f.type === 'select'}<span class="muted">Auto from existing item values</span>{:else}<span class="muted">—</span>{/if}</td>
+                                                                <td>{#if f.type === 'select'}<select value={f.select_source ?? 'static'} onchange={(e) => updateEditField(idx, { select_source: (e.target as HTMLSelectElement).value as 'static' | 'dynamic' })}><option value="static">Static list</option><option value="dynamic">Dynamic from used values</option></select>{:else if f.type === 'relation'}<select value={f.relation_scope ?? 'same_collection'} onchange={(e) => updateEditField(idx, { relation_scope: (e.target as HTMLSelectElement).value as 'same_collection' | 'any_collection' })}><option value="same_collection">Same collection</option><option value="any_collection">Any collection</option></select>{:else}<span class="muted">—</span>{/if}</td>
+                                                                <td>{#if f.type === 'select' && (f.select_source ?? 'static') === 'static'}<input value={(f.options ?? []).join(', ')} placeholder="A, B, C" oninput={(e) => updateEditField(idx, { options: (e.target as HTMLInputElement).value.split(',').map((s) => s.trim()).filter(Boolean) })} />{:else if f.type === 'select'}<span class="muted">Auto from existing item values</span>{:else if f.type === 'relation'}<span class="muted">Resolved by item id</span>{:else}<span class="muted">—</span>{/if}</td>
                                                                 <td><button type="button" class="danger" onclick={() => removeEditField(idx)}>×</button></td>
                                                             </tr>
                                                         {/each}

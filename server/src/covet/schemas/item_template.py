@@ -7,8 +7,18 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-FieldType = Literal["text", "number", "boolean", "date", "url", "select", "multi_value"]
+FieldType = Literal[
+    "text",
+    "number",
+    "boolean",
+    "date",
+    "url",
+    "select",
+    "multi_value",
+    "relation",
+]
 SelectSource = Literal["static", "dynamic"]
+RelationScope = Literal["same_collection", "any_collection"]
 
 
 class TemplateField(BaseModel):
@@ -19,6 +29,7 @@ class TemplateField(BaseModel):
     default: Any = None
     options: list[str] | None = None  # for type="select"
     select_source: SelectSource = "static"
+    relation_scope: RelationScope = "same_collection"
     help: str | None = Field(default=None, max_length=256)
 
 

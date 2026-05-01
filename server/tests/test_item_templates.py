@@ -333,3 +333,103 @@ def test_multi_value_field_coercion_and_order(client) -> None:
     )
     assert patched.status_code == 200, patched.text
     assert patched.json()["attrs"]["cast"] == ["Hugo Weaving", "Joe Pantoliano"]
+
+
+def test_relation_field_scope_validation(client) -> None:
+    _register(client, "reluser")
+    _login(client, "reluser")
+    cid_a = client.post("/api/collections", json={"name": "A"}).json()["id"]
+    cid_b = client.post("/api/collections", json={"name": "B"}).json()["id"]
+
+    item_a = client.post(
+        "/api/items",
+        json={"collection_id": cid_a, "category": "other.generic", "title": "Local target"},
+    ).json()["id"]
+    item_b = client.post(
+        "/api/items",
+        json={"collection_id": cid_b, "category": "other.generic", "title": "Remote target"},
+    ).json()["id"]
+
+    same_scope_tmpl = client.post(
+        f"/api/collections/{cid_a}/templates",
+        json={
+            "name": "Accessory",
+            "category_slug": "other.generic",
+            "fields": [
+                {
+                    "key": "accessory_for",
+                    "label": "Accessory for",
+                    "type": "relation",
+                    "relation_scope": "same_collection",
+                }
+            ],
+        },
+    )
+    assert same_scope_tmpl.status_code == 201, same_scope_tmpl.text
+    same_scope_tmpl_id = same_scope_tmpl.json()["id"]
+
+    ok_same = client.post(
+        "/api/items",
+        json={
+            "collection_id": cid_a,
+            "category": "other.generic",
+            "title": "Accessory cable",
+            "template_id": same_scope_tmpl_id,
+            "attrs": {"accessory_for": item_a},
+        },
+    )
+    assert ok_same.status_code == 201, ok_same.text
+
+    bad_same = client.post(
+        "/api/items",
+        json={
+            "collection_id": cid_a,
+            "category": "other.generic",
+            "title": "Accessory cable 2",
+            "template_id": same_scope_tmpl_id,
+            "attrs": {"accessory_for": item_b},
+        },
+    )
+    assert bad_same.status_code == 422
+
+    any_scope_tmpl = client.post(
+        f"/api/collections/{cid_a}/templates",
+        json={
+            "name": "Compatible battery",
+            "category_slug": "other.generic",
+            "fields": [
+                {
+                    "key": "compatible_with",
+                    "label": "Compatible with",
+                    "type": "relation",
+                    "relation_scope": "any_collection",
+                }
+            ],
+        },
+    )
+    assert any_scope_tmpl.status_code == 201, any_scope_tmpl.text
+    any_scope_tmpl_id = any_scope_tmpl.json()["id"]
+
+    ok_any = client.post(
+        "/api/items",
+        json={
+            "collection_id": cid_a,
+            "category": "other.generic",
+            "title": "Battery",
+            "template_id": any_scope_tmpl_id,
+            "attrs": {"compatible_with": item_b},
+        },
+    )
+    assert ok_any.status_code == 201, ok_any.text
+
+    bad_unknown = client.post(
+        "/api/items",
+        json={
+            "collection_id": cid_a,
+            "category": "other.generic",
+            "title": "Battery 2",
+            "template_id": any_scope_tmpl_id,
+            "attrs": {"compatible_with": "01ZZZZZZZZZZZZZZZZZZZZZZZZ"},
+        },
+    )
+    assert bad_unknown.status_code == 422

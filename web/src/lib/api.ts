@@ -185,14 +185,24 @@ export interface AuditLogEntry {
     created_at: string;
 }
 
-export type TemplateFieldType = 'text' | 'number' | 'boolean' | 'date' | 'url' | 'select' | 'multi_value';
+export type TemplateFieldType =
+    | 'text'
+    | 'number'
+    | 'boolean'
+    | 'date'
+    | 'url'
+    | 'select'
+    | 'multi_value'
+    | 'relation';
 export type TemplateSelectSource = 'static' | 'dynamic';
+export type TemplateRelationScope = 'same_collection' | 'any_collection';
 
 export interface TemplateField {
     key: string;
     label: string;
     type: TemplateFieldType;
     select_source?: TemplateSelectSource;
+    relation_scope?: TemplateRelationScope;
     required?: boolean;
     default?: unknown;
     options?: string[] | null;

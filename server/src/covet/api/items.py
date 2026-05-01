@@ -283,7 +283,12 @@ def create_item(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Unknown template",
             )
-        data["attrs"] = validate_attrs(tmpl, data.get("attrs") or {})
+        data["attrs"] = validate_attrs(
+            db,
+            tmpl,
+            data.get("attrs") or {},
+            collection_id=payload.collection_id,
+        )
     item = Item(**data)
     db.add(item)
     db.commit()
@@ -341,7 +346,12 @@ def update_item(
                 detail="Unknown template",
             )
         base_attrs = updates.get("attrs") if "attrs" in updates else item.attrs
-        updates["attrs"] = validate_attrs(tmpl, base_attrs or {})
+        updates["attrs"] = validate_attrs(
+            db,
+            tmpl,
+            base_attrs or {},
+            collection_id=item.collection_id,
+        )
 
     # Any standard edit implicitly resolves the review flag.
     if updates:
