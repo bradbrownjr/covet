@@ -22,6 +22,7 @@ from covet.api import share as share_router
 from covet.api import system as system_router
 from covet.api import sync as sync_router
 from covet.api import tags as tags_router
+from covet.api import webhooks as webhooks_router
 
 api_router = APIRouter()
 api_router.include_router(meta_router.router)
@@ -44,5 +45,6 @@ api_router.include_router(documents_router.router)
 api_router.include_router(maintenance_router.router)
 api_router.include_router(photos_router.router)
 api_router.include_router(system_router.router)
+api_router.include_router(webhooks_router.router)
 
 __all__ = ["api_router"]

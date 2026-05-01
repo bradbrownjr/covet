@@ -6,6 +6,8 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 from sqlalchemy import String, asc, cast, delete, desc, func, or_, select
 from sqlalchemy.orm import Session as DBSession
 from sqlalchemy.orm import selectinload
@@ -45,6 +47,7 @@ from covet.schemas import (
     TagRead,
 )
 from covet.services.categories import resolve_slug, subtree_ids
+from covet.services.qr_labels import generate_qr_codes_pdf
 
 router = APIRouter(prefix="/items", tags=["items"])
 
@@ -845,3 +848,57 @@ def list_item_children(
         select(Item).where(Item.parent_id == item_id).order_by(Item.title)
     ).all()
     return [_to_item_read(r, rollups) for r in rows]
+
+
+class QRLabelRequest(BaseModel):
+    """Request to generate QR code labels."""
+
+    collection_id: str
+    item_ids: list[str]
+    labels_per_row: int = 3
+
+
+@router.post("/qr-labels/generate")
+def generate_qr_labels(
+    payload: QRLabelRequest,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> StreamingResponse:
+    """Generate a PDF with QR code labels for selected items."""
+    _require_role(db, auth, payload.collection_id, _VIEWER_ROLES)
+
+    # Verify all item IDs belong to this collection
+    items = db.scalars(
+        select(Item).where(
+            Item.id.in_(payload.item_ids),
+            Item.collection_id == payload.collection_id,
+        )
+    ).all()
+
+    if len(items) != len(payload.item_ids):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Some items not found in this collection",
+        )
+
+    # Get collection name
+    collection = db.get(Collection, payload.collection_id)
+    if collection is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Collection not found")
+
+    # Prepare item data
+    item_data = [{"id": item.id, "title": item.title or "Untitled"} for item in sorted(items, key=lambda i: i.title or "")]
+
+    # Generate PDF
+    pdf_bytes = generate_qr_codes_pdf(
+        items=item_data,
+        collection_name=collection.name,
+        labels_per_row=payload.labels_per_row,
+    )
+
+    # Return as file download
+    return StreamingResponse(
+        iter([pdf_bytes]),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename=qr-labels-{collection.name}.pdf"},
+    )

@@ -13,6 +13,7 @@ from covet.models.base import TimestampMixin, ULIDPrimaryKey
 if TYPE_CHECKING:
     from covet.models.item import Item
     from covet.models.share_link import ShareLink
+    from covet.models.webhook import Webhook
     from covet.models.user import CollectionMembership, User
 
 
@@ -38,5 +39,8 @@ class Collection(ULIDPrimaryKey, TimestampMixin, Base):
         back_populates="collection", cascade="all, delete-orphan"
     )
     share_links: Mapped[list[ShareLink]] = relationship(
+        back_populates="collection", cascade="all, delete-orphan"
+    )
+    webhooks: Mapped[list[Webhook]] = relationship(
         back_populates="collection", cascade="all, delete-orphan"
     )

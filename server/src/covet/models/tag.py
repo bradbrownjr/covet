@@ -16,13 +16,35 @@ if TYPE_CHECKING:
 
 class Tag(ULIDPrimaryKey, TimestampMixin, Base):
     __tablename__ = "tags"
-    __table_args__ = (UniqueConstraint("owner_id", "name", name="uq_tag_owner_name"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "owner_id", "parent_id", "name", name="uq_tag_owner_parent_name"
+        ),
+    )
 
     owner_id: Mapped[str] = mapped_column(
         String(26), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    parent_id: Mapped[str | None] = mapped_column(
+        String(26), ForeignKey("tags.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     name: Mapped[str] = mapped_column(String(64), nullable=False)
     color: Mapped[str | None] = mapped_column(String(16), nullable=True)
+
+    # Relationships
+    parent: Mapped[Tag | None] = relationship(
+        "Tag",
+        remote_side="Tag.id",
+        foreign_keys="Tag.parent_id",
+        back_populates="children",
+    )
+    children: Mapped[list[Tag]] = relationship(
+        "Tag",
+        remote_side="Tag.parent_id",
+        foreign_keys="Tag.parent_id",
+        back_populates="parent",
+        cascade="all, delete-orphan",
+    )
 
 
 class ItemTag(Base):

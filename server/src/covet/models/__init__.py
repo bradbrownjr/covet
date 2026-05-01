@@ -28,6 +28,7 @@ from covet.models.user import (
     Session,
     User,
 )
+from covet.models.webhook import Webhook, WebhookDelivery, WebhookEventType
 
 __all__ = [
     "APIToken",
@@ -56,5 +57,8 @@ __all__ = [
     "TimestampMixin",
     "ULIDPrimaryKey",
     "User",
+    "Webhook",
+    "WebhookDelivery",
+    "WebhookEventType",
     "ulid_str",
 ]

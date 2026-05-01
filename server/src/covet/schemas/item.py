@@ -34,6 +34,7 @@ class ItemBase(BaseModel):
     disposition_at: datetime | None = None
     disposition_amount: Decimal | None = None
     disposition_buyer: str | None = None
+    buyer_id: str | None = None
     disposition_note: str | None = None
     purchased_at: datetime | None = None
     use_by_date: datetime | None = None
@@ -78,6 +79,7 @@ class ItemUpdate(BaseModel):
     disposition_at: datetime | None = None
     disposition_amount: Decimal | None = None
     disposition_buyer: str | None = None
+    buyer_id: str | None = None
     disposition_note: str | None = None
     purchased_at: datetime | None = None
     use_by_date: datetime | None = None
@@ -124,6 +126,7 @@ class ItemArchiveUpdate(BaseModel):
     disposition_at: datetime | None = None
     disposition_amount: Decimal | None = None
     disposition_buyer: str | None = Field(default=None, max_length=256)
+    buyer_id: str | None = None
     disposition_note: str | None = Field(default=None, max_length=512)
 
 

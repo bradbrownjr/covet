@@ -14,6 +14,7 @@ from covet.models.base import TimestampMixin, ULIDPrimaryKey
 if TYPE_CHECKING:
     from covet.models.category import Category
     from covet.models.collection import Collection
+    from covet.models.contact import Contact
     from covet.models.item_lot import ItemLot
     from covet.models.loan import Loan
     from covet.models.photo import Photo
@@ -70,6 +71,9 @@ class Item(ULIDPrimaryKey, TimestampMixin, Base):
     disposition_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     disposition_amount: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
     disposition_buyer: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    buyer_id: Mapped[str | None] = mapped_column(
+        String(26), ForeignKey("contacts.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     disposition_note: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
     # Optional pointer to the CRDT document for this item.
@@ -89,6 +93,7 @@ class Item(ULIDPrimaryKey, TimestampMixin, Base):
 
     collection: Mapped[Collection] = relationship(back_populates="items")
     category: Mapped[Category] = relationship(lazy="joined")
+    buyer: Mapped[Contact | None] = relationship()
     photos: Mapped[list[Photo]] = relationship(
         back_populates="item", cascade="all, delete-orphan"
     )

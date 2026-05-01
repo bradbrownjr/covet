@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session as DBSession
 
@@ -24,6 +25,7 @@ from covet.schemas import (
     MembershipUpdate,
 )
 from covet.services import audit
+from covet.services.reports import CollectionReport
 
 router = APIRouter(prefix="/collections", tags=["collections"])
 
@@ -275,3 +277,69 @@ def remove_member(
     )
     db.delete(membership)
     db.commit()
+
+
+@router.get("/{collection_id}/reports/totals")
+def get_collection_totals(
+    collection_id: str,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> dict:
+    """Get collection totals (item count, total value)."""
+    if collection_role(db, auth.user, collection_id) is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    collection = db.get(Collection, collection_id)
+    if collection is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Collection not found")
+
+    report = CollectionReport(db, collection)
+    return report.generate_totals()
+
+
+@router.get("/{collection_id}/reports/bom")
+def get_collection_bom(
+    collection_id: str,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> StreamingResponse:
+    """Download bill of materials as text file."""
+    if collection_role(db, auth.user, collection_id) is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    collection = db.get(Collection, collection_id)
+    if collection is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Collection not found")
+
+    report = CollectionReport(db, collection)
+    bom_text = report.generate_bom_text()
+
+    return StreamingResponse(
+        iter([bom_text.encode("utf-8")]),
+        media_type="text/plain",
+        headers={"Content-Disposition": f"attachment; filename=bom-{collection.name}.txt"},
+    )
+
+
+@router.get("/{collection_id}/reports/insurance-export")
+def get_insurance_export(
+    collection_id: str,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> StreamingResponse:
+    """Download insurance-friendly export (ZIP with CSV, photos, manifest)."""
+    if collection_role(db, auth.user, collection_id) is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    collection = db.get(Collection, collection_id)
+    if collection is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Collection not found")
+
+    report = CollectionReport(db, collection)
+    zip_data = report.generate_insurance_export()
+
+    return StreamingResponse(
+        iter([zip_data]),
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename=insurance-export-{collection.name}.zip"},
+    )

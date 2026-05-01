@@ -75,6 +75,12 @@ from covet.schemas.sync import (
 )
 from covet.schemas.tag import TagCreate, TagRead, TagUpdate
 from covet.schemas.user import UserCreate, UserRead, UserUpdate
+from covet.schemas.webhook import (
+    WebhookCreate,
+    WebhookRead,
+    WebhookUpdate,
+    WebhookDeliveryRead,
+)
 
 __all__ = [
     "AuditLogRead",
@@ -147,4 +153,8 @@ __all__ = [
     "UserCreate",
     "UserRead",
     "UserUpdate",
+    "WebhookCreate",
+    "WebhookRead",
+    "WebhookUpdate",
+    "WebhookDeliveryRead",
 ]
