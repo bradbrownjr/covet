@@ -63,7 +63,7 @@ more useful data without manual data entry.
 
 ---
 
-## Phase 10 — Make it efficient (in progress)
+## Phase 10 — Make it efficient ✅
 
 With more items per collection, bulk operations and discovery become the
 bottleneck. This phase is about scaling the UX.
@@ -76,19 +76,19 @@ bottleneck. This phase is about scaling the UX.
 - **Better search** ✅ — global command palette search endpoint with
   accent-folding (`café` matches `cafe`) and fuzzy ranking; searches
   title/subtitle/notes/custom-fields/identifiers across all user-accessible
-  collections. Remaining scope: OCR indexing for attached documents.
-- **Hierarchical / nested tags** — `electronics > audio > cables`. UI
+  collections, plus OCR/text indexing for attached documents.
+- **Hierarchical / nested tags** ✅ — `electronics > audio > cables`. UI
   shows breadcrumbs; filters cascade.
-- **QR code label sheets** — generate a printable PDF of QR labels for
+- **QR code label sheets** ✅ — generate a printable PDF of QR labels for
   selected items. Android scanner gains a "find by QR" mode (vs.
   scan-to-create today) that jumps straight to item detail.
 - **Wishlist / wanted items** ✅ — flag items the user doesn't own yet;
   one click converts to owned with acquisition date and price.
-- **Reports** — per-collection totals (count, value), BoM PDF export,
+- **Reports** ✅ — per-collection totals (count, value), BoM PDF export,
   insurance-friendly export bundle (CSV + photos + PDFs in a zip).
 - **CSV export with parent/child preserved** ✅ — round-trip the new
   item hierarchy through CSV without losing relationships.
-- **Webhooks** — outbound HTTP on item events (created, updated,
+- **Webhooks** ✅ — outbound HTTP on item events (created, updated,
   loaned, returned, maintenance-due) for Home Assistant, n8n, Discord.
 - **i18n scaffold** — moved to Phase 14 where translation rollout is
   tracked as platform work.
@@ -123,6 +123,11 @@ Covet starts as a collectibles tracker. This phase broadens it into a
 complete home inventory: every room, every appliance, every tool, every
 consumable. The goal is to replace the spreadsheet every homeowner
 eventually makes and then stops maintaining.
+
+- **Manual/asset bundles (planned)** — beyond per-item document uploads,
+  add a reusable manual library that can store a primary manual plus
+  related assets (diagrams, firmware, service sheets, parts lists), then
+  link one bundle to multiple items.
 
 ### New top-level category roots
 

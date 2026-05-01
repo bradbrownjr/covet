@@ -290,6 +290,10 @@ Both stores are *content-addressed*: identical bytes uploaded twice
 take one slot on disk. Deleting the last reference garbage-collects
 the file.
 
+Attachment search indexes document text. PDF/text extraction works out
+of the box; image OCR indexing requires the `tesseract` binary to be
+installed in the runtime environment.
+
 ## Routine tasks
 
 ### Vacuum SQLite

@@ -121,3 +121,29 @@ def test_expiring_dashboard(client) -> None:
     r = client.get("/api/expiring?within_days=500")
     rows = r.json()
     assert {r["kind"] for r in rows} == {"item", "document"}
+
+
+def test_document_text_is_indexed_for_global_search(client) -> None:
+    cid, iid = _setup_item(client, owner="erin")
+    other = client.post(
+        "/api/items",
+        json={
+            "collection_id": cid,
+            "category": "tools.hand",
+            "title": "Hammer",
+        },
+    )
+    assert other.status_code == 201, other.text
+
+    upload = client.post(
+        f"/api/items/{iid}/documents",
+        files={"file": ("manual.txt", io.BytesIO(b"Torque spec 42Nm"), "text/plain")},
+        data={"category": "manual"},
+    )
+    assert upload.status_code == 201, upload.text
+
+    found = client.get("/api/items/search", params={"q": "torque spec"})
+    assert found.status_code == 200, found.text
+    titles = [row["title"] for row in found.json()]
+    assert "Drill" in titles
+    assert "Hammer" not in titles

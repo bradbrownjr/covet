@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from covet.db import Base
@@ -27,6 +27,7 @@ class Document(ULIDPrimaryKey, TimestampMixin, Base):
     mime_type: Mapped[str] = mapped_column(String(128), nullable=False)
     byte_size: Mapped[int] = mapped_column(Integer, nullable=False)
     filename: Mapped[str] = mapped_column(String(256), nullable=False)
+    search_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     label: Mapped[str | None] = mapped_column(String(128), nullable=True)
     # category ∈ {"receipt","manual","warranty","other"} - free-form, advisory
     category: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)

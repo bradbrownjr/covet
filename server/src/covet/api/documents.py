@@ -30,6 +30,7 @@ from covet.config import get_settings
 from covet.db import get_session
 from covet.models import Document, Item
 from covet.schemas import DocumentRead, DocumentUpdate
+from covet.services.document_search import extract_search_text
 
 router = APIRouter(tags=["documents"])
 
@@ -141,6 +142,7 @@ async def upload_document(
         mime_type=mime,
         byte_size=total,
         filename=file.filename or sha256,
+        search_text=extract_search_text(path, mime, file.filename or sha256),
         label=label,
         category=category,
         expires_at=expires_at,

@@ -133,6 +133,10 @@ Attach any file (PDF, receipt, manual, warranty) up to 50 MB. Each
 document can have a **label**, **category** (`manual`, `receipt`,
 `warranty`, ...), and **expiry date**.
 
+Document text is indexed for global search. Covet indexes text/PDF
+content and, when OCR support is available on the server, image text
+inside attachments as well.
+
 Items themselves also have an **expires_at**. The
 **Expiring** dashboard surfaces every item *and* document whose
 expiry is within a window you choose, so you can see warranties about

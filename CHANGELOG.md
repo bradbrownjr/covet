@@ -81,6 +81,10 @@ All notable changes to **Covet** are documented here. Format follows
 - **Expanded item search (web + API).** Collection search now matches
   title/subtitle, notes, and JSON custom fields/identifiers, and web adds
   a `/` keyboard shortcut to focus the search box.
+- **Attachment OCR/text indexing in search (API).** Global search
+  (`GET /items/search`) now includes indexed attachment text from item
+  documents. Text files/PDF text are indexed, and image attachments are
+  OCR'd when Tesseract is available.
 - **Grocery list page.** A new "Grocery List" link in the navigation shows all
   depleted items across every collection you have access to — ideal for shared
   household pantry collections where multiple members need to see what to restock.

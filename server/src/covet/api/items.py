@@ -25,6 +25,7 @@ from covet.models import (
     Collection,
     CollectionMembership,
     Contact,
+    Document,
     Item,
     ItemTag,
     ItemTemplate,
@@ -47,9 +48,9 @@ from covet.schemas import (
     LoanRead,
     TagRead,
 )
+from covet.services import audit
 from covet.services.categories import resolve_slug, subtree_ids
 from covet.services.qr_labels import generate_qr_codes_pdf
-from covet.services import audit
 
 router = APIRouter(prefix="/items", tags=["items"])
 
@@ -270,22 +271,29 @@ def search_items(
     auth: AuthContext = Depends(require_user),
 ) -> list[ItemRead]:
     """Global search across all items in user's accessible collections.
-    
+
     Supports fuzzy matching with accent-folding (é matches e, etc).
     Returns items from all collections the user can access.
     """
-    # Get all collections user has access to
-    from covet.models.user import CollectionMembership
-    
-    accessible_collections = db.scalars(
-        select(CollectionMembership.collection_id).where(
-            CollectionMembership.user_id == auth.user.id
+    # Get all collections user has access to (membership + ownership).
+    if auth.user.is_admin:
+        accessible_collections = db.scalars(select(Collection.id)).all()
+    else:
+        member_cids = set(
+            db.scalars(
+                select(CollectionMembership.collection_id).where(
+                    CollectionMembership.user_id == auth.user.id
+                )
+            ).all()
         )
-    ).all()
-    
+        owner_cids = set(
+            db.scalars(select(Collection.id).where(Collection.owner_id == auth.user.id)).all()
+        )
+        accessible_collections = sorted(member_cids | owner_cids)
+
     if not accessible_collections:
         return []
-    
+
     # Search across all accessible collections
     stmt = (
         select(Item)
@@ -293,15 +301,29 @@ def search_items(
         .where(Item.archived_at.is_(None))
         .options(selectinload(Item.photos))
     )
-    
+
     items = db.scalars(stmt).all()
-    
+    if not items:
+        return []
+
+    item_ids = [item.id for item in items]
+    doc_rows = db.execute(
+        select(Document.item_id, Document.search_text)
+        .where(Document.item_id.in_(item_ids))
+        .where(Document.search_text.is_not(None))
+    ).all()
+    doc_text_by_item: dict[str, list[str]] = {}
+    for item_id, search_text in doc_rows:
+        if not search_text:
+            continue
+        doc_text_by_item.setdefault(item_id, []).append(search_text)
+
     # Normalize search term (accent-folding)
     normalized_q = unidecode(q.lower().strip())
-    
+
     # Filter items using fuzzy matching with accent-folding
     matched_items: list[tuple[Item, float]] = []
-    
+
     for item in items:
         # Build searchable content
         search_fields = [
@@ -310,10 +332,11 @@ def search_items(
             item.notes or "",
             " ".join(str(v) for v in (item.attrs or {}).values()),
             " ".join(str(v) for v in (item.identifiers or {}).values()),
+            " ".join(doc_text_by_item.get(item.id, [])),
         ]
         combined_text = " ".join(search_fields)
         normalized_text = unidecode(combined_text.lower())
-        
+
         # Simple fuzzy matching: check if query appears in text or vice versa
         # Score: exact match > substring match > partial match
         score = 0.0
@@ -326,12 +349,12 @@ def search_items(
             score = 25.0
         else:
             continue  # No match, skip this item
-        
+
         matched_items.append((item, score))
-    
+
     # Sort by score descending, then by title
     matched_items.sort(key=lambda x: (-x[1], x[0].title or ""))
-    
+
     # Compute rollups per collection for accurate values
     result = []
     by_collection: dict[str, list[tuple[Item, float]]] = {}
@@ -339,12 +362,12 @@ def search_items(
         if item.collection_id not in by_collection:
             by_collection[item.collection_id] = []
         by_collection[item.collection_id].append((item, score))
-    
+
     for collection_id, items_in_collection in by_collection.items():
         rollups = _compute_rollup_values(db, collection_id)
         for item, _ in items_in_collection:
             result.append(_to_item_read(item, rollups))
-    
+
     return result
 
 
@@ -633,7 +656,7 @@ def bulk_archive_items(
         item.depleted = False
 
     db.commit()
-    
+
     # Log audit entries for each archived item
     for item in rows:
         audit.log(
@@ -651,7 +674,7 @@ def bulk_archive_items(
                 "bulk": True,
             },
         )
-    
+
     db.commit()
     for item in rows:
         db.refresh(item)
@@ -690,7 +713,7 @@ def bulk_restore_items(
         item.disposition_note = None
 
     db.commit()
-    
+
     # Log audit entries for each restored item
     for item in rows:
         audit.log(
@@ -702,7 +725,7 @@ def bulk_restore_items(
             target_id=item.id,
             payload={"title": item.title, "bulk": True},
         )
-    
+
     db.commit()
     for item in rows:
         db.refresh(item)
@@ -914,7 +937,7 @@ def archive_item(
     # Archived items are not active wants/depleted state.
     item.wanted = False
     item.depleted = False
-    
+
     # Log audit entry
     audit.log(
         db,
@@ -930,7 +953,7 @@ def archive_item(
             "disposition_buyer": item.disposition_buyer,
         },
     )
-    
+
     db.commit()
     db.refresh(item)
     return ItemRead.model_validate(item)
@@ -953,7 +976,7 @@ def restore_item(
     item.disposition_amount = None
     item.disposition_buyer = None
     item.disposition_note = None
-    
+
     # Log audit entry
     audit.log(
         db,
@@ -964,7 +987,7 @@ def restore_item(
         target_id=item.id,
         payload={"title": item.title},
     )
-    
+
     db.commit()
     db.refresh(item)
     return ItemRead.model_validate(item)
