@@ -54,6 +54,8 @@ Inside a collection you see all its items.
   server).
 - If items span multiple categories, **filter chips** appear above the
   search bar. Tap a chip to show only items in that category.
+- If an item is a container / kit with children, the list/card can show the
+  **effective rolled-up value** of its nested contents.
 
 ---
 
@@ -64,6 +66,7 @@ Tap the **+** (FAB) to open the **Add item** dialog.
 | Method | How |
 |---|---|
 | **Barcode / QR code** | Tap the scanner icon in the toolbar before opening the dialog; the barcode lookup fills in the title automatically. |
+| **Barcode from saved image** | Tap the image icon in the toolbar and choose a photo / screenshot containing a barcode. |
 | **ISBN / EAN** | Type or paste the number in the **Title** field; tap **Look up** to pre-fill metadata. |
 | **URL** | Paste a product page URL; tap **Look up** to scrape the title and category. |
 | **Manual** | Type the title directly and tap **Add**. |
@@ -90,6 +93,10 @@ Tap the **QR/barcode icon** in the collection detail toolbar to open the
 camera scanner. Point at any barcode or QR code. The app sends the code to
 the server, which searches several providers for a match and returns a list
 of candidates. Choose one to pre-fill the add-item dialog.
+
+If you already have a product photo or screenshot, tap the **image icon** in
+the same toolbar. Covet scans the saved image for a barcode and runs the same
+candidate lookup flow.
 
 ---
 

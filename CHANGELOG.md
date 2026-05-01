@@ -16,6 +16,20 @@ All notable changes to **Covet** are documented here. Format follows
 - **Depleted flag on items.** Any item can be marked as depleted (ran out /
   needs restocking) via the Edit row actions in the collection detail view.
   Depleted items appear dimmed with a strikethrough. Toggle back with "In stock".
+- **Duplicate item action (web).** Collection item rows/cards now include a
+  **Duplicate** button that creates a copy in the same collection and category,
+  carrying over quantity, condition, identifiers, and custom attributes.
+- **Item sort controls (web + API).** Collection views now support sorting by
+  title, current value, acquisition date, and a custom attribute key. The
+  server adds `GET /items` query params `sort_by`, `sort_dir`, and `sort_attr`
+  (for custom-field sorting).
+- **Barcode scan from still images (web + Android).** You can now pick an
+  existing photo from your device and decode barcodes without using the live
+  camera preview. Web uses ZXing browser decoding and Android uses ML Kit on
+  gallery images, both feeding the existing metadata lookup flow.
+- **Parent item value rollup (web + Android + API).** Container/kit items now
+  expose a computed `rollup_current_value` equal to the summed value of their
+  nested contents, and both clients display that effective value in item lists.
 - **Grocery list page.** A new "Grocery List" link in the navigation shows all
   depleted items across every collection you have access to — ideal for shared
   household pantry collections where multiple members need to see what to restock.

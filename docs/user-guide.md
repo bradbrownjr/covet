@@ -84,6 +84,13 @@ Each item row has an **Edit** button (visible to editors and owners) that
 expands an inline form for title, creator, series/subtitle, condition, and
 quantity. Viewers see the collection read-only.
 
+- **Duplicate** creates a copy of an item in the same collection and
+  category, carrying over identifiers and custom attributes so you can
+  make small edits instead of re-entering everything.
+- Parent / container items can show a computed **rollup value**. If a
+  kit or container has child items, Covet shows the summed value of its
+  nested contents instead of only the parent row's own `current_value`.
+
 ### Quick creation tricks
 
 - **Scrape URL** — paste a product URL (Open Library ISBN page, a
@@ -91,6 +98,10 @@ quantity. Viewers see the collection read-only.
   `description`, `image_url`, etc. via the metadata scraper.
 - **Scan a barcode** (web or Android) — type or paste an ISBN/EAN and
   Covet looks it up via Open Library and fills in the title and category.
+- **Scan a barcode from an image** — on the web add form, click
+  **Scan image** and pick a photo or screenshot containing a barcode.
+  Covet decodes it in the browser and runs the same lookup flow as the
+  live scanner / typed barcode path.
 - **Apply a template** — pick a template from the collection's
   **Templates** tab to inherit a custom-field schema. Required fields are
   validated on save; `select` fields are constrained to their option list.
@@ -153,8 +164,9 @@ editor is available for bulk editing.
 ## Tags and search
 
 - Add tags from the item editor or the collection's **Tags** page.
-- The collection list view supports `search=` (title prefix) and
-  `type=` filters.
+- The collection view supports live **title search**, category filters,
+  and **sort controls** for title, current value, acquisition date, or a
+  custom attribute key such as `creator`.
 - Filter by tag from the collection page.
 
 ## Importing your existing inventory
@@ -186,10 +198,13 @@ The Android app is offline-first:
 4. **Add items** including from the **Barcode scanner** (CameraX +
    ML Kit). Scanning an EAN/UPC pre-fills the identifier; combine with
    the URL scraper on the web side to enrich later.
-5. **Pull to refresh** — swipe down on any collection's item list to
+5. **Scan barcodes from still images** from the Android collection
+  toolbar if you already have a saved photo / screenshot instead of a
+  live camera view.
+6. **Pull to refresh** — swipe down on any collection's item list to
    immediately fetch the latest items from the server, without waiting
    for the background worker.
-6. A **sync worker** runs every 15 minutes (and immediately when you
+7. A **sync worker** runs every 15 minutes (and immediately when you
    open the app) to push your local edits and pull server changes
    through the CRDT sync engine.
 

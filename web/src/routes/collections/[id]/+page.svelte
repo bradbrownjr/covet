@@ -10,6 +10,9 @@
     let categories = $state<Category[]>([]);
     let search = $state('');
     let rootFilter = $state(''); // only used when collection has no default category
+    let sortBy = $state<'title' | 'value' | 'acquired_at' | 'attr'>('title');
+    let sortDir = $state<'asc' | 'desc'>('asc');
+    let sortAttr = $state('');
     let loading = $state(true);
     let error = $state('');
     let didSeedDefaults = $state(false);
@@ -41,6 +44,7 @@
     let creatorInput: HTMLInputElement | undefined;
     let titleInput: HTMLInputElement | undefined;
     let subtitleInput: HTMLInputElement | undefined;
+    let barcodeImageInput: HTMLInputElement | undefined;
 
     // Label for the creator field based on leaf category; null = hide the field.
     const creatorLabel = $derived.by(() => {
@@ -118,6 +122,21 @@
     }
     const detected = $derived(detectKind(newQuery));
 
+    function displayValue(i: Item): number | null {
+        return i.rollup_current_value ?? i.current_value;
+    }
+
+    function formatValue(i: Item): string {
+        const value = displayValue(i);
+        if (value == null) return '';
+        const currency = i.currency ?? 'USD';
+        try {
+            return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(value);
+        } catch {
+            return `${currency} ${value.toFixed(2)}`;
+        }
+    }
+
     async function load() {
         loading = true;
         try {
@@ -140,6 +159,9 @@
             const params = new URLSearchParams({ collection_id: cid });
             if (search) params.set('search', search);
             if (rootFilter) params.set('category_subtree', rootFilter);
+            params.set('sort_by', sortBy);
+            params.set('sort_dir', sortDir);
+            if (sortBy === 'attr' && sortAttr.trim()) params.set('sort_attr', sortAttr.trim());
             items = await api.get<Item[]>(`/items?${params.toString()}`);
         } catch (e) {
             error = (e as Error).message;
@@ -167,21 +189,76 @@
         scraping = true;
         error = '';
         try {
-            let url = '';
             if (kind === 'url') {
-                url = newQuery.trim();
+                const res = await api.post<{ title?: string; category?: string }>(
+                    '/metadata/scrape',
+                    { url: newQuery.trim() }
+                );
+                applyScrapeResult(res);
             } else {
                 const digits = newQuery.replace(/[\s-]/g, '');
-                url = `https://openlibrary.org/isbn/${digits}`;
+                const res = await api.post<{ candidates?: Array<{ title?: string; category?: string; attrs?: Record<string, unknown> }> }>(
+                    '/metadata/barcode',
+                    { barcode: digits }
+                );
+                const first = res.candidates?.[0];
+                if (first) {
+                    applyScrapeResult(first);
+                } else {
+                    throw new Error('No barcode match found');
+                }
             }
-            const res = await api.post<{ title?: string; category?: string }>(
-                '/metadata/scrape',
-                { url }
-            );
-            applyScrapeResult(res);
         } catch (e) {
             error = `Lookup failed: ${(e as Error).message}`;
         } finally {
+            scraping = false;
+        }
+    }
+
+    async function decodeBarcodeFromImage(file: File): Promise<string> {
+        const { BrowserMultiFormatReader } = await import('@zxing/browser');
+        const reader = new BrowserMultiFormatReader();
+        try {
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+                const fr = new FileReader();
+                fr.onload = () => resolve(String(fr.result));
+                fr.onerror = () => reject(new Error('Could not read image file'));
+                fr.readAsDataURL(file);
+            });
+            const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+                const el = new Image();
+                el.onload = () => resolve(el);
+                el.onerror = () => reject(new Error('Could not decode image'));
+                el.src = dataUrl;
+            });
+            const result = await reader.decodeFromImageElement(img);
+            return result.getText();
+        } finally {
+            reader.reset();
+        }
+    }
+
+    function triggerBarcodeImagePicker() {
+        barcodeImageInput?.click();
+    }
+
+    async function onBarcodeImagePicked(e: Event) {
+        const input = e.currentTarget as HTMLInputElement;
+        const file = input.files?.[0];
+        input.value = '';
+        if (!file) return;
+        scraping = true;
+        error = '';
+        try {
+            const code = await decodeBarcodeFromImage(file);
+            newQuery = code;
+            if (detectKind(code) === 'title') {
+                scraping = false;
+                return;
+            }
+            await lookupAndPrefill();
+        } catch (err) {
+            error = `Image scan failed: ${(err as Error).message}`;
             scraping = false;
         }
     }
@@ -287,6 +364,31 @@
         await load();
     }
 
+    async function duplicateItem(item: Item) {
+        const copyTitle = item.title.endsWith(' (Copy)') ? item.title : `${item.title} (Copy)`;
+        await api.post('/items', {
+            collection_id: item.collection_id,
+            category_id: item.category_id,
+            title: copyTitle,
+            subtitle: item.subtitle,
+            notes: item.notes,
+            condition: item.condition,
+            quantity: item.quantity,
+            purchase_price: item.purchase_price,
+            current_value: item.current_value,
+            currency: item.currency,
+            location: item.location,
+            identifiers: { ...item.identifiers },
+            attrs: { ...item.attrs },
+            depleted: item.depleted,
+            purchased_at: item.purchased_at,
+            use_by_date: item.use_by_date,
+            date_frozen: item.date_frozen,
+            date_opened: item.date_opened
+        });
+        await load();
+    }
+
     function requestDeleteCollection() {
         confirmDialog = 'delete-collection';
     }
@@ -327,6 +429,13 @@
 
     {#if canEdit}
     <form onsubmit={addItem} class="card add-form">
+        <input
+            bind:this={barcodeImageInput}
+            type="file"
+            accept="image/*"
+            style="display:none"
+            onchange={onBarcodeImagePicked}
+        />
         <label class="add-label" for="addq">
             Add an item
             <span class="muted">— paste a URL, scan a barcode, type an ISBN/EAN, or just a title</span>
@@ -384,6 +493,9 @@
                     {scraping ? 'Looking up…' : `Look up ${detected.toUpperCase()}`}
                 </button>
             {/if}
+            <button type="button" class="secondary" onclick={triggerBarcodeImagePicker} disabled={scraping}>
+                Scan image
+            </button>
             <button type="submit" disabled={scraping || !newQuery.trim()}>Add</button>
         </div>
         {#if error}<p class="error">{error}</p>{/if}
@@ -421,6 +533,30 @@
                 </svg>
             </button>
         </div>
+        <select bind:value={sortBy} onchange={() => load()} title="Sort by">
+            <option value="title">Sort: Title</option>
+            <option value="value">Sort: Current value</option>
+            <option value="acquired_at">Sort: Acquisition date</option>
+            <option value="attr">Sort: Custom field</option>
+        </select>
+        <select bind:value={sortDir} onchange={() => load()} title="Sort direction">
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
+        </select>
+        {#if sortBy === 'attr'}
+            <input
+                bind:value={sortAttr}
+                placeholder="Custom field key (e.g. creator)"
+                title="Custom field key"
+                onkeydown={(e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        load();
+                    }
+                }}
+                onblur={() => load()}
+            />
+        {/if}
     </div>
 
     {#if loading}
@@ -470,6 +606,7 @@
                             <div class="item-meta">
                                 {#if i.condition}<span>{i.condition}</span>{/if}
                                 {#if i.quantity > 1}<span>×{i.quantity}</span>{/if}
+                                {#if displayValue(i) != null}<span>{formatValue(i)}</span>{/if}
                                 {#if i.depleted}<span class="depleted-badge">Depleted</span>{/if}
                                 {#if isConsumable(i.category_slug)}
                                     {#if i.use_by_date}<span class="date-badge use-by">Use by {new Date(i.use_by_date).toLocaleDateString()}</span>{/if}
@@ -480,6 +617,7 @@
                         {#if canEdit}
                             <div class="item-card-actions">
                                 <button type="button" class="secondary" onclick={() => startEdit(i)}>Edit</button>
+                                <button type="button" class="secondary" onclick={() => duplicateItem(i)}>Duplicate</button>
                                 <button
                                     type="button"
                                     class={i.depleted ? 'secondary' : 'warn'}
@@ -502,6 +640,7 @@
                     {#if showCollectionSubtitle}<th>Subtitle</th>{/if}
                     <th>Qty</th>
                     <th>Condition</th>
+                    <th>Value</th>
                     {#if canEdit}<th></th>{/if}
                 </tr>
             </thead>
@@ -519,6 +658,7 @@
                             {/if}
                             <td><input type="number" bind:value={editQuantity} min="0" placeholder="Qty" class="edit-input qty-input" /></td>
                             <td><input bind:value={editCondition} placeholder="Condition" class="edit-input" /></td>
+                            <td class="muted">{formatValue(i)}</td>
                             {#if canEdit}
                                 <td class="row-actions">
                                     <button onclick={saveEdit}>Save</button>
@@ -546,9 +686,11 @@
                             {#if showCollectionSubtitle}<td class="muted">{i.subtitle ?? ''}</td>{/if}
                             <td>{i.quantity}</td>
                             <td>{i.condition ?? ''}</td>
+                            <td class="muted">{formatValue(i)}</td>
                             {#if canEdit}
                                 <td class="row-actions">
                                     <button class="secondary" onclick={() => startEdit(i)}>Edit</button>
+                                    <button class="secondary" onclick={() => duplicateItem(i)}>Duplicate</button>
                                     <button
                                         type="button"
                                         class={i.depleted ? 'secondary' : 'warn'}

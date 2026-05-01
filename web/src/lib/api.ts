@@ -110,6 +110,7 @@ export interface Item {
     quantity: number;
     purchase_price: number | null;
     current_value: number | null;
+    rollup_current_value: number | null;
     currency: string | null;
     location: string | null;
     identifiers: Record<string, unknown>;

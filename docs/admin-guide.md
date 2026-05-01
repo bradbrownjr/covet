@@ -179,6 +179,20 @@ The container runs `alembic upgrade head` on start unless
 2. Read the relevant section of [`CHANGELOG.md`](../CHANGELOG.md).
 3. Pin to a major or minor tag (`:0.11`, `:0`) in production rather
    than `:edge`, so you don't pull breaking changes inadvertently.
+4. After upgrades, review the shipped documentation set:
+   `CHANGELOG.md` for release notes,
+   `docs/user-guide.md` for web/server user workflows, and
+   `docs/android-user-guide.md` for Android workflows.
+
+### Recent client features with no extra server config
+
+The following recent features are client/API behavior only and do **not**
+require new environment variables or reverse-proxy changes:
+
+- Web duplicate-item action.
+- Web item sort controls (title, value, acquisition date, custom field).
+- Web + Android barcode scanning from still images.
+- Parent/container value rollups exposed as `rollup_current_value` on item reads.
 
 To pin a specific version:
 

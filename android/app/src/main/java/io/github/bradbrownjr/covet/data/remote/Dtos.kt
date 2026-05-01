@@ -103,6 +103,7 @@ data class ItemDto(
     val quantity: Int = 1,
     val purchase_price: Double? = null,
     val current_value: Double? = null,
+    val rollup_current_value: Double? = null,
     val currency: String? = null,
     val location: String? = null,
     val identifiers: Map<String, Any?> = emptyMap(),

@@ -79,6 +79,7 @@ class ItemRead(ItemBase):
     category_id: str
     category_slug: str | None = None
     primary_photo_id: str | None = None
+    rollup_current_value: Decimal | None = None
     created_at: datetime
     updated_at: datetime
 

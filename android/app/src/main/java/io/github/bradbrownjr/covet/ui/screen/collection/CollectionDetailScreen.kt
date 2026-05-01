@@ -1,5 +1,7 @@
 package io.github.bradbrownjr.covet.ui.screen.collection
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -28,10 +30,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions
+import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.common.InputImage
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -51,6 +58,9 @@ import io.github.bradbrownjr.covet.data.remote.CovetApi
 import io.github.bradbrownjr.covet.data.repo.CategoryRepository
 import io.github.bradbrownjr.covet.data.repo.CollectionRepository
 import io.github.bradbrownjr.covet.data.repo.ItemRepository
+import java.text.NumberFormat
+import java.util.Currency
+import java.util.Locale
 import javax.inject.Inject
 
 enum class ViewMode { LIST, GRID }
@@ -89,6 +99,18 @@ data class DetailUi(
     val showDeleteConfirm: Boolean = false,
     val deleted: Boolean = false,
 )
+
+private fun formatItemValue(item: ItemDto): String? {
+    val raw = item.rollup_current_value ?: item.current_value ?: return null
+    val currencyCode = item.currency ?: "USD"
+    return try {
+        val fmt = NumberFormat.getCurrencyInstance(Locale.getDefault())
+        fmt.currency = Currency.getInstance(currencyCode)
+        fmt.format(raw)
+    } catch (_: Throwable) {
+        String.format(Locale.US, "%s %.2f", currencyCode, raw)
+    }
+}
 
 @HiltViewModel
 class CollectionDetailViewModel @Inject constructor(
@@ -389,6 +411,42 @@ fun CollectionDetailScreen(
 ) {
     @Suppress("UNUSED_PARAMETER") val cid = collectionId // already in SavedStateHandle
     val s by vm.state.collectAsState()
+    val context = LocalContext.current
+
+    val imageScanner = remember {
+        BarcodeScanning.getClient(
+            BarcodeScannerOptions.Builder()
+                .setBarcodeFormats(
+                    Barcode.FORMAT_EAN_13,
+                    Barcode.FORMAT_EAN_8,
+                    Barcode.FORMAT_UPC_A,
+                    Barcode.FORMAT_UPC_E,
+                    Barcode.FORMAT_CODE_128,
+                    Barcode.FORMAT_QR_CODE,
+                )
+                .build(),
+        )
+    }
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        try {
+            val image = InputImage.fromFilePath(context, uri)
+            imageScanner.process(image)
+                .addOnSuccessListener { results ->
+                    val code = results.firstOrNull { !it.rawValue.isNullOrBlank() }?.rawValue
+                    if (!code.isNullOrBlank()) vm.onBarcode(code) else vm.showCreate(true)
+                }
+                .addOnFailureListener {
+                    vm.showCreate(true)
+                }
+        } catch (_: Throwable) {
+            vm.showCreate(true)
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { imageScanner.close() }
+    }
 
     // Navigate back when the collection is successfully deleted.
     LaunchedEffect(s.deleted) {
@@ -429,6 +487,9 @@ fun CollectionDetailScreen(
                     if (onScan != null) {
                         IconButton(onClick = onScan) {
                             Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan barcode")
+                        }
+                        IconButton(onClick = { imagePicker.launch("image/*") }) {
+                            Icon(Icons.Default.Image, contentDescription = "Scan barcode from image")
                         }
                     }
                 },
@@ -523,9 +584,19 @@ fun CollectionDetailScreen(
                                 }
                             } else {
                                 items(displayItems, key = { it.id }) { item ->
+                                    val valueText = formatItemValue(item)
                                     ListItem(
                                         headlineContent = { Text(item.title) },
-                                        supportingContent = item.category_slug?.let { { Text(it) } },
+                                        supportingContent = {
+                                            val category = item.category_slug
+                                            if (category != null && valueText != null) {
+                                                Text("$category • $valueText")
+                                            } else if (category != null) {
+                                                Text(category)
+                                            } else if (valueText != null) {
+                                                Text(valueText)
+                                            }
+                                        },
                                         trailingContent = {
                                             IconButton(onClick = { vm.delete(item.id) }) {
                                                 Icon(Icons.Default.Delete, contentDescription = "Delete")
@@ -790,6 +861,13 @@ private fun ItemCard(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
+                formatItemValue(item)?.let { value ->
+                    Text(
+                        value,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 item.subtitle?.takeIf { it.isNotBlank() }?.let {
                     Text(
                         it,

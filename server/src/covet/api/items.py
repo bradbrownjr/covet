@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import asc, desc, func, select
 from sqlalchemy.orm import Session as DBSession
 from sqlalchemy.orm import selectinload
 
@@ -57,6 +59,87 @@ def _validate_parent(
         cursor = db.get(Item, cursor.parent_id)
 
 
+def _apply_sort(
+    stmt,
+    *,
+    sort_by: str,
+    sort_dir: str,
+    sort_attr: str | None,
+):
+    direction = asc if sort_dir == "asc" else desc
+
+    if sort_by == "title":
+        return stmt.order_by(direction(Item.title), Item.id)
+
+    if sort_by == "value":
+        return stmt.order_by(
+            Item.current_value.is_(None),
+            direction(Item.current_value),
+            Item.title,
+            Item.id,
+        )
+
+    if sort_by == "acquired_at":
+        acquired = func.coalesce(Item.acquired_at, Item.purchased_at)
+        return stmt.order_by(acquired.is_(None), direction(acquired), Item.title, Item.id)
+
+    if sort_by == "attr":
+        if not sort_attr:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="sort_attr is required when sort_by=attr",
+            )
+        attr_value = Item.attrs[sort_attr].as_string()
+        return stmt.order_by(attr_value.is_(None), direction(attr_value), Item.title, Item.id)
+
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="sort_by must be one of: title, value, acquired_at, attr",
+    )
+
+
+def _compute_rollup_values(db: DBSession, collection_id: str) -> dict[str, Decimal]:
+    rows = db.execute(
+        select(Item.id, Item.parent_id, Item.current_value).where(Item.collection_id == collection_id)
+    ).all()
+
+    children_by_parent: dict[str, list[str]] = {}
+    own_values: dict[str, Decimal] = {}
+    for item_id, parent_id, current_value in rows:
+        own_values[item_id] = current_value if current_value is not None else Decimal("0")
+        if parent_id is not None:
+            children_by_parent.setdefault(parent_id, []).append(item_id)
+
+    memo: dict[str, Decimal] = {}
+
+    def effective_value(item_id: str) -> Decimal:
+        cached = memo.get(item_id)
+        if cached is not None:
+            return cached
+        children = children_by_parent.get(item_id)
+        if children:
+            total = Decimal("0")
+            for child_id in children:
+                total += effective_value(child_id)
+            memo[item_id] = total
+            return total
+        value = own_values.get(item_id, Decimal("0"))
+        memo[item_id] = value
+        return value
+
+    rollups: dict[str, Decimal] = {}
+    for parent_id in children_by_parent:
+        rollups[parent_id] = effective_value(parent_id)
+    return rollups
+
+
+def _to_item_read(item: Item, rollups: dict[str, Decimal]) -> ItemRead:
+    dto = ItemRead.model_validate(item)
+    if item.id in rollups:
+        dto.rollup_current_value = rollups[item.id]
+    return dto
+
+
 @router.get("", response_model=list[ItemRead])
 def list_items(
     collection_id: str = Query(...),
@@ -67,12 +150,22 @@ def list_items(
     ),
     search: str | None = None,
     depleted: bool | None = Query(default=None, description="Filter by depleted status."),
+    sort_by: str = Query(
+        default="title",
+        description="Sort key: title, value (current_value), acquired_at, or attr.",
+    ),
+    sort_dir: str = Query(default="asc", description="Sort direction: asc or desc."),
+    sort_attr: str | None = Query(
+        default=None,
+        description="Custom attribute key, required when sort_by=attr.",
+    ),
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
 ) -> list[ItemRead]:
     _require_role(db, auth, collection_id, _VIEWER_ROLES)
+    rollups = _compute_rollup_values(db, collection_id)
     stmt = select(Item).where(Item.collection_id == collection_id)
     if category_subtree:
         try:
@@ -95,8 +188,15 @@ def list_items(
         stmt = stmt.where(Item.title.ilike(like))
     if depleted is not None:
         stmt = stmt.where(Item.depleted.is_(depleted))
-    stmt = stmt.options(selectinload(Item.photos)).order_by(Item.title).limit(limit).offset(offset)
-    return [ItemRead.model_validate(item) for item in db.scalars(stmt)]
+    if sort_dir not in {"asc", "desc"}:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="sort_dir must be one of: asc, desc",
+        )
+    stmt = stmt.options(selectinload(Item.photos))
+    stmt = _apply_sort(stmt, sort_by=sort_by, sort_dir=sort_dir, sort_attr=sort_attr)
+    stmt = stmt.limit(limit).offset(offset)
+    return [_to_item_read(item, rollups) for item in db.scalars(stmt)]
 
 
 @router.get("/grocery-list", response_model=list[ItemRead])
@@ -194,7 +294,8 @@ def get_item(
     if item is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     _require_role(db, auth, item.collection_id, _VIEWER_ROLES)
-    return ItemRead.model_validate(item)
+    rollups = _compute_rollup_values(db, item.collection_id)
+    return _to_item_read(item, rollups)
 
 
 @router.patch("/{item_id}", response_model=ItemRead)
@@ -265,7 +366,8 @@ def list_item_children(
     if item is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     _require_role(db, auth, item.collection_id, _VIEWER_ROLES)
+    rollups = _compute_rollup_values(db, item.collection_id)
     rows = db.scalars(
         select(Item).where(Item.parent_id == item_id).order_by(Item.title)
     ).all()
-    return [ItemRead.model_validate(r) for r in rows]
+    return [_to_item_read(r, rollups) for r in rows]

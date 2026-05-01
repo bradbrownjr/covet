@@ -65,9 +65,10 @@ This is the bar that protects shipped features:
 - Imperative mood; the body explains *what* changed and *why*.
 - One logical change per commit. Don't batch unrelated work.
 - Never commit broken builds, failing tests, or unresolved lint errors.
-- After completing a task, commit and push (`git add -A && git commit && git push`).
+- After each major feature or bug fix, commit and push once local validation passes (`git add -A && git commit && git push`).
 - The user does not currently use the `Co-authored-by: Copilot` trailer.
   Don't add it unless asked.
+- Do not publish a new Docker image, tag a release, or publish an APK/GitHub Release artifact until the user explicitly says they are ready.
 
 ### Release procedure
 
@@ -96,6 +97,11 @@ tag and the matching `## [X.Y.Z]` section of `CHANGELOG.md`.
 - `ruff check` / `svelte-check` / lint clean.
 - Documentation updated (`CHANGELOG.md` for user-facing changes;
   `AGENTS.md` for new rules / gotchas; `README.md` only when needed).
+- Update the user/admin guides whenever shipped behavior changes:
+  `docs/user-guide.md` for web/server user workflows,
+  `docs/android-user-guide.md` for Android workflows,
+  `docs/admin-guide.md` for operator-facing behavior/config/upgrade notes.
+  User/admin-facing features are not done until the relevant guides are caught up.
 - **`CHANGELOG.md` is the source for the in-app "What's new" modal** —
   every user-facing change must land in `CHANGELOG.md` under
   `## [Unreleased]` (or the active version). The web client fetches
