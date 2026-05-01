@@ -85,9 +85,10 @@ tag and the matching `## [X.Y.Z]` section of `CHANGELOG.md`.
    release in user-facing terms.
 3. Commit, push, then `git tag -a vX.Y.Z -m "..." && git push origin vX.Y.Z`.
 4. `release.yml` creates the GitHub Release. `release-image.yml` builds the
-   multi-arch GHCR image at `:X.Y.Z`, `:X.Y`, `:X`. `android.yml` rebuilds
-   the debug APK; signed APK upload requires `ANDROID_KEYSTORE_BASE64` etc.
-   and is currently disabled.
+  multi-arch GHCR image at `:X.Y.Z`, `:X.Y`, `:X`. `android.yml` now runs on
+  PRs, version tags, or manual dispatch only (not every push to `main`);
+  signed APK upload requires `ANDROID_KEYSTORE_BASE64` etc. and is currently
+  disabled until the user explicitly wants a release.
 
 ## Definition of Done
 
