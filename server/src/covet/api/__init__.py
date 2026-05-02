@@ -10,6 +10,7 @@ from covet.api import collections as collections_router
 from covet.api import comments as comments_router
 from covet.api import contacts as contacts_router
 from covet.api import documents as documents_router
+from covet.api import grocery as grocery_router
 from covet.api import ha as ha_router
 from covet.api import imports as imports_router
 from covet.api import inventory as inventory_router
@@ -50,6 +51,7 @@ api_router.include_router(invitations_router.router)
 api_router.include_router(audit_router.router)
 api_router.include_router(metadata_router.router)
 api_router.include_router(documents_router.router)
+api_router.include_router(grocery_router.router)
 api_router.include_router(maintenance_router.router)
 api_router.include_router(chores_router.router)
 api_router.include_router(notifications_router.router)

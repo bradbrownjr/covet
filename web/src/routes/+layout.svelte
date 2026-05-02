@@ -19,11 +19,23 @@
 
     interface NotificationPref { kind: string; browser_enabled: boolean; lead_days: number; }
     interface DueAlert { id: string; title: string; details: string | null; due_at: string; kind: string; severity: string; }
+    interface GroceryCount { total: number; ad_hoc: number; depleted_items: number; }
 
     let { children } = $props();
     let ready = $state(false);
     let whatsNewOpen = $state(false);
     let lastSeen = $state<string | null>(null);
+    let groceryCount = $state(0);
+
+    async function refreshGroceryCount() {
+        if (!$me) { groceryCount = 0; return; }
+        try {
+            const c = await api.get<GroceryCount>('/grocery/count');
+            groceryCount = c.total;
+        } catch {
+            groceryCount = 0;
+        }
+    }
 
     const hasUnseen = $derived(
         !!$publicConfig?.version && lastSeen !== $publicConfig.version
@@ -54,6 +66,7 @@
         }
         await Promise.all([refreshMe(), loadPublicConfig()]);
         ready = true;
+        await refreshGroceryCount();
         const path = page.url.pathname;
         const onAuth = path === '/login' || path === '/register';
         const isPublic = path.startsWith('/share/') || path.startsWith('/invite/');
@@ -128,7 +141,9 @@
         {#if $me}
             <a href="/">{$_('nav.collections')}</a>
             <a href="/maintenance">{$_('nav.maintenance')}</a>
-            <a href="/grocery-list">{$_('nav.grocery_list')}</a>
+            {#if groceryCount > 0}
+                <a href="/grocery-list">{$_('nav.grocery_list')} <span class="badge">{groceryCount}</span></a>
+            {/if}
             <a href="/import">{$_('nav.import')}</a>
             <a href="/settings">{$_('nav.settings')}</a>
             <a href="/profile" class="user" title="Edit your profile">{userLabel($me)}</a>
@@ -227,5 +242,17 @@
         background: var(--surface);
         color: var(--text);
         cursor: pointer;
+    }
+    .badge {
+        display: inline-block;
+        min-width: 1.2em;
+        padding: 0 0.4em;
+        margin-left: 0.25em;
+        font-size: 0.75rem;
+        line-height: 1.4;
+        text-align: center;
+        border-radius: 999px;
+        background: var(--accent, #2563eb);
+        color: #fff;
     }
 </style>

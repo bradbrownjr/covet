@@ -591,6 +591,16 @@ def create_item(
         )
     item = Item(**data)
     db.add(item)
+    db.flush()
+    audit.log(
+        db,
+        actor_user_id=auth.user.id,
+        action="item.create",
+        collection_id=item.collection_id,
+        target_type="item",
+        target_id=item.id,
+        payload={"title": item.title, "category_id": item.category_id},
+    )
     db.commit()
     db.refresh(item)
     return ItemRead.model_validate(item)
@@ -1011,6 +1021,15 @@ def update_item(
 
     for key, value in updates.items():
         setattr(item, key, value)
+    audit.log(
+        db,
+        actor_user_id=auth.user.id,
+        action="item.update",
+        collection_id=item.collection_id,
+        target_type="item",
+        target_id=item.id,
+        payload={"changes": list(updates.keys())},
+    )
     db.commit()
     db.refresh(item)
     return ItemRead.model_validate(item)
@@ -1030,6 +1049,15 @@ def flag_item(
     note = (payload.note or "").strip()
     item.flagged_note = note or None
     item.flagged_at = datetime.now(UTC)
+    audit.log(
+        db,
+        actor_user_id=auth.user.id,
+        action="item.flag",
+        collection_id=item.collection_id,
+        target_type="item",
+        target_id=item.id,
+        payload={"note": item.flagged_note},
+    )
     db.commit()
     db.refresh(item)
     return ItemRead.model_validate(item)
@@ -1047,6 +1075,15 @@ def unflag_item(
     _require_role(db, auth, item.collection_id, _EDITOR_ROLES)
     item.flagged_note = None
     item.flagged_at = None
+    audit.log(
+        db,
+        actor_user_id=auth.user.id,
+        action="item.unflag",
+        collection_id=item.collection_id,
+        target_type="item",
+        target_id=item.id,
+        payload=None,
+    )
     db.commit()
     db.refresh(item)
     return ItemRead.model_validate(item)
@@ -1139,6 +1176,15 @@ def delete_item(
     if item is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     _require_role(db, auth, item.collection_id, _EDITOR_ROLES)
+    audit.log(
+        db,
+        actor_user_id=auth.user.id,
+        action="item.delete",
+        collection_id=item.collection_id,
+        target_type="item",
+        target_id=item.id,
+        payload={"title": item.title},
+    )
     db.delete(item)
     db.commit()
 

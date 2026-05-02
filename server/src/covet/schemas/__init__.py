@@ -23,6 +23,15 @@ from covet.schemas.collection import (
 )
 from covet.schemas.contact import ContactCreate, ContactRead, ContactUpdate
 from covet.schemas.document import DocumentRead, DocumentUpdate
+from covet.schemas.grocery import (
+    GroceryCount,
+    GroceryFeedEntry,
+    GroceryItemCreate,
+    GroceryItemRead,
+    GroceryItemUpdate,
+    GroceryPurchaseRequest,
+    GrocerySource,
+)
 from covet.schemas.inventory import (
     DueAlertRead,
     ItemLotCreate,
@@ -116,6 +125,13 @@ __all__ = [
     "DocumentRead",
     "DocumentUpdate",
     "DueAlertRead",
+    "GroceryCount",
+    "GroceryFeedEntry",
+    "GroceryItemCreate",
+    "GroceryItemRead",
+    "GroceryItemUpdate",
+    "GroceryPurchaseRequest",
+    "GrocerySource",
     "InvitationCreate",
     "InvitationCreated",
     "InvitationPreview",

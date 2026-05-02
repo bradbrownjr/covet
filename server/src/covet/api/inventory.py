@@ -20,6 +20,7 @@ from covet.schemas.inventory import (
     ItemLotUpdate,
     RestockRequest,
 )
+from covet.services import audit
 
 router = APIRouter(tags=["inventory"])
 
@@ -105,6 +106,15 @@ def restock_item(
     _sync_item_inventory_state(db, item)
     if payload.mark_in_stock:
         item.depleted = False
+    audit.log(
+        db,
+        actor_user_id=auth.user.id,
+        action="item.restock",
+        collection_id=item.collection_id,
+        target_type="item",
+        target_id=item.id,
+        payload={"lot_id": lot.id, "quantity": lot.quantity},
+    )
     db.commit()
     db.refresh(lot)
     return ItemLotRead.model_validate(lot)

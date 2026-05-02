@@ -6,6 +6,18 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+- **Shared grocery list** — household members can now add ad-hoc items
+  to a shared shopping list per collection, alongside any pantry items
+  marked depleted. New `/api/grocery` endpoints (list, create, update,
+  delete, mark-purchased). Marking a linked entry purchased restocks the
+  pantry item automatically (creates an `ItemLot`, clears `depleted`).
+- **Conditional Grocery List nav** — the menu link now only shows when
+  there is something on the list (depleted items + ad-hoc entries).
+  A small badge displays the open count.
+- **Wider audit-log coverage** — every grocery action plus item create,
+  update, delete, flag/unflag and restock now write an `AuditLogEntry`.
+  Closes long-standing gaps in the per-collection audit view.
+
 ## [0.17.0-rc2] — 2026-05-02
 
 - **Squashed Alembic migrations** — pre-1.0 had 35 incremental migrations

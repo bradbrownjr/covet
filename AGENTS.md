@@ -383,6 +383,7 @@ the affected file column is preserved.**
 | MCP server | `server/src/covet/api/mcp_server.py` | `FastMCP`, `mcp_app()`, mounted at `/mcp`, tools: `list_collections`, `search_items`, `get_item`, `list_maintenance`, `list_due_alerts`, `list_low_stock` |
 | Item comment threads | `server/src/covet/api/comments.py`, `models/item_comment.py`, `alembic/versions/0035_item_comments.py`, `web/src/lib/ItemComments.svelte` | `GET/POST /items/{id}/comments`, `GET /items/{id}/comments/{parent_id}/replies`, `PATCH/DELETE /comments/{id}`, `ItemComment`, `CommentAuthor`, `ItemComments` component |
 | Scraper plugin/adapter system | `server/src/covet/services/metadata.py`, `api/metadata.py` | `register_adapter`, `register_barcode_adapter`, `discover_plugins`, `list_adapters`, `GET /metadata/adapters`, entry-point groups `covet.scraper_adapter` / `covet.barcode_adapter` |
+| Shared grocery list (ad-hoc + depleted-item feed) | `server/src/covet/api/grocery.py`, `models/grocery.py`, `schemas/grocery.py`, `web/src/routes/grocery-list/+page.svelte`, `web/src/routes/+layout.svelte` | `GroceryItem`, `GET/POST/PATCH/DELETE /grocery`, `POST /grocery/{id}/purchase`, `GET /grocery/count`, `GroceryFeedEntry`, conditional nav badge |
 
 Update this table whenever a new feature lands or an existing feature moves.
 

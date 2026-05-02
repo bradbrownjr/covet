@@ -10,6 +10,7 @@ from covet.models.category import Category
 from covet.models.collection import Collection
 from covet.models.contact import Contact
 from covet.models.document import Document
+from covet.models.grocery import GroceryItem
 from covet.models.invitation import Invitation
 from covet.models.item import Item
 from covet.models.item_comment import ItemComment
@@ -56,6 +57,7 @@ __all__ = [
     "CollectionMembership",
     "Contact",
     "Document",
+    "GroceryItem",
     "Invitation",
     "Item",
     "ItemComment",
