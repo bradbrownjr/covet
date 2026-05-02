@@ -22,7 +22,7 @@ from reportlab.platypus import (
 )
 
 
-def _make_qr_png(data: str, size_px: int = 200) -> BytesIO:
+def _make_qr_png(data: str) -> BytesIO:
     """Generate a QR code PNG for *data* and return it as a BytesIO buffer."""
     qr = qrcode.QRCode(
         version=1,

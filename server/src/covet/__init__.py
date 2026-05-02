@@ -1,3 +1,3 @@
 """Covet server package."""
 
-__version__ = "0.17.0-rc1"
+__version__ = "0.17.0-rc2"

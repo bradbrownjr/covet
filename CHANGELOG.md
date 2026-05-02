@@ -6,6 +6,19 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.17.0-rc2] — 2026-05-02
+
+- **Squashed Alembic migrations** — pre-1.0 had 35 incremental migrations
+  carried since the first commit; collapsed into a single
+  `0001_initial.py` baseline that creates the schema from
+  `Base.metadata` and seeds the curated category taxonomy. Cleaner fresh
+  installs; no functional change.
+- **Fix Android build** — added missing `import retrofit2.http.PUT`
+  in `CovetApi.kt` so the notification preference endpoint compiles
+  again. (Regression introduced when notification PUT route was added.)
+- Removed unused `size_px` parameter from `_make_qr_png` helper.
+- Removed two empty stray top-level files (`category`, `leaf`).
+
 ## [0.17.0-rc1] — 2026-05-02
 
 - **i18n & localization** — the web UI now supports multiple languages.

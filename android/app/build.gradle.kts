@@ -15,8 +15,8 @@ android {
         applicationId = "io.github.bradbrownjr.covet"
         minSdk = 26 // Android 8.0
         targetSdk = 35
-        versionCode = 23
-        versionName = "0.17.0-rc1"
+        versionCode = 24
+        versionName = "0.17.0-rc2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
     }
