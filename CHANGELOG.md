@@ -6,6 +6,8 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.17.0-rc1] — 2026-05-02
+
 - **i18n & localization** — the web UI now supports multiple languages.
   A language picker in the navigation bar lets users switch between English,
   French, German, Spanish, and Japanese; the preference is saved to

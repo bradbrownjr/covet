@@ -432,6 +432,55 @@ Long-term work that makes Covet a foundation other things build on.
 
 ---
 
+## Phase 15 — Polish, themes & real-time (planned)
+
+Quality-of-life improvements that make existing features shine plus
+the first steps toward live collaboration.
+
+- **Real-time / live updates** — the app currently polls (15-min Android
+  SyncWorker, manual web refresh). Add a `GET /collections/{id}/events`
+  SSE (Server-Sent Events) stream that pushes `item-added`,
+  `item-updated`, `item-deleted`, and `comment-added` events. The web
+  client subscribes while the collection page is open and reconciles
+  diffs without a full reload. Android subscribes in the foreground
+  (OkHttp EventSource) and cancels when backgrounded.
+- **Collection themes** — visual skins for the collection detail view
+  inspired by the physical environment of each category. Three built-in
+  themes to start:
+  - *Bookshelf* — wood-grain shelf texture behind cover tiles; books
+    stand upright as spine thumbnails.
+  - *Game room* — dark ambient background with neon-accent category
+    badges; cartridge/box art shown prominently.
+  - *Movie room* — cinematic widescreen header; poster-style grid with
+    rating stars.
+  A `theme` field is added to `Collection`; the web collection detail
+  page reads `collection.theme` and applies a `data-collection-theme`
+  attribute for per-theme CSS; Android switches background/color tokens.
+  Requires photo thumbnails in the items list API response.
+- **Template editing & cloning** — the server already has `ItemTemplate`
+  model and CRUD API (`api/item_templates.py`); items have an optional
+  `template_id` FK. Remaining work:
+  - Role-based access: enforce `editor`+ for create/edit/clone, any
+    member for read, using the existing `Membership` `viewer/editor/owner`
+    roles.
+  - `POST /item-templates/{id}/clone` endpoint.
+  - Web: template management page (list, create, edit, delete, clone).
+  - Android: template picker in the add-item flow.
+- **Full i18n rollout** — the i18n scaffold (svelte-i18n + catalogs for
+  EN/FR/DE/ES/JA) is in place. Wire the remaining web pages — collection
+  list, collection detail, item detail, import wizard, settings,
+  maintenance, bundles, locations — into `$_()` calls and extend all
+  five catalogs. Accept community pull requests to add more locales via
+  `web/src/lib/locales/`.
+- **Android AI-prefill from barcode scanner** — the scanner screen today
+  navigates to add-item after a scan. Wire the scanned barcode into
+  `POST /api/items/ai-prefill` so the new-item form pre-populates title,
+  subtitle, category, and custom fields from Open Library / MusicBrainz /
+  Open Food Facts before the user sees it. Falls back gracefully if no
+  match is found.
+
+---
+
 ## Done
 
 See [CHANGELOG.md](CHANGELOG.md) for what has shipped (auth, items,
