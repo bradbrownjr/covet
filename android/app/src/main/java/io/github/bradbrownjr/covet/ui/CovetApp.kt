@@ -3,6 +3,7 @@ package io.github.bradbrownjr.covet.ui
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -10,6 +11,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import io.github.bradbrownjr.covet.nfc.NfcManager
 import io.github.bradbrownjr.covet.ui.screen.about.AboutScreen
 import io.github.bradbrownjr.covet.ui.screen.collection.CollectionDetailScreen
 import io.github.bradbrownjr.covet.ui.screen.collections.CollectionListScreen
@@ -39,6 +41,14 @@ fun CovetApp() {
     val nav = rememberNavController()
     val rootVm: RootViewModel = hiltViewModel()
     val loggedIn by rootVm.loggedIn.collectAsState(initial = null)
+
+    // Navigate to an item when an NFC tag is tapped.
+    val nfcItemId by NfcManager.pendingNavigationItemId.collectAsState()
+    LaunchedEffect(nfcItemId) {
+        val id = nfcItemId ?: return@LaunchedEffect
+        NfcManager.pendingNavigationItemId.value = null
+        nav.navigate(Routes.itemDetail(id))
+    }
 
     Scaffold { padding ->
         NavHost(
@@ -93,6 +103,16 @@ fun CovetApp() {
             }
             composable(Routes.SCANNER) {
                 ScannerScreen(onResult = { code ->
+                    // A covet://item/<id> QR code navigates directly to the item.
+                    if (code.startsWith("covet://item/")) {
+                        val itemId = code.removePrefix("covet://item/").trim('/')
+                        if (itemId.isNotBlank()) {
+                            nav.navigate(Routes.itemDetail(itemId)) {
+                                popUpTo(Routes.SCANNER) { inclusive = true }
+                            }
+                            return@ScannerScreen
+                        }
+                    }
                     nav.previousBackStackEntry?.savedStateHandle?.set("barcode", code)
                     nav.popBackStack()
                 })
@@ -113,3 +133,5 @@ fun CovetApp() {
         }
     }
 }
+
+

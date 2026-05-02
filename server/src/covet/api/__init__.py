@@ -9,6 +9,7 @@ from covet.api import chores as chores_router
 from covet.api import collections as collections_router
 from covet.api import contacts as contacts_router
 from covet.api import documents as documents_router
+from covet.api import ha as ha_router
 from covet.api import imports as imports_router
 from covet.api import inventory as inventory_router
 from covet.api import invitations as invitations_router
@@ -54,5 +55,6 @@ api_router.include_router(photos_router.router)
 api_router.include_router(manual_bundles_router.router)
 api_router.include_router(system_router.router)
 api_router.include_router(webhooks_router.router)
+api_router.include_router(ha_router.router)
 
 __all__ = ["api_router"]

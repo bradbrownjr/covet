@@ -1,6 +1,10 @@
 package io.github.bradbrownjr.covet.ui.screen.item
 
+import android.app.PendingIntent
+import android.content.Intent
+import android.content.IntentFilter
 import android.net.Uri
+import android.nfc.NfcAdapter
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -42,6 +46,7 @@ import io.github.bradbrownjr.covet.data.repo.ItemRepository
 import io.github.bradbrownjr.covet.data.repo.LocationRepository
 import io.github.bradbrownjr.covet.data.repo.BundleRepository
 import io.github.bradbrownjr.covet.data.repo.PhotoRepository
+import io.github.bradbrownjr.covet.nfc.NfcManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -364,6 +369,90 @@ private fun DetailView(s: ItemDetailUi, vm: ItemDetailViewModel, modifier: Modif
                     }
                 }
             }
+
+            // NFC tag write
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            NfcWriteSection(itemId = item.id)
+        }
+    }
+}
+
+@Composable
+private fun NfcWriteSection(itemId: String) {
+    val context = LocalContext.current
+    val nfcAdapter = remember { NfcAdapter.getDefaultAdapter(context) }
+    var showDialog by remember { mutableStateOf(false) }
+    var nfcMessage by remember { mutableStateOf<String?>(null) }
+
+    // Collect write results when dialog is open.
+    LaunchedEffect(showDialog) {
+        if (!showDialog) return@LaunchedEffect
+        NfcManager.writeResult.collect { result ->
+            nfcMessage = when (result) {
+                is NfcManager.WriteResult.Success -> "Tag written successfully."
+                is NfcManager.WriteResult.Failure -> "Write failed: ${result.message}"
+            }
+            NfcManager.pendingWriteItemId = null
+        }
+    }
+
+    if (showDialog) {
+        // Enable foreground NFC dispatch while dialog is open.
+        DisposableEffect(Unit) {
+            val activity = context as? android.app.Activity
+            if (activity != null && nfcAdapter != null) {
+                NfcManager.pendingWriteItemId = itemId
+                val intent = Intent(activity, activity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                val pi = PendingIntent.getActivity(
+                    activity, 0, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
+                )
+                val filters = arrayOf(IntentFilter(NfcAdapter.ACTION_TAG_DISCOVERED))
+                nfcAdapter.enableForegroundDispatch(activity, pi, filters, null)
+            }
+            onDispose {
+                NfcManager.pendingWriteItemId = null
+                if (activity != null && nfcAdapter != null) {
+                    nfcAdapter.disableForegroundDispatch(activity)
+                }
+            }
+        }
+
+        AlertDialog(
+            onDismissRequest = { showDialog = false; nfcMessage = null },
+            title = { Text("Write NFC Tag") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (nfcMessage != null) {
+                        Text(nfcMessage!!, style = MaterialTheme.typography.bodyMedium)
+                    } else {
+                        CircularProgressIndicator(Modifier.size(20.dp).align(Alignment.CenterHorizontally), strokeWidth = 2.dp)
+                        Text(
+                            "Hold your phone to a blank NFC tag to write the Covet item ID.",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showDialog = false; nfcMessage = null }) { Text("Done") }
+            },
+        )
+    }
+
+    if (nfcAdapter == null) {
+        Text(
+            "NFC not available on this device.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    } else {
+        OutlinedButton(
+            onClick = { showDialog = true },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Write NFC Tag")
         }
     }
 }

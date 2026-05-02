@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy import ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from covet.db import Base
@@ -28,5 +28,6 @@ class Photo(ULIDPrimaryKey, TimestampMixin, Base):
     byte_size: Mapped[int] = mapped_column(Integer, nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     is_primary: Mapped[bool] = mapped_column(default=False, nullable=False)
+    caption: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     item: Mapped[Item] = relationship(back_populates="photos")

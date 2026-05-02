@@ -1,6 +1,7 @@
 package io.github.bradbrownjr.covet
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -14,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.bradbrownjr.covet.data.auth.SessionStore
+import io.github.bradbrownjr.covet.nfc.NfcManager
 import io.github.bradbrownjr.covet.ui.CovetApp
 import io.github.bradbrownjr.covet.ui.theme.CovetTheme
 import javax.inject.Inject
@@ -37,6 +39,9 @@ class MainActivity : ComponentActivity() {
             requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
 
+        // Handle NFC intent that launched (or re-launched) the activity.
+        intent?.let { NfcManager.handleIntent(it) }
+
         setContent {
             val themeMode by sessionStore.themeMode.collectAsState(initial = null)
             val systemDark = isSystemInDarkTheme()
@@ -49,5 +54,11 @@ class MainActivity : ComponentActivity() {
                 CovetApp()
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        NfcManager.handleIntent(intent)
     }
 }

@@ -360,41 +360,18 @@ history, and proactive notifications across every asset.
 
 ---
 
-## Phase 13 — Smart home integration & discovery (planned)
+## Phase 13 — Smart home integration & discovery ✅
 
 With rich data in place, Covet can become a hub that other smart home
 tools query and react to.
 
-- **Home Assistant integration** — expose a read-only REST sensor
-  endpoint (or webhook push) so HA dashboards can display stock levels,
-  maintenance due dates, expiring items, and battery charge status.
-  Companion blueprint for automations (e.g. notify when generator run
-  is overdue).
-- **NFC tag support (Android)** — write a Covet item ID to an NFC
-  tag; tap tag to jump directly to item detail or mark maintenance
-  complete without opening the app. Use Android's NdefMessage API;
-  no extra hardware required beyond cheap NFC stickers.
-- **Unified physical labeling** — support NFC tags, QR code stickers,
-  and barcode stickers for both items and locations. One scan action
-  can identify item/location, record movement events (from/to location,
-  timestamp, actor), and optionally prompt for quantity adjustments.
-- **AI-assisted item creation** — snap a photo of an item (product
-  label, packaging, barcode) and let an on-device or server-side model
-  pre-fill title, category, and template fields. Falls back to barcode
-  lookup if no model is available.
-- **Insurance export bundle** — one-click ZIP: CSV of all items with
-  values + purchase dates, all primary photos, all warranty/receipt
-  attachments. Structured for easy hand-off to an insurance agent.
-  Optionally scoped to a single collection or a selected location
-  subtree.
-- **Field-value hyperlink filters** — clicking a field value (brand,
-  category, manufacturer, fuel type) in item detail instantly filters
-  the collection to matching items. Works on both custom `attrs` fields
-  and first-class fields.
-- **Image gallery / "Add more images"** — beyond a single primary
-  photo, support a gallery of annotated images per item (front, back,
-  serial number plate, damage, accessories included). Web slideshow +
-  Android swipe.
+- **Home Assistant integration** ✅ — `GET /api/ha/sensors` returns per-collection sensor data (item count, low-stock count, overdue/due-soon alerts) in HA REST sensor format. `GET /api/ha/blueprint.yaml` serves a downloadable automation blueprint. Both accept Bearer token or session auth.
+- **NFC tag support (Android)** ✅ — Write `covet://item/<id>` to an NFC tag from the item detail screen. Tap any Covet NFC tag to navigate directly to the item. QR scanner also handles `covet://` URIs.
+- **Unified physical labeling** ✅ — `GET /api/items/{id}/qr.png` serves a machine-readable PNG QR code. The bulk QR-label PDF now embeds real `covet://item/` QR images. Both NFC and QR scans route to the same item detail screen.
+- **AI-assisted item creation** ✅ — `POST /api/items/ai-prefill` accepts `{ barcode }` and queries Open Library, MusicBrainz, Open Food Facts, and Google Books; returns `{ title, subtitle, category_slug, attrs, source }` for pre-filling the add-item form.
+- **Insurance export bundle** ✅ — `GET /api/collections/{id}/reports/insurance-export` already served the CSV+photos ZIP. An **Export** tab in the collection subnav now triggers it directly from the browser.
+- **Field-value hyperlink filters** ✅ — Category badges, creator, condition, and location values in the collection grid and table are interactive filter buttons; clicking any value instantly narrows the item list.
+- **Image gallery / "Add more images"** ✅ — Full photo gallery component with lightbox, thumbnail strip, keyboard navigation, set-as-primary, delete, and editable per-photo captions (stored in new `caption` column, migration `0031_photo_caption`).
 
 ---
 

@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import io
 from datetime import UTC, datetime
 from decimal import Decimal
 
+import qrcode  # type: ignore[import]
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -51,6 +53,7 @@ from covet.schemas import (
 )
 from covet.services import audit
 from covet.services.categories import resolve_slug, subtree_ids
+from covet.services.metadata import ScrapeResult, barcode_lookup
 from covet.services.qr_labels import generate_qr_codes_pdf
 
 router = APIRouter(prefix="/items", tags=["items"])
@@ -271,6 +274,63 @@ def list_items(
     stmt = _apply_sort(stmt, sort_by=sort_by, sort_dir=sort_dir, sort_attr=sort_attr)
     stmt = stmt.limit(limit).offset(offset)
     return [_to_item_read(item, rollups) for item in db.scalars(stmt)]
+
+
+class AiPrefillRequest(BaseModel):
+    """Request body for AI-assisted item pre-fill."""
+
+    barcode: str | None = None
+    collection_id: str | None = None
+
+
+class AiPrefillResponse(BaseModel):
+    """Suggested field values for a new item.
+
+    All fields are optional — callers should pre-fill only those that are
+    non-null and let the user confirm or edit before saving.
+    """
+
+    title: str | None = None
+    subtitle: str | None = None
+    category_slug: str | None = None
+    attrs: dict | None = None
+    source: str | None = None
+
+
+@router.post("/ai-prefill", response_model=AiPrefillResponse)
+def ai_prefill(
+    payload: AiPrefillRequest,
+    auth: AuthContext = Depends(require_user),
+) -> AiPrefillResponse:
+    """Suggest item field values from a barcode.
+
+    Queries the enabled barcode adapters (Open Library, MusicBrainz,
+    Open Food Facts, Google Books) and returns the best-match title,
+    category, and attributes.  Returns an empty response if no match is
+    found — the client should treat any field as an optional hint.
+
+    Image-based prefill requires an external vision API that is not
+    bundled; this endpoint only supports barcode lookup today.
+    """
+    if not payload.barcode:
+        return AiPrefillResponse()
+
+    try:
+        results: list[ScrapeResult] = barcode_lookup(payload.barcode)
+    except Exception:
+        return AiPrefillResponse()
+
+    if not results:
+        return AiPrefillResponse()
+
+    best = results[0]
+    return AiPrefillResponse(
+        title=best.title,
+        subtitle=best.description,
+        category_slug=best.category,
+        attrs=best.attrs or None,
+        source=best.provider,
+    )
 
 
 @router.get("/search", response_model=list[ItemRead])
@@ -1036,6 +1096,42 @@ def list_item_children(
         select(Item).where(Item.parent_id == item_id).order_by(Item.title)
     ).all()
     return [_to_item_read(r, rollups) for r in rows]
+
+
+@router.get("/{item_id}/qr.png")
+def item_qr_code(
+    item_id: str,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> StreamingResponse:
+    """Return a PNG QR code that encodes ``covet://item/{item_id}``.
+
+    Scanning this QR code with a Covet-aware reader (or any URI-capable
+    reader) identifies the item.  The caller must be a collection member.
+    """
+    item = db.get(Item, item_id)
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    _require_role(db, auth, item.collection_id, _VIEWER_ROLES)
+
+    uri = f"covet://item/{item_id}"
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=10,
+        border=2,
+    )
+    qr.add_data(uri)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return StreamingResponse(
+        buf,
+        media_type="image/png",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 
 class QRLabelRequest(BaseModel):

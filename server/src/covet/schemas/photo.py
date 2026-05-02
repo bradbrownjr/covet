@@ -19,12 +19,14 @@ class PhotoRead(BaseModel):
     byte_size: int
     sort_order: int
     is_primary: bool
+    caption: str | None
     created_at: datetime
 
 
 class PhotoUpdate(BaseModel):
     sort_order: int | None = None
     is_primary: bool | None = None
+    caption: str | None = None
 
 
 class PhotoFromUrl(BaseModel):

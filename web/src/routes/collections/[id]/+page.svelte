@@ -4,6 +4,7 @@
     import { page } from '$app/state';
     import { api, type Category, type Collection, type Contact, type Item, type ItemTemplate, type LocationNode, type Tag } from '$lib/api';
     import { childrenOf, loadCategories, rootCategories } from '$lib/categories';
+    import PhotoGallery from '$lib/PhotoGallery.svelte';
 
     let collection = $state<Collection | null>(null);
     let items = $state<Item[]>([]);
@@ -818,6 +819,16 @@
         return () => window.removeEventListener('keydown', onGlobalKeydown);
     });
 
+    function filterBySearch(value: string) {
+        search = value;
+        void load();
+    }
+
+    function filterByCategory(slug: string) {
+        rootFilter = slug;
+        void load();
+    }
+
     $effect(() => {
         localStorage.setItem('covet:viewMode', viewMode);
     });
@@ -834,6 +845,7 @@
         <a class="tab" href="/collections/{cid}/bundles">Bundles</a>
         <a class="tab" href="/collections/{cid}/chores">Chores</a>
         <a class="tab" href="/collections/{cid}/members">Members</a>
+        <a class="tab" href="/api/collections/{cid}/reports/insurance-export" download title="Download insurance-ready ZIP (CSV + photos)">Export</a>
         {#if collection.my_role === 'owner'}
             <button type="button" class="tab tab-danger" onclick={requestDeleteCollection}>Delete</button>
         {/if}
@@ -1066,15 +1078,16 @@
                                 </label>
                             {/if}
                             {#if !isFocused && i.category_slug}
-                                <span class="category-badge">{i.category_slug.split('.').at(-1) ?? i.category_slug}</span>
+                                <button type="button" class="category-badge filter-link" onclick={() => filterByCategory(i.category_slug!)}>{i.category_slug.split('.').at(-1) ?? i.category_slug}</button>
                             {/if}
                             {#if i.attrs?.creator}
-                                <p class="item-creator">{String(i.attrs.creator)}</p>
+                                <p class="item-creator"><button type="button" class="filter-link" onclick={() => filterBySearch(String(i.attrs!.creator))}>{String(i.attrs.creator)}</button></p>
                             {/if}
                             <p class="item-title">{i.title}</p>
                             {#if i.subtitle}
                                 <p class="item-subtitle">{i.subtitle}</p>
                             {/if}
+                            <PhotoGallery itemId={i.id} canEdit={canEdit} compact />
                             {#if relationEntries(i).length}
                                 <div class="relation-list">
                                     {#each relationEntries(i) as rel (`${rel.key}:${rel.targetId}`)}
@@ -1086,10 +1099,10 @@
                                 </div>
                             {/if}
                             <div class="item-meta">
-                                {#if i.condition}<span>{i.condition}</span>{/if}
+                                {#if i.condition}<button type="button" class="filter-link" onclick={() => filterBySearch(i.condition!)}>{i.condition}</button>{/if}
                                 {#if i.quantity > 1}<span>×{i.quantity}</span>{/if}
                                 {#if displayValue(i) != null}<span>{formatValue(i)}</span>{/if}
-                                {#if i.location_path && i.location_path.length}<span class="location-badge" title="Location">{i.location_path.join(' / ')}</span>{/if}
+                                {#if i.location_path && i.location_path.length}<button type="button" class="location-badge filter-link" title="Filter by location" onclick={() => filterBySearch(i.location_path!.at(-1)!)}>{i.location_path.join(' / ')}</button>{/if}
                                 {#if i.depleted}<span class="depleted-badge">Depleted</span>{/if}
                                 {#if i.wanted}<span class="wanted-badge">Wanted</span>{/if}
                                 {#if i.archived_at}<span class="archived-badge">Archived</span>{/if}
@@ -1198,8 +1211,8 @@
                                     />
                                 </td>
                             {/if}
-                            {#if !isFocused}<td class="muted">{i.category_slug ?? ''}</td>{/if}
-                            {#if collectionCreatorLabel}<td class="muted">{String(i.attrs?.creator ?? '')}</td>{/if}
+                            {#if !isFocused}<td class="muted"><button type="button" class="filter-link" onclick={() => i.category_slug && filterByCategory(i.category_slug)}>{i.category_slug ?? ''}</button></td>{/if}
+                            {#if collectionCreatorLabel}<td class="muted"><button type="button" class="filter-link" onclick={() => filterBySearch(String(i.attrs?.creator ?? ''))}>{String(i.attrs?.creator ?? '')}</button></td>{/if}
                             <td>
                                 {i.title}
                                 {#if i.subtitle && !showCollectionSubtitle}<span class="muted"> · {i.subtitle}</span>{/if}
@@ -1222,6 +1235,7 @@
                                         {/each}
                                     </div>
                                 {/if}
+                                <PhotoGallery itemId={i.id} canEdit={canEdit} compact />
                             </td>
                             {#if showCollectionSubtitle}<td class="muted">{i.subtitle ?? ''}</td>{/if}
                             <td>{i.quantity}</td>
@@ -1585,6 +1599,16 @@
         padding: 0.15em 0.45em;
         align-self: flex-start;
     }
+    .filter-link {
+        background: none;
+        border: none;
+        padding: 0;
+        font: inherit;
+        cursor: pointer;
+        color: inherit;
+        text-align: left;
+    }
+    .filter-link:hover { text-decoration: underline; opacity: 0.8; }
     .item-creator {
         font-size: 0.8rem;
         color: var(--text-muted, #888);
