@@ -281,8 +281,8 @@
     }
 
     function siteSettingPlaceholder(s: SiteSetting): string {
-        if (s.value === '***') return '(set via ' + s.source + ' — leave blank to keep)';
-        if (s.source !== 'default' && s.value !== null) return s.value;
+        if (s.value === '***') return 'Enter new value to change, or leave blank to keep current';
+        if (s.source !== 'default' && s.value !== null && !s.sensitive) return s.value;
         return s.type === 'bool' ? 'true or false' : s.type === 'int' ? String(s.value ?? '') : '';
     }
 
@@ -577,13 +577,18 @@
                                             <option value="false">false</option>
                                         </select>
                                     {:else}
-                                        <input
-                                            type={s.sensitive ? 'password' : 'text'}
-                                            autocomplete="off"
-                                            value={s.key in siteSettingsEdits ? siteSettingsEdits[s.key] : siteSettingDisplayValue(s)}
-                                            placeholder={siteSettingPlaceholder(s)}
-                                            oninput={(e) => (siteSettingsEdits[s.key] = (e.target as HTMLInputElement).value)}
-                                        />
+                                        <div class="sensitive-wrap">
+                                            {#if s.sensitive && s.is_set && !(s.key in siteSettingsEdits)}
+                                                <span class="set-badge" title="A value is stored — it is never sent to the browser">Set</span>
+                                            {/if}
+                                            <input
+                                                type={s.sensitive ? 'password' : 'text'}
+                                                autocomplete="off"
+                                                value={s.key in siteSettingsEdits ? siteSettingsEdits[s.key] : siteSettingDisplayValue(s)}
+                                                placeholder={siteSettingPlaceholder(s)}
+                                                oninput={(e) => (siteSettingsEdits[s.key] = (e.target as HTMLInputElement).value)}
+                                            />
+                                        </div>
                                     {/if}
                                     {#if s.source === 'database'}
                                         <button class="secondary small" title="Revert to env/default" onclick={() => clearSiteSetting(s.key)}>Revert</button>
@@ -852,4 +857,31 @@
     }
     .setting-input input, .setting-input select { flex: 1; min-width: 0; }
     button.small { padding: 0.25rem 0.6rem; font-size: 0.8rem; }
+
+    .sensitive-wrap {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        flex: 1;
+        min-width: 0;
+    }
+    .sensitive-wrap input { flex: 1; min-width: 0; }
+    .set-badge {
+        flex-shrink: 0;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 0.15rem 0.45rem;
+        border-radius: 999px;
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #6ee7b7;
+        white-space: nowrap;
+    }
+    [data-theme='dark'] .set-badge {
+        background: #064e3b;
+        color: #6ee7b7;
+        border-color: #065f46;
+    }
 </style>
