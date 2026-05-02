@@ -1,6 +1,8 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { api } from '$lib/api';
+    import { goto } from '$app/navigation';
+    import { page } from '$app/state';
+    import { api, type SiteSetting } from '$lib/api';
     import { me, refreshMe } from '$lib/session';
     import { theme, type ThemeMode } from '$lib/theme';
 
@@ -75,6 +77,17 @@
     let deletePassword = $state('');
     let deleteTotpCode = $state('');
     let deleteMessage = $state('');
+
+    // Admin settings state
+    let siteSettings = $state<SiteSetting[]>([]);
+    let siteSettingsEdits = $state<Record<string, string>>({});
+    let siteSettingsSaved = $state(false);
+    let siteSettingsError = $state('');
+    let siteSettingsLoaded = $state(false);
+
+    // Enrollment enforcement
+    const enrollRequired = $derived(!!$me?.enrollment_required);
+    const enrollParam = $derived(page.url.searchParams.has('enroll'));
 
     async function load() {
         try {
@@ -253,13 +266,90 @@
         }
     }
 
+    // --- Admin site settings ---
+    async function loadSiteSettings() {
+        try {
+            siteSettings = await api.get<SiteSetting[]>('/admin/system/settings');
+            siteSettingsEdits = {};
+            siteSettingsLoaded = true;
+        } catch { /* non-admin or unavailable */ }
+    }
+
+    function siteSettingDisplayValue(s: SiteSetting): string {
+        if (s.value === null) return '';
+        return s.value === '***' ? '' : s.value;
+    }
+
+    function siteSettingPlaceholder(s: SiteSetting): string {
+        if (s.value === '***') return '(set via ' + s.source + ' — leave blank to keep)';
+        if (s.source !== 'default' && s.value !== null) return s.value;
+        return s.type === 'bool' ? 'true or false' : s.type === 'int' ? String(s.value ?? '') : '';
+    }
+
+    async function saveSiteSettings() {
+        siteSettingsError = '';
+        siteSettingsSaved = false;
+        const updates: Record<string, string | null> = {};
+        for (const [key, val] of Object.entries(siteSettingsEdits)) {
+            updates[key] = val.trim() === '' ? null : val.trim();
+        }
+        // For sensitive fields left blank but already set, send "***" sentinel
+        for (const s of siteSettings) {
+            if (s.sensitive && s.is_set && !(s.key in updates)) {
+                updates[s.key] = '***';
+            }
+        }
+        try {
+            siteSettings = await api.put<SiteSetting[]>('/admin/system/settings', { updates });
+            siteSettingsEdits = {};
+            siteSettingsSaved = true;
+            // Reload public config so require_2fa changes take effect
+            await refreshMe();
+        } catch (e) {
+            siteSettingsError = (e as Error).message;
+        }
+    }
+
+    async function clearSiteSetting(key: string) {
+        try {
+            await fetch(`/api/admin/system/settings/${encodeURIComponent(key)}`, {
+                method: 'DELETE',
+                credentials: 'include',
+            });
+            await loadSiteSettings();
+        } catch (e) {
+            siteSettingsError = (e as Error).message;
+        }
+    }
+
+    // Group settings by section for display
+    const SECTION_LABELS: Record<string, string> = {
+        security: 'Security',
+        sessions: 'Sessions',
+        integrations: 'Integrations',
+        email: 'Email / SMTP',
+    };
+
     onMount(async () => {
         await refreshMe();
-        await Promise.all([load(), loadTotpStatus()]);
+        const promises: Promise<unknown>[] = [load(), loadTotpStatus()];
+        if ($me?.is_admin) promises.push(loadSiteSettings());
+        await Promise.all(promises);
+        // Auto-open 2FA setup when enrollment is required or ?enroll param is set
+        if ((enrollRequired || enrollParam) && !totpStatus?.enabled && !totpSetup) {
+            await startTotpSetup();
+        }
     });
 </script>
 
 <h1>Settings</h1>
+
+{#if enrollRequired || enrollParam}
+    <div class="banner-warn" role="alert">
+        <strong>Two-factor authentication required.</strong>
+        Your administrator requires 2FA for all accounts. Please set it up below before you can continue.
+    </div>
+{/if}
 
 {#if error}<p class="error">{error}</p>{/if}
 {#if scrubResult}<p class="ok">{scrubResult}</p>{/if}
@@ -453,6 +543,65 @@
 </div>
 
 {#if $me?.is_admin}
+    {#if siteSettingsLoaded}
+        <div class="card" style="margin-top: 1rem">
+            <h3 style="margin-top:0">Server Settings</h3>
+            <p class="muted">
+                These override environment variables at runtime. Values set here take precedence
+                over Docker/env config without requiring a restart.
+                <span class="muted" style="font-size:0.8rem">Env vars shown as source indicator only.</span>
+            </p>
+            {#each Object.entries(SECTION_LABELS) as [section, label] (section)}
+                {@const group = siteSettings.filter(s => s.section === section)}
+                {#if group.length}
+                    <h4 style="margin:1rem 0 0.5rem">{label}</h4>
+                    <div class="settings-grid">
+                        {#each group as s (s.key)}
+                            <div class="setting-row">
+                                <div class="setting-meta">
+                                    <span class="setting-key">{s.key}</span>
+                                    {#if s.env_var}
+                                        <code class="env-var">{s.env_var}</code>
+                                    {/if}
+                                    <span class="source-badge source-{s.source}">{s.source}</span>
+                                </div>
+                                <p class="setting-desc muted">{s.description}</p>
+                                <div class="setting-input">
+                                    {#if s.type === 'bool'}
+                                        <select
+                                            value={s.key in siteSettingsEdits ? siteSettingsEdits[s.key] : (s.source === 'default' ? '' : (s.value ?? ''))}
+                                            onchange={(e) => (siteSettingsEdits[s.key] = (e.target as HTMLSelectElement).value)}
+                                        >
+                                            <option value="">(use {s.source === 'database' ? 'env/default' : 'default'})</option>
+                                            <option value="true">true</option>
+                                            <option value="false">false</option>
+                                        </select>
+                                    {:else}
+                                        <input
+                                            type={s.sensitive ? 'password' : 'text'}
+                                            autocomplete="off"
+                                            value={s.key in siteSettingsEdits ? siteSettingsEdits[s.key] : siteSettingDisplayValue(s)}
+                                            placeholder={siteSettingPlaceholder(s)}
+                                            oninput={(e) => (siteSettingsEdits[s.key] = (e.target as HTMLInputElement).value)}
+                                        />
+                                    {/if}
+                                    {#if s.source === 'database'}
+                                        <button class="secondary small" title="Revert to env/default" onclick={() => clearSiteSetting(s.key)}>Revert</button>
+                                    {/if}
+                                </div>
+                            </div>
+                        {/each}
+                    </div>
+                {/if}
+            {/each}
+            {#if siteSettingsError}<p class="error">{siteSettingsError}</p>{/if}
+            {#if siteSettingsSaved}<p class="ok">Settings saved.</p>{/if}
+            <div style="margin-top:1rem;display:flex;gap:0.5rem">
+                <button onclick={saveSiteSettings}>Save settings</button>
+                <button class="secondary" onclick={loadSiteSettings}>Reset</button>
+            </div>
+        </div>
+    {/if}
     <div class="card" style="margin-top: 1rem">
         <h3 style="margin-top:0">System Maintenance</h3>
         <p class="muted">
@@ -635,4 +784,72 @@
     .field label { font-size: 0.875rem; font-weight: 500; }
     .field input { width: 100%; }
     .notif-table thead tr { border-bottom: 1px solid var(--border); }
+
+    .banner-warn {
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        color: #92400e;
+    }
+    [data-theme='dark'] .banner-warn {
+        background: #451a03;
+        border-color: #d97706;
+        color: #fcd34d;
+    }
+
+    .settings-grid {
+        display: grid;
+        gap: 0.75rem;
+    }
+    .setting-row {
+        display: grid;
+        gap: 0.2rem;
+        padding: 0.65rem 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--surface-2);
+    }
+    .setting-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    .setting-key {
+        font-weight: 600;
+        font-size: 0.875rem;
+        font-family: monospace;
+    }
+    .env-var {
+        font-size: 0.75rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 0.1rem 0.35rem;
+        color: var(--muted);
+    }
+    .source-badge {
+        font-size: 0.7rem;
+        padding: 0.1rem 0.4rem;
+        border-radius: 999px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .source-database { background: #dbeafe; color: #1e40af; }
+    .source-environment { background: #d1fae5; color: #065f46; }
+    .source-default { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+    [data-theme='dark'] .source-database { background: #1e3a5f; color: #93c5fd; }
+    [data-theme='dark'] .source-environment { background: #064e3b; color: #6ee7b7; }
+    .setting-desc { margin: 0; font-size: 0.8rem; }
+    .setting-input {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .setting-input input, .setting-input select { flex: 1; min-width: 0; }
+    button.small { padding: 0.25rem 0.6rem; font-size: 0.8rem; }
 </style>

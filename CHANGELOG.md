@@ -6,6 +6,20 @@ All notable changes to **Covet** are documented here. Format follows
 
 ## [Unreleased]
 
+- **Enforce 2FA site-wide**: admins can toggle `require_2fa` in the new
+  Server Settings panel; unenrolled users are redirected to Settings and
+  shown an enrollment prompt automatically on every page load until 2FA
+  is set up. `GET /auth/me` now returns `enrollment_required: bool`.
+- **Admin Server Settings panel** (Settings page, admin-only): all
+  meaningful `COVET_*` env-var knobs (security, sessions, integrations,
+  SMTP) are editable through the UI. DB overrides take precedence over
+  env vars without requiring a restart; sensitive values are masked. Each
+  field shows its current source (`database` / `environment` / `default`)
+  and its corresponding env var name for reference.
+- **`GET /config/public`** now includes `require_2fa` so clients can
+  adapt before the user even logs in (future use).
+- **Migration 0034_app_settings**: new `app_settings` key/value table
+  for runtime admin overrides.
 ### Added
 
 - **Two-factor authentication (TOTP).** Local accounts can now enable 2FA using any TOTP-compatible authenticator app (Google Authenticator, Authy, etc.). Setup generates a QR code and secret displayed in Settings. Activation verifies the first code and issues 8 one-time backup codes. Login detects 2FA and presents a second-step code prompt. Backup codes can be regenerated; 2FA can be disabled with password + current code. API: `POST /auth/totp/setup`, `POST /auth/totp/verify`, `DELETE /auth/totp`, `POST /auth/totp/regenerate-backup-codes`, `POST /auth/totp/confirm-login`.

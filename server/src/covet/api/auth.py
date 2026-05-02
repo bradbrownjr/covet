@@ -42,6 +42,7 @@ from covet.schemas.auth import (
     TOTPStatusResponse,
     TOTPVerifyRequest,
 )
+from covet.services.site_settings import get_site_bool
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -217,8 +218,16 @@ def register(
 
 
 @router.get("/me", response_model=UserRead)
-def me(auth: AuthContext = Depends(require_user)) -> UserRead:
-    return UserRead.model_validate(auth.user)
+def me(
+    db: DBSession = Depends(get_session),
+    settings: Settings = Depends(get_settings),
+    auth: AuthContext = Depends(require_user),
+) -> UserRead:
+    require_2fa = get_site_bool(db, "require_2fa", settings)
+    enrollment_required = require_2fa and not auth.user.totp_enabled
+    return UserRead.model_validate(auth.user).model_copy(
+        update={"enrollment_required": enrollment_required}
+    )
 
 
 @router.patch("/me", response_model=UserRead)

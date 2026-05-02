@@ -57,6 +57,8 @@
             await goto(cfg?.setup_required ? '/register' : '/login');
         } else if ($me && onAuth) {
             await goto('/');
+        } else if ($me?.enrollment_required && path !== '/settings') {
+            await goto('/settings?enroll=1');
         }
 
         // Browser push notifications: fire once per session for browser_enabled kinds.

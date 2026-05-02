@@ -130,6 +130,7 @@ class Settings(BaseSettings):
     session_ttl_hours: int = 720
     registration_enabled: bool = True
     password_min_length: int = 12
+    require_2fa: bool = False
 
     # OIDC
     oidc_enabled: bool = False

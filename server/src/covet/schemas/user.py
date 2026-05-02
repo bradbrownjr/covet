@@ -34,3 +34,4 @@ class UserRead(UserBase):
     is_active: bool
     last_login_at: datetime | None
     created_at: datetime
+    enrollment_required: bool = False

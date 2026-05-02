@@ -3,6 +3,7 @@
 Importing this module registers all model classes with :class:`covet.db.Base`.
 """
 
+from covet.models.app_setting import AppSetting
 from covet.models.audit import AuditLogEntry
 from covet.models.base import TimestampMixin, ULIDPrimaryKey, ulid_str
 from covet.models.category import Category
@@ -41,6 +42,7 @@ from covet.models.webhook import Webhook, WebhookDelivery, WebhookEventType
 
 __all__ = [
     "APIToken",
+    "AppSetting",
     "AuditLogEntry",
     "AutomergeChange",
     "AutomergeDoc",

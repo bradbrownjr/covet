@@ -16,6 +16,7 @@ from covet import __version__
 from covet.config import get_settings
 from covet.db import get_engine, get_session
 from covet.models.user import User
+from covet.services.site_settings import get_site_bool
 
 router = APIRouter(tags=["meta"])
 
@@ -65,6 +66,7 @@ def public_config(db: Session = Depends(get_session)) -> dict[str, object]:
         "oidc_enabled": settings.oidc_enabled,
         "oidc_providers": providers,
         "public_url": settings.public_url,
+        "require_2fa": get_site_bool(db, "require_2fa", settings),
     }
 
 

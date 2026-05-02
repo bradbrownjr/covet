@@ -82,6 +82,7 @@ export interface User {
     email: string | null;
     display_name: string | null;
     is_admin: boolean;
+    enrollment_required?: boolean;
 }
 
 /** Display label for a user: full name when set, else username. */
@@ -309,6 +310,19 @@ export interface PublicConfig {
     setup_required: boolean;
     oidc_enabled: boolean;
     oidc_providers: { name: string; label: string; login_url: string }[];
+    require_2fa: boolean;
+}
+
+export interface SiteSetting {
+    key: string;
+    value: string | null;
+    is_set: boolean;
+    source: 'database' | 'environment' | 'default';
+    type: 'bool' | 'int' | 'str';
+    description: string;
+    sensitive: boolean;
+    section: string;
+    env_var: string | null;
 }
 
 export interface ScraperRegistryEntry {
