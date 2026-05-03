@@ -200,6 +200,7 @@
     <string name="theme_system">System</string>
     <string name="theme_light">Hell</string>
     <string name="theme_dark">Dunkel</string>
+    <string name="language">Sprache</string>
     <string name="notifications">Benachrichtigungen</string>
     <string name="no_notification_prefs">Keine Benachrichtigungseinstellungen.</string>
     <string name="app_label">App</string>

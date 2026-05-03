@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,8 +28,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import io.github.bradbrownjr.tangible.R
 import io.github.bradbrownjr.tangible.data.auth.SessionStore
+import io.github.bradbrownjr.tangible.data.remote.PatchMeRequest
 import io.github.bradbrownjr.tangible.data.remote.TangibleApi
 import io.github.bradbrownjr.tangible.data.remote.DueAlertDto
 import io.github.bradbrownjr.tangible.data.remote.NotificationPrefDto
@@ -36,6 +40,16 @@ import io.github.bradbrownjr.tangible.data.remote.NotificationPrefUpdate
 import io.github.bradbrownjr.tangible.data.repo.AuthRepository
 import android.content.Context
 import javax.inject.Inject
+
+private val SUPPORTED_LOCALES = listOf(
+    "en" to "English",
+    "fr" to "Français",
+    "de" to "Deutsch",
+    "es" to "Español",
+    "ja" to "日本語",
+    "zh" to "中文",
+    "it" to "Italiano",
+)
 
 private val KIND_LABEL_RES = mapOf(
     "maintenance_due" to R.string.notif_maintenance_due,
@@ -54,6 +68,7 @@ data class SettingsUi(
     val testOk: Boolean = false,
     // "system" | "light" | "dark" — null treated as "system"
     val themeMode: String? = null,
+    val locale: String? = null,
     val alerts: List<DueAlertDto> = emptyList(),
     val alertsBusy: Boolean = false,
     val notifPrefs: List<NotificationPrefDto> = emptyList(),
@@ -80,6 +95,11 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             session.themeMode.collect { mode ->
                 _state.value = _state.value.copy(themeMode = mode)
+            }
+        }
+        viewModelScope.launch {
+            session.locale.collect { loc ->
+                _state.value = _state.value.copy(locale = loc)
             }
         }
         refreshAlerts()
@@ -124,6 +144,15 @@ class SettingsViewModel @Inject constructor(
 
     fun setTheme(mode: String) {
         viewModelScope.launch { session.saveTheme(mode) }
+    }
+
+    fun setLocale(code: String) {
+        _state.value = _state.value.copy(locale = code)
+        viewModelScope.launch {
+            session.saveLocale(code)
+            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(code))
+            try { api.patchMe(PatchMeRequest(locale = code)) } catch (_: Throwable) {}
+        }
     }
 
     fun testConnection() {
@@ -225,6 +254,40 @@ fun SettingsScreen(
                             shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
                             label = { Text(label) },
                         )
+                    }
+                }
+            }
+            item { HorizontalDivider() }
+            item {
+                Text(stringResource(R.string.language), style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            item {
+                @OptIn(ExperimentalMaterial3Api::class)
+                var langMenuExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = langMenuExpanded,
+                    onExpandedChange = { langMenuExpanded = it },
+                ) {
+                    OutlinedTextField(
+                        value = SUPPORTED_LOCALES.find { it.first == (s.locale ?: "en") }?.second ?: "English",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(stringResource(R.string.language)) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = langMenuExpanded) },
+                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                        modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                    )
+                    ExposedDropdownMenu(
+                        expanded = langMenuExpanded,
+                        onDismissRequest = { langMenuExpanded = false },
+                    ) {
+                        SUPPORTED_LOCALES.forEach { (code, label) ->
+                            DropdownMenuItem(
+                                text = { Text(label) },
+                                onClick = { vm.setLocale(code); langMenuExpanded = false },
+                            )
+                        }
                     }
                 }
             }

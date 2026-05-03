@@ -198,6 +198,7 @@
     <string name="theme_system">システム</string>
     <string name="theme_light">ライト</string>
     <string name="theme_dark">ダーク</string>
+    <string name="language">言語</string>
     <string name="notifications">通知</string>
     <string name="no_notification_prefs">通知設定がありません。</string>
     <string name="app_label">アプリ</string>

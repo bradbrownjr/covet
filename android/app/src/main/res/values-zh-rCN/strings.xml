@@ -200,6 +200,7 @@
     <string name="theme_system">跟随系统</string>
     <string name="theme_light">浅色</string>
     <string name="theme_dark">深色</string>
+    <string name="language">语言</string>
     <string name="notifications">通知</string>
     <string name="no_notification_prefs">无通知偏好设置。</string>
     <string name="app_label">应用</string>

@@ -200,6 +200,7 @@
     <string name="theme_system">Sistema</string>
     <string name="theme_light">Claro</string>
     <string name="theme_dark">Oscuro</string>
+    <string name="language">Idioma</string>
     <string name="notifications">Notificaciones</string>
     <string name="no_notification_prefs">Sin preferencias de notificación.</string>
     <string name="app_label">App</string>

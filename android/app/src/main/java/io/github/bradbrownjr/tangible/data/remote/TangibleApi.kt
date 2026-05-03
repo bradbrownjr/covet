@@ -21,6 +21,9 @@ interface TangibleApi {
     @GET("auth/me")
     suspend fun me(): UserDto
 
+    @PATCH("auth/me")
+    suspend fun patchMe(@Body body: PatchMeRequest): UserDto
+
     @POST("auth/tokens")
     suspend fun createToken(@Query("name") name: String): TokenInfo
 

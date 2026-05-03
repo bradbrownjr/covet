@@ -22,6 +22,12 @@ data class UserDto(
     val email: String? = null,
     val display_name: String? = null,
     val is_admin: Boolean = false,
+    val locale: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class PatchMeRequest(
+    val locale: String? = null,
 )
 
 @JsonClass(generateAdapter = true)

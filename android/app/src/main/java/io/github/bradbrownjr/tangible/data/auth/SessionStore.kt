@@ -17,6 +17,7 @@ private val KEY_BASE_URL = stringPreferencesKey("base_url")
 private val KEY_TOKEN    = stringPreferencesKey("api_token")
 private val KEY_USERNAME = stringPreferencesKey("username")
 private val KEY_THEME    = stringPreferencesKey("theme_mode")
+private val KEY_LOCALE   = stringPreferencesKey("locale")
 
 /**
  * Persistent server URL + bearer token + (display) username.
@@ -32,6 +33,7 @@ class SessionStore @Inject constructor(@ApplicationContext private val ctx: Cont
     val token:     Flow<String?> = ctx.authStore.data.map { it[KEY_TOKEN] }
     val username:  Flow<String?> = ctx.authStore.data.map { it[KEY_USERNAME] }
     val themeMode: Flow<String?> = ctx.authStore.data.map { it[KEY_THEME] }
+    val locale:    Flow<String?> = ctx.authStore.data.map { it[KEY_LOCALE] }
 
     suspend fun save(baseUrl: String, token: String, username: String) {
         ctx.authStore.edit { p ->
@@ -51,6 +53,10 @@ class SessionStore @Inject constructor(@ApplicationContext private val ctx: Cont
 
     suspend fun saveTheme(mode: String) {
         ctx.authStore.edit { p -> p[KEY_THEME] = mode }
+    }
+
+    suspend fun saveLocale(code: String) {
+        ctx.authStore.edit { p -> p[KEY_LOCALE] = code }
     }
 
     /** Returns true when the user has a saved bearer token (i.e. is logged in). */
