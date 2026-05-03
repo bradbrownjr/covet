@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -29,9 +31,29 @@ import io.github.bradbrownjr.tangible.data.remote.GroceryStoreDto
 import io.github.bradbrownjr.tangible.data.repo.GroceryRepository
 import javax.inject.Inject
 
-// ---------------------------------------------------------------------------
-// Store list screen
-// ---------------------------------------------------------------------------
+private data class GroceryCategoryPreset(val slug: String, val label: String)
+
+private val GROCERY_CATEGORY_PRESETS = listOf(
+    GroceryCategoryPreset("produce",             "Produce"),
+    GroceryCategoryPreset("bread",               "Bread"),
+    GroceryCategoryPreset("bakery",              "Bakery"),
+    GroceryCategoryPreset("meat-seafood",        "Meat & Seafood"),
+    GroceryCategoryPreset("deli",                "Deli"),
+    GroceryCategoryPreset("dairy-eggs",          "Dairy & Eggs"),
+    GroceryCategoryPreset("frozen",              "Frozen"),
+    GroceryCategoryPreset("canned-pantry",       "Canned & Pantry"),
+    GroceryCategoryPreset("pasta-grains",        "Pasta & Grains"),
+    GroceryCategoryPreset("snacks",              "Snacks"),
+    GroceryCategoryPreset("beverages",           "Beverages"),
+    GroceryCategoryPreset("breakfast-cereal",    "Breakfast & Cereal"),
+    GroceryCategoryPreset("condiments-spices",   "Condiments & Spices"),
+    GroceryCategoryPreset("cleaning-household",  "Cleaning & Household"),
+    GroceryCategoryPreset("health-beauty",       "Health & Beauty"),
+    GroceryCategoryPreset("pet-supplies",        "Pet Supplies"),
+    GroceryCategoryPreset("alcohol",             "Alcohol"),
+)
+
+private val PRESET_SLUGS = GROCERY_CATEGORY_PRESETS.map { it.slug }.toSet()
 
 data class GroceryStoreListUi(
     val stores: List<GroceryStoreDto> = emptyList(),
@@ -391,10 +413,10 @@ fun GroceryAisleEditorScreen(
         AisleInputDialog(
             title = "New aisle",
             initialName = "",
-            initialSlugs = "",
+            initialSlugs = emptyList(),
             onDismiss = { showCreateDialog = false },
-            onConfirm = { name, slugsText ->
-                viewModel.createAisle(name, slugsText.parseSlugs())
+            onConfirm = { name, slugs ->
+                viewModel.createAisle(name, slugs)
                 showCreateDialog = false
             },
         )
@@ -404,10 +426,10 @@ fun GroceryAisleEditorScreen(
         AisleInputDialog(
             title = "Edit aisle",
             initialName = aisle.name,
-            initialSlugs = aisle.category_slugs.joinToString(", "),
+            initialSlugs = aisle.category_slugs,
             onDismiss = { editAisle = null },
-            onConfirm = { name, slugsText ->
-                viewModel.updateAisle(aisle.id, name, slugsText.parseSlugs())
+            onConfirm = { name, slugs ->
+                viewModel.updateAisle(aisle.id, name, slugs)
                 editAisle = null
             },
         )
@@ -466,21 +488,41 @@ private fun NameInputDialog(
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AisleInputDialog(
     title: String,
     initialName: String,
-    initialSlugs: String,
+    initialSlugs: List<String>,
     onDismiss: () -> Unit,
-    onConfirm: (name: String, slugsText: String) -> Unit,
+    onConfirm: (name: String, slugs: List<String>) -> Unit,
 ) {
     var name by remember { mutableStateOf(initialName) }
-    var slugsText by remember { mutableStateOf(initialSlugs) }
+    val selectedSlugs = remember {
+        mutableStateOf(initialSlugs.filter { it in PRESET_SLUGS }.toSet())
+    }
+    var customText by remember {
+        mutableStateOf(
+            initialSlugs.filter { it !in PRESET_SLUGS }.joinToString(", ")
+        )
+    }
+
+    fun buildSlugs(): List<String> {
+        val result = selectedSlugs.value.toMutableList()
+        customText.split(",").map { it.trim().lowercase().replace(" ", "-") }
+            .filter { it.isNotBlank() && it !in result }
+            .forEach { result.add(it) }
+        return result
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -489,21 +531,41 @@ private fun AisleInputDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                Text("Categories", style = MaterialTheme.typography.labelMedium)
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    GROCERY_CATEGORY_PRESETS.forEach { cat ->
+                        FilterChip(
+                            selected = cat.slug in selectedSlugs.value,
+                            onClick = {
+                                selectedSlugs.value = if (cat.slug in selectedSlugs.value)
+                                    selectedSlugs.value - cat.slug
+                                else
+                                    selectedSlugs.value + cat.slug
+                            },
+                            label = { Text(cat.label) },
+                        )
+                    }
+                }
                 OutlinedTextField(
-                    value = slugsText,
-                    onValueChange = { slugsText = it },
-                    label = { Text("Category slugs") },
-                    placeholder = { Text("e.g. food.dairy, food.eggs") },
-                    supportingText = { Text("Comma-separated. Items with matching categories will appear in this aisle.") },
-                    maxLines = 4,
+                    value = customText,
+                    onValueChange = { customText = it },
+                    label = { Text("Custom categories (optional)") },
+                    placeholder = { Text("e.g. organic, gluten-free") },
+                    supportingText = { Text("Comma-separated. Items with matching categories appear in this aisle.") },
+                    maxLines = 3,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
         },
         confirmButton = {
-            Button(onClick = { if (name.isNotBlank()) onConfirm(name.trim(), slugsText) }, enabled = name.isNotBlank()) {
-                Text("Save")
-            }
+            Button(
+                onClick = { if (name.isNotBlank()) onConfirm(name.trim(), buildSlugs()) },
+                enabled = name.isNotBlank(),
+            ) { Text("Save") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
