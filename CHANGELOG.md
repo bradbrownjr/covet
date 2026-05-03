@@ -6,6 +6,12 @@ All notable changes to **Tangible** are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.17.5] — 2026-05-03
+
+- **Android language picker** — choose from English, Français, Deutsch, Español, 日本語, 中文, or Italiano in Android Settings. The preference is stored locally, applied immediately, and synced to the server so the web picks up the same locale.
+- **Android grocery & collection UX** — the category picker in Add Grocery Item is now a dropdown instead of a text field; aisle categories are listed one-per-line in alphabetical order; the Add Collection wizard uses a sorted single-column list.
+- **Web i18n** — Maintenance, Grocery List, and Settings pages now use the locale system for all visible text.
+
 ## [0.17.4] — 2026-05-03
 
 - **Grocery categories** — 17 preset categories (Produce, Bread, Bakery, Meat & Seafood, Deli, Dairy & Eggs, Frozen, Canned & Pantry, Pasta & Grains, Snacks, Beverages, Breakfast & Cereal, Condiments & Spices, Cleaning & Household, Health & Beauty, Pet Supplies, Alcohol) plus a Custom option. Bread and Bakery are intentionally distinct.
