@@ -5,7 +5,9 @@
     "grocery_list": "Lista de la compra",
     "settings": "Configuración",
     "log_out": "Cerrar sesión",
-    "alerts": "Alertas"
+    "alerts": "Alertas",
+    "whats_new": "Novedades",
+    "edit_profile": "Editar perfil"
   },
   "alerts": {
     "no_upcoming": "Sin alertas próximas.",
@@ -20,7 +22,8 @@
     "close": "Cerrar",
     "loading": "Cargando…",
     "error": "Error",
-    "confirm": "¿Está seguro/a?"
+    "confirm": "¿Está seguro/a?",
+    "never": "nunca"
   },
   "auth": {
     "sign_in": "Iniciar sesión",
@@ -200,7 +203,23 @@
     "archive_confirm": "Archivar",
     "scraping_error": "Búsqueda fallida: {error}",
     "image_scan_error": "Escaneo de imagen fallido: {error}",
-    "title_derivation_error": "No se pudo derivar un título — ingréselo manualmente."
+    "title_derivation_error": "No se pudo derivar un título — ingréselo manualmente.",
+    "not_found": "Colección no encontrada.",
+    "item_select_label": "Seleccionar",
+    "flag_for_review": "Marcado para revisión",
+    "looking_up_button": "Buscando…",
+    "creator_artist": "Artista / Banda",
+    "creator_author": "Autor",
+    "creator_director": "Director",
+    "creator_developer": "Desarrollador",
+    "creator_designer": "Diseñador",
+    "quick_action_filter_change": "Registrar cambio de filtro",
+    "quick_action_filter_service": "Registrar servicio de filtro",
+    "quick_action_run_generator": "Generador encendido hoy",
+    "consumable_purchased": "Comprado el",
+    "consumable_use_by": "Consumir antes de",
+    "consumable_frozen": "Congelado el",
+    "consumable_opened": "Abierto el"
   },
   "members": {
     "add_placeholder": "Nombre de usuario o correo",
@@ -302,7 +321,8 @@
     "upload_button": "Subir",
     "uploading_button": "Subiendo…",
     "delete_bundle_title": "¿Eliminar paquete?",
-    "delete_bundle_text": "¿Eliminar paquete {name}? Se eliminarán todos los archivos. Los artículos vinculados se desvincularán."
+    "delete_bundle_text": "¿Eliminar paquete {name}? Se eliminarán todos los archivos. Los artículos vinculados se desvincularán.",
+    "delete_asset_confirm": "¿Eliminar este recurso?"
   },
   "chores": {
     "page_description": "Tareas domésticas recurrentes no vinculadas a un artículo específico.",
@@ -333,7 +353,8 @@
     "mark_done_save": "Guardar",
     "delete_title": "¿Eliminar tarea?",
     "delete_text": "¿Eliminar tarea {name}? Esto no se puede deshacer.",
-    "delete_confirm": "Eliminar"
+    "delete_confirm": "Eliminar",
+    "interval_display": "cada {days}d"
   },
   "templates": {
     "description": "Las plantillas añaden campos personalizados a los artículos. Las nuevas plantillas se crean en {target}.",
@@ -442,7 +463,10 @@
     "list_file_label": "O adjuntar archivo .txt",
     "restore_file_label": "Archivo JSON de copia de seguridad",
     "submit_button": "Importar",
-    "working_button": "Trabajando…"
+    "working_button": "Trabajando…",
+    "heading": "Importar / Copia de seguridad",
+    "error_pick_file": "Seleccione un archivo",
+    "error_no_list": "Pegue una lista o adjunte un archivo .txt"
   },
   "maintenance": {
     "title": "Mantenimiento y alertas",
@@ -466,7 +490,10 @@
     "collection_link": "Colección",
     "chores_link": "Tareas",
     "overdue_label": "Vencido",
-    "upcoming_label": "Próximo"
+    "upcoming_label": "Próximo",
+    "days_overdue": "{days}d de retraso",
+    "due_today": "vence hoy",
+    "in_days": "en {days}d"
   },
   "settings": {
     "title": "Configuración",
@@ -564,5 +591,67 @@
     "kind_item_expires": "Artículo expira",
     "kind_lot_use_by": "Lote usar antes de",
     "kind_low_stock": "Stock bajo"
+  },
+  "share": {
+    "not_available": "No disponible",
+    "expired_message": "Este enlace puede haber expirado o sido revocado.",
+    "read_only_note": "Vista de solo lectura compartida por el propietario.",
+    "no_items": "No hay artículos para mostrar."
+  },
+  "invite": {
+    "title": "Invitación a la colección",
+    "expired_message": "Esta invitación puede haber expirado o sido revocada.",
+    "joined_as": "Ha sido invitado/a a unirse a {name} como {role}.",
+    "signed_in_as": "Conectado/a como {user}.",
+    "accept_button": "Aceptar invitación",
+    "accepting_button": "Aceptando…",
+    "sign_in_prompt": "Necesita iniciar sesión o crear una cuenta para aceptar.",
+    "sign_in_link": "Iniciar sesión",
+    "create_account_link": "Crear una cuenta"
+  },
+  "comments": {
+    "compose_placeholder": "Añadir un comentario…",
+    "post_button": "Publicar",
+    "no_comments": "Sin comentarios todavía.",
+    "edit_button": "Editar",
+    "delete_button": "Eliminar",
+    "edited_note": "(editado)",
+    "reply_button": "Responder",
+    "reply_placeholder": "Escribir una respuesta…",
+    "hide_replies_button": "Ocultar respuestas",
+    "just_now": "ahora mismo",
+    "mins_ago": "hace {mins}min",
+    "hrs_ago": "hace {hrs}h",
+    "days_ago": "hace {days}d",
+    "delete_confirm": "¿Eliminar este comentario?"
+  },
+  "photos": {
+    "caption_placeholder": "Clic para añadir un pie de foto…",
+    "primary_badge": "Principal",
+    "set_primary_button": "Establecer como principal",
+    "delete_button": "Eliminar"
+  },
+  "whats_new": {
+    "title": "Novedades",
+    "error": "No se pudo cargar el registro de cambios: {error}"
+  },
+  "grocery_store": {
+    "title": "Mis tiendas",
+    "create_store_placeholder": "Nombre de la tienda…",
+    "no_store": "Crea una tienda para empezar.",
+    "add_aisle_button": "+ Agregar pasillo",
+    "no_aisles": "Sin pasillos todavía. Añade uno para ordenar tu lista.",
+    "edit_aisle_heading": "Editar pasillo",
+    "new_aisle_heading": "Nuevo pasillo",
+    "aisle_name_label": "Nombre del pasillo",
+    "aisle_name_placeholder": "ej. Lácteos, Productos, Pasillo 3",
+    "categories_legend": "Categorías en este pasillo",
+    "custom_categories_label": "Categorías personalizadas",
+    "custom_categories_hint": "separadas por comas, opcional",
+    "custom_categories_placeholder": "ej. producción-orgánica, sin-gluten",
+    "saving_button": "Guardando…",
+    "save_aisle_button": "Guardar pasillo",
+    "back_button": "← Atrás",
+    "delete_store_confirm": "¿Eliminar esta tienda y todos sus pasillos?"
   }
 }

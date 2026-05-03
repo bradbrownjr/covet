@@ -1,5 +1,6 @@
 <script lang="ts">
     import { api, type ItemComment } from '$lib/api';
+    import { _ } from 'svelte-i18n';
 
     let { itemId, currentUserId, canManage = false }: {
         itemId: string;
@@ -102,7 +103,7 @@
     }
 
     async function deleteComment(commentId: string, parentId: string | null) {
-        if (!confirm('Delete this comment?')) return;
+        if (!confirm($_('comments.delete_confirm'))) return;
         try {
             await api.delete(`/comments/${commentId}`);
             if (parentId) {
@@ -121,12 +122,12 @@
     function timeAgo(iso: string): string {
         const diff = Date.now() - new Date(iso).getTime();
         const mins = Math.floor(diff / 60000);
-        if (mins < 1) return 'just now';
-        if (mins < 60) return `${mins}m ago`;
+        if (mins < 1) return $_('comments.just_now');
+        if (mins < 60) return $_('comments.mins_ago', { values: { mins } });
         const hrs = Math.floor(mins / 60);
-        if (hrs < 24) return `${hrs}h ago`;
+        if (hrs < 24) return $_('comments.hrs_ago', { values: { hrs } });
         const days = Math.floor(hrs / 24);
-        return `${days}d ago`;
+        return $_('comments.days_ago', { values: { days } });
     }
 
     const totalCount = $derived(comments.reduce((n, c) => n + 1 + c.reply_count, 0));
@@ -145,18 +146,18 @@
                 <div class="comment-compose">
                     <textarea
                         bind:value={newBody}
-                        placeholder="Add a comment…"
+                        placeholder={$_('comments.compose_placeholder')}
                         rows={2}
                         onkeydown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submit(); }}
                     ></textarea>
-                    <button type="button" onclick={submit} disabled={submitting || !newBody.trim()}>Post</button>
+                    <button type="button" onclick={submit} disabled={submitting || !newBody.trim()}>{$_('comments.post_button')}</button>
                 </div>
             {/if}
 
             {#if !loaded}
-                <p class="muted">Loading…</p>
+                <p class="muted">{$_('common.loading')}</p>
             {:else if comments.length === 0}
-                <p class="muted">No comments yet.</p>
+                <p class="muted">{$_('comments.no_comments')}</p>
             {:else}
                 <ul class="comment-list">
                     {#each comments as c (c.id)}
@@ -165,8 +166,8 @@
                                 <div class="comment-edit">
                                     <textarea bind:value={editBody} rows={2}></textarea>
                                     <div class="comment-edit-actions">
-                                        <button type="button" onclick={() => saveEdit(c.id)} disabled={submitting}>Save</button>
-                                        <button type="button" class="secondary" onclick={() => { editingId = null; editBody = ''; }}>Cancel</button>
+                                        <button type="button" onclick={() => saveEdit(c.id)} disabled={submitting}>{$_('common.save')}</button>
+                                        <button type="button" class="secondary" onclick={() => { editingId = null; editBody = ''; }}>{$_('common.cancel')}</button>
                                     </div>
                                 </div>
                             {:else}
@@ -174,14 +175,14 @@
                                     <span class="comment-author">{c.author.display_name ?? c.author.username}</span>
                                     <span class="comment-time muted">{timeAgo(c.created_at)}</span>
                                     {#if c.created_at !== c.updated_at}
-                                        <span class="comment-edited muted">(edited)</span>
+                                        <span class="comment-edited muted">{$_('comments.edited_note')}</span>
                                     {/if}
                                     <span class="comment-actions">
                                         {#if c.author.id === currentUserId}
-                                            <button type="button" class="link-btn" onclick={() => { editingId = c.id; editBody = c.body; }}>Edit</button>
+                                            <button type="button" class="link-btn" onclick={() => { editingId = c.id; editBody = c.body; }}>{$_('comments.edit_button')}</button>
                                         {/if}
                                         {#if c.author.id === currentUserId || canManage}
-                                            <button type="button" class="link-btn danger-link" onclick={() => deleteComment(c.id, null)}>Delete</button>
+                                            <button type="button" class="link-btn danger-link" onclick={() => deleteComment(c.id, null)}>{$_('comments.delete_button')}</button>
                                         {/if}
                                     </span>
                                 </div>
@@ -189,12 +190,12 @@
                                 <div class="comment-footer">
                                     {#if currentUserId}
                                         <button type="button" class="link-btn" onclick={() => { replyingTo = replyingTo === c.id ? null : c.id; replyBody = ''; }}>
-                                            Reply
+                                            {$_('comments.reply_button')}
                                         </button>
                                     {/if}
                                     {#if c.reply_count > 0 || openReplies[c.id]}
                                         <button type="button" class="link-btn" onclick={() => loadReplies(c.id)}>
-                                            {loadingReplies[c.id] ? 'Loading…' : openReplies[c.id] ? `Hide replies` : `${c.reply_count} repl${c.reply_count === 1 ? 'y' : 'ies'}`}
+                                            {loadingReplies[c.id] ? $_('common.loading') : openReplies[c.id] ? $_('comments.hide_replies_button') : `${c.reply_count} repl${c.reply_count === 1 ? 'y' : 'ies'}`}
                                         </button>
                                     {/if}
                                 </div>
@@ -202,9 +203,9 @@
 
                             {#if replyingTo === c.id}
                                 <div class="comment-compose reply-compose">
-                                    <textarea bind:value={replyBody} placeholder="Write a reply…" rows={2} onkeydown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submitReply(c.id); }}></textarea>
-                                    <button type="button" onclick={() => submitReply(c.id)} disabled={submitting || !replyBody.trim()}>Reply</button>
-                                    <button type="button" class="secondary" onclick={() => { replyingTo = null; replyBody = ''; }}>Cancel</button>
+                                    <textarea bind:value={replyBody} placeholder={$_('comments.reply_placeholder')} rows={2} onkeydown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) submitReply(c.id); }}></textarea>
+                                    <button type="button" onclick={() => submitReply(c.id)} disabled={submitting || !replyBody.trim()}>{$_('comments.reply_button')}</button>
+                                    <button type="button" class="secondary" onclick={() => { replyingTo = null; replyBody = ''; }}>{$_('common.cancel')}</button>
                                 </div>
                             {/if}
 
@@ -216,8 +217,8 @@
                                                 <div class="comment-edit">
                                                     <textarea bind:value={editBody} rows={2}></textarea>
                                                     <div class="comment-edit-actions">
-                                                        <button type="button" onclick={() => saveEdit(r.id)} disabled={submitting}>Save</button>
-                                                        <button type="button" class="secondary" onclick={() => { editingId = null; editBody = ''; }}>Cancel</button>
+                                                        <button type="button" onclick={() => saveEdit(r.id)} disabled={submitting}>{$_('common.save')}</button>
+                                                        <button type="button" class="secondary" onclick={() => { editingId = null; editBody = ''; }}>{$_('common.cancel')}</button>
                                                     </div>
                                                 </div>
                                             {:else}
@@ -225,14 +226,14 @@
                                                     <span class="comment-author">{r.author.display_name ?? r.author.username}</span>
                                                     <span class="comment-time muted">{timeAgo(r.created_at)}</span>
                                                     {#if r.created_at !== r.updated_at}
-                                                        <span class="comment-edited muted">(edited)</span>
+                                                        <span class="comment-edited muted">{$_('comments.edited_note')}</span>
                                                     {/if}
                                                     <span class="comment-actions">
                                                         {#if r.author.id === currentUserId}
-                                                            <button type="button" class="link-btn" onclick={() => { editingId = r.id; editBody = r.body; }}>Edit</button>
+                                                            <button type="button" class="link-btn" onclick={() => { editingId = r.id; editBody = r.body; }}>{$_('comments.edit_button')}</button>
                                                         {/if}
                                                         {#if r.author.id === currentUserId || canManage}
-                                                            <button type="button" class="link-btn danger-link" onclick={() => deleteComment(r.id, c.id)}>Delete</button>
+                                                            <button type="button" class="link-btn danger-link" onclick={() => deleteComment(r.id, c.id)}>{$_('comments.delete_button')}</button>
                                                         {/if}
                                                     </span>
                                                 </div>

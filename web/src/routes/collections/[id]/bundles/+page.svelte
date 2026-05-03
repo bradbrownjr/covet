@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { page } from '$app/state';
+    import { _ } from 'svelte-i18n';
     import {
         api,
         type BundleAssetKind,
@@ -147,7 +148,7 @@
     }
 
     async function deleteAsset(bid: string, aid: string) {
-        if (!confirm('Delete this asset?')) return;
+        if (!confirm($_('bundles.delete_asset_confirm'))) return;
         try {
             await api.delete(`/bundles/${bid}/assets/${aid}`);
             await load();
@@ -203,20 +204,20 @@
 
     {#if canEdit}
         <form onsubmit={createBundle} class="card" style="margin: 1rem 0">
-            <h2>Add manual bundle</h2>
+            <h2>{$_('bundles.add_heading')}</h2>
             <div class="form-row">
                 <input
                     type="text"
                     bind:value={newTitle}
-                    placeholder="Title (e.g. DeWalt DCD777 Manual)"
+                    placeholder={$_('bundles.title_placeholder')}
                     required
                 />
                 <input
                     type="text"
                     bind:value={newDescription}
-                    placeholder="Description (optional)"
+                    placeholder={$_('bundles.description_placeholder')}
                 />
-                <button type="submit" disabled={!newTitle.trim()}>Add</button>
+                <button type="submit" disabled={!newTitle.trim()}>{$_('bundles.add_button')}</button>
             </div>
         </form>
     {/if}
@@ -224,19 +225,16 @@
     {#if loading}
         <p>Loading…</p>
     {:else if bundles.length === 0}
-        <p class="muted">
-            No bundles yet. Bundles let you store a manual once and link it to many items
-            (e.g. one user manual shared by every unit of an appliance you own).
-        </p>
+        <p class="muted">{$_('bundles.no_bundles')}</p>
     {:else}
         {#each bundles as b (b.id)}
             <article class="card bundle">
                 {#if editingId === b.id}
                     <div class="form-row">
                         <input bind:value={editTitle} required />
-                        <input bind:value={editDescription} placeholder="Description" />
-                        <button type="button" onclick={saveEdit}>Save</button>
-                        <button type="button" class="secondary" onclick={() => (editingId = null)}>Cancel</button>
+                        <input bind:value={editDescription} placeholder={$_('bundles.description_placeholder')} />
+                        <button type="button" onclick={saveEdit}>{$_('bundles.save_button')}</button>
+                        <button type="button" class="secondary" onclick={() => (editingId = null)}>{$_('common.cancel')}</button>
                     </div>
                 {:else}
                     <header class="bundle-header">
@@ -246,17 +244,17 @@
                         </div>
                         {#if canEdit}
                             <div class="bundle-actions">
-                                <button type="button" class="secondary" onclick={() => startUpload(b.id)}>Upload asset</button>
-                                <button type="button" class="secondary" onclick={() => startEdit(b)}>Edit</button>
-                                <button type="button" class="danger" onclick={() => requestDelete(b)}>Delete</button>
+                                <button type="button" class="secondary" onclick={() => startUpload(b.id)}>{$_('bundles.upload_asset_button')}</button>
+                                <button type="button" class="secondary" onclick={() => startEdit(b)}>{$_('bundles.edit_button')}</button>
+                                <button type="button" class="danger" onclick={() => requestDelete(b)}>{$_('bundles.delete_button')}</button>
                             </div>
                         {/if}
                     </header>
 
                     <section class="bundle-section">
-                        <h4>Assets ({b.assets.length})</h4>
+                        <h4>{$_('bundles.assets_heading')} ({b.assets.length})</h4>
                         {#if b.assets.length === 0}
-                            <p class="muted">No assets uploaded yet.</p>
+                            <p class="muted">{$_('bundles.no_assets')}</p>
                         {:else}
                             <ul class="asset-list">
                                 {#each b.assets as a (a.id)}
@@ -266,12 +264,12 @@
                                         </a>
                                         <span class="muted">[{a.kind}] {fmtBytes(a.byte_size)}</span>
                                         {#if b.primary_asset_id === a.id}
-                                            <span class="badge">primary</span>
+                                            <span class="badge">{$_('bundles.asset_primary_badge')}</span>
                                         {:else if canEdit}
-                                            <button type="button" class="link" onclick={() => setPrimary(b.id, a.id)}>Make primary</button>
+                                            <button type="button" class="link" onclick={() => setPrimary(b.id, a.id)}>{$_('bundles.make_primary_button')}</button>
                                         {/if}
                                         {#if canEdit}
-                                            <button type="button" class="link danger" onclick={() => deleteAsset(b.id, a.id)}>Delete</button>
+                                            <button type="button" class="link danger" onclick={() => deleteAsset(b.id, a.id)}>{$_('bundles.delete_asset_button')}</button>
                                         {/if}
                                     </li>
                                 {/each}
@@ -280,9 +278,9 @@
                     </section>
 
                     <section class="bundle-section">
-                        <h4>Linked items ({b.item_ids.length})</h4>
+                        <h4>{$_('bundles.linked_items_heading')} ({b.item_ids.length})</h4>
                         {#if b.item_ids.length === 0}
-                            <p class="muted">Not linked to any items yet.</p>
+                            <p class="muted">{$_('bundles.no_linked_items')}</p>
                         {:else}
                             <ul class="link-list">
                                 {#each b.item_ids as iid (iid)}
@@ -293,7 +291,7 @@
                                             <span class="muted">{iid}</span>
                                         {/if}
                                         {#if canEdit}
-                                            <button type="button" class="link danger" onclick={() => unlinkItem(b.id, iid)}>Unlink</button>
+                                            <button type="button" class="link danger" onclick={() => unlinkItem(b.id, iid)}>{$_('bundles.unlink_button')}</button>
                                         {/if}
                                     </li>
                                 {/each}
@@ -302,12 +300,12 @@
                         {#if canEdit}
                             <div class="form-row">
                                 <select bind:value={linkItemId} onfocus={() => (linkBundleId = b.id)}>
-                                    <option value="">— Pick item to link —</option>
+                                    <option value="">{$_('bundles.link_item_placeholder')}</option>
                                     {#each items.filter((i) => !b.item_ids.includes(i.id)) as i (i.id)}
                                         <option value={i.id}>{i.title}</option>
                                     {/each}
                                 </select>
-                                <button type="button" onclick={() => { linkBundleId = b.id; linkItem(); }} disabled={!linkItemId || linkBundleId !== b.id}>Link</button>
+                                <button type="button" onclick={() => { linkBundleId = b.id; linkItem(); }} disabled={!linkItemId || linkBundleId !== b.id}>{$_('bundles.link_item_button')}</button>
                             </div>
                         {/if}
                     </section>
@@ -319,7 +317,7 @@
     {#if uploadBundleId}
         <div class="modal" role="dialog" aria-modal="true">
             <div class="card">
-                <h3>Upload asset</h3>
+                <h3>{$_('bundles.upload_heading')}</h3>
                 <div class="form-row">
                     <input
                         type="file"
@@ -328,20 +326,20 @@
                 </div>
                 <div class="form-row">
                     <select bind:value={uploadKind}>
-                        <option value="manual">Manual</option>
-                        <option value="diagram">Diagram</option>
-                        <option value="firmware">Firmware</option>
-                        <option value="service">Service sheet</option>
-                        <option value="parts">Parts list</option>
-                        <option value="other">Other</option>
+                        <option value="manual">{$_('bundles.kind_manual')}</option>
+                        <option value="diagram">{$_('bundles.kind_diagram')}</option>
+                        <option value="firmware">{$_('bundles.kind_firmware')}</option>
+                        <option value="service">{$_('bundles.kind_service')}</option>
+                        <option value="parts">{$_('bundles.kind_parts')}</option>
+                        <option value="other">{$_('bundles.kind_other')}</option>
                     </select>
-                    <input bind:value={uploadLabel} placeholder="Label (optional)" />
+                    <input bind:value={uploadLabel} placeholder={$_('bundles.upload_label_placeholder')} />
                 </div>
                 <div class="form-row">
                     <button type="button" onclick={doUpload} disabled={!uploadFile || uploadBusy}>
-                        {uploadBusy ? 'Uploading…' : 'Upload'}
+                        {uploadBusy ? $_('bundles.uploading_button') : $_('bundles.upload_button')}
                     </button>
-                    <button type="button" class="secondary" onclick={() => (uploadBundleId = null)} disabled={uploadBusy}>Cancel</button>
+                    <button type="button" class="secondary" onclick={() => (uploadBundleId = null)} disabled={uploadBusy}>{$_('common.cancel')}</button>
                 </div>
             </div>
         </div>
@@ -351,13 +349,11 @@
         <div class="modal" role="dialog" aria-modal="true">
             <div class="card">
                 <p>
-                    Delete bundle <strong>{confirmDeleteLabel}</strong>? All assets in this
-                    bundle will be removed. Items previously linked will be unlinked but
-                    not deleted.
+                    {$_('bundles.delete_bundle_text', {values: {name: confirmDeleteLabel}})}
                 </p>
                 <div class="form-row">
-                    <button type="button" class="danger" onclick={deleteConfirmed}>Delete</button>
-                    <button type="button" class="secondary" onclick={() => (confirmDeleteId = null)}>Cancel</button>
+                    <button type="button" class="danger" onclick={deleteConfirmed}>{$_('bundles.delete_button')}</button>
+                    <button type="button" class="secondary" onclick={() => (confirmDeleteId = null)}>{$_('common.cancel')}</button>
                 </div>
             </div>
         </div>

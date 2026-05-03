@@ -5,7 +5,9 @@
     "grocery_list": "Einkaufsliste",
     "settings": "Einstellungen",
     "log_out": "Abmelden",
-    "alerts": "Benachrichtigungen"
+    "alerts": "Benachrichtigungen",
+    "whats_new": "Neuigkeiten",
+    "edit_profile": "Profil bearbeiten"
   },
   "alerts": {
     "no_upcoming": "Keine bevorstehenden Benachrichtigungen.",
@@ -20,7 +22,8 @@
     "close": "Schließen",
     "loading": "Lädt…",
     "error": "Fehler",
-    "confirm": "Sind Sie sicher?"
+    "confirm": "Sind Sie sicher?",
+    "never": "nie"
   },
   "auth": {
     "sign_in": "Anmelden",
@@ -200,7 +203,23 @@
     "archive_confirm": "Archivieren",
     "scraping_error": "Suche fehlgeschlagen: {error}",
     "image_scan_error": "Bildscan fehlgeschlagen: {error}",
-    "title_derivation_error": "Titel konnte nicht ermittelt werden — bitte manuell eingeben."
+    "title_derivation_error": "Titel konnte nicht ermittelt werden — bitte manuell eingeben.",
+    "not_found": "Sammlung nicht gefunden.",
+    "item_select_label": "Auswählen",
+    "flag_for_review": "Zur Überprüfung markiert",
+    "looking_up_button": "Suche läuft…",
+    "creator_artist": "Künstler / Band",
+    "creator_author": "Autor",
+    "creator_director": "Regisseur",
+    "creator_developer": "Entwickler",
+    "creator_designer": "Designer",
+    "quick_action_filter_change": "Filterwechsel protokollieren",
+    "quick_action_filter_service": "Filterwartung protokollieren",
+    "quick_action_run_generator": "Generator heute gestartet",
+    "consumable_purchased": "Gekauft am",
+    "consumable_use_by": "Verbrauch bis",
+    "consumable_frozen": "Eingefroren am",
+    "consumable_opened": "Geöffnet am"
   },
   "members": {
     "add_placeholder": "Benutzername oder E-Mail",
@@ -302,7 +321,8 @@
     "upload_button": "Hochladen",
     "uploading_button": "Lade hoch…",
     "delete_bundle_title": "Bündel löschen?",
-    "delete_bundle_text": "Bündel {name} löschen? Alle Dateien werden gelöscht. Verknüpfte Artikel werden getrennt."
+    "delete_bundle_text": "Bündel {name} löschen? Alle Dateien werden gelöscht. Verknüpfte Artikel werden getrennt.",
+    "delete_asset_confirm": "Dieses Asset löschen?"
   },
   "chores": {
     "page_description": "Wiederkehrende Haushaltsaufgaben, die nicht an einen bestimmten Artikel gebunden sind.",
@@ -333,7 +353,8 @@
     "mark_done_save": "Speichern",
     "delete_title": "Aufgabe löschen?",
     "delete_text": "Aufgabe {name} löschen? Dies kann nicht rückgängig gemacht werden.",
-    "delete_confirm": "Löschen"
+    "delete_confirm": "Löschen",
+    "interval_display": "alle {days}T"
   },
   "templates": {
     "description": "Vorlagen fügen Artikeln benutzerdefinierte Felder hinzu. Neue Vorlagen werden unter {target} erstellt.",
@@ -442,7 +463,10 @@
     "list_file_label": "Oder .txt-Datei anhängen",
     "restore_file_label": "JSON-Backup-Datei",
     "submit_button": "Importieren",
-    "working_button": "Arbeite…"
+    "working_button": "Arbeite…",
+    "heading": "Import / Sicherung",
+    "error_pick_file": "Datei auswählen",
+    "error_no_list": "Liste einfügen oder .txt-Datei anhängen"
   },
   "maintenance": {
     "title": "Wartung & Warnungen",
@@ -466,7 +490,10 @@
     "collection_link": "Sammlung",
     "chores_link": "Aufgaben",
     "overdue_label": "Überfällig",
-    "upcoming_label": "Bevorstehend"
+    "upcoming_label": "Bevorstehend",
+    "days_overdue": "{days}T überfällig",
+    "due_today": "heute fällig",
+    "in_days": "in {days}T"
   },
   "settings": {
     "title": "Einstellungen",
@@ -564,5 +591,67 @@
     "kind_item_expires": "Artikel läuft ab",
     "kind_lot_use_by": "Charge verwenden bis",
     "kind_low_stock": "Niedriger Bestand"
+  },
+  "share": {
+    "not_available": "Nicht verfügbar",
+    "expired_message": "Dieser Freigabelink ist möglicherweise abgelaufen oder widerrufen.",
+    "read_only_note": "Schreibgeschützte Ansicht, geteilt vom Eigentümer.",
+    "no_items": "Keine Artikel vorhanden."
+  },
+  "invite": {
+    "title": "Sammlungseinladung",
+    "expired_message": "Diese Einladung ist möglicherweise abgelaufen oder widerrufen.",
+    "joined_as": "Sie wurden eingeladen, {name} als {role} beizutreten.",
+    "signed_in_as": "Angemeldet als {user}.",
+    "accept_button": "Einladung annehmen",
+    "accepting_button": "Wird angenommen…",
+    "sign_in_prompt": "Sie müssen sich anmelden oder ein Konto erstellen, um zu akzeptieren.",
+    "sign_in_link": "Anmelden",
+    "create_account_link": "Konto erstellen"
+  },
+  "comments": {
+    "compose_placeholder": "Kommentar hinzufügen…",
+    "post_button": "Senden",
+    "no_comments": "Noch keine Kommentare.",
+    "edit_button": "Bearbeiten",
+    "delete_button": "Löschen",
+    "edited_note": "(bearbeitet)",
+    "reply_button": "Antworten",
+    "reply_placeholder": "Antwort schreiben…",
+    "hide_replies_button": "Antworten ausblenden",
+    "just_now": "gerade eben",
+    "mins_ago": "vor {mins}Min",
+    "hrs_ago": "vor {hrs}Std",
+    "days_ago": "vor {days}T",
+    "delete_confirm": "Diesen Kommentar löschen?"
+  },
+  "photos": {
+    "caption_placeholder": "Klicken zum Hinzufügen einer Beschriftung…",
+    "primary_badge": "Primär",
+    "set_primary_button": "Als primär festlegen",
+    "delete_button": "Löschen"
+  },
+  "whats_new": {
+    "title": "Neuigkeiten",
+    "error": "Änderungsprotokoll konnte nicht geladen werden: {error}"
+  },
+  "grocery_store": {
+    "title": "Meine Geschäfte",
+    "create_store_placeholder": "Name des Geschäfts…",
+    "no_store": "Erstellen Sie ein Geschäft, um zu beginnen.",
+    "add_aisle_button": "+ Gang hinzufügen",
+    "no_aisles": "Noch keine Gänge. Fügen Sie einen hinzu.",
+    "edit_aisle_heading": "Gang bearbeiten",
+    "new_aisle_heading": "Neuer Gang",
+    "aisle_name_label": "Name des Gangs",
+    "aisle_name_placeholder": "z.B. Milchprodukte, Obst, Gang 3",
+    "categories_legend": "Kategorien in diesem Gang",
+    "custom_categories_label": "Benutzerdefinierte Kategorien",
+    "custom_categories_hint": "kommagetrennt, optional",
+    "custom_categories_placeholder": "z.B. bio-produkte, glutenfrei",
+    "saving_button": "Speichern…",
+    "save_aisle_button": "Gang speichern",
+    "back_button": "← Zurück",
+    "delete_store_confirm": "Dieses Geschäft und alle seine Gänge löschen?"
   }
 }

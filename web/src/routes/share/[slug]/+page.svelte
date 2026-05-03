@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { page } from '$app/state';
+    import { _ } from 'svelte-i18n';
     import { api, type Collection, type Item } from '$lib/api';
 
     let collection = $state<Collection | null>(null);
@@ -26,26 +27,26 @@
 </script>
 
 {#if loading}
-    <p class="muted">Loading…</p>
+    <p class="muted">{$_('common.loading')}</p>
 {:else if error}
-    <h1>Not available</h1>
+    <h1>{$_('share.not_available')}</h1>
     <p class="error">{error}</p>
-    <p class="muted">This share link may be expired or revoked.</p>
+    <p class="muted">{$_('share.expired_message')}</p>
 {:else if collection}
     <h1>{collection.name}</h1>
     {#if collection.description}<p class="muted">{collection.description}</p>{/if}
-    <p class="muted">Read-only view shared by the owner.</p>
+    <p class="muted">{$_('share.read_only_note')}</p>
 
     {#if items.length === 0}
-        <p class="muted">No items to show.</p>
+        <p class="muted">{$_('share.no_items')}</p>
     {:else}
         <table>
             <thead>
                 <tr>
-                    <th>Category</th>
-                    <th>Title</th>
-                    <th>Qty</th>
-                    <th>Condition</th>
+                    <th>{$_('collection.col_category')}</th>
+                    <th>{$_('collection.col_title')}</th>
+                    <th>{$_('collection.col_qty')}</th>
+                    <th>{$_('collection.col_condition')}</th>
                 </tr>
             </thead>
             <tbody>

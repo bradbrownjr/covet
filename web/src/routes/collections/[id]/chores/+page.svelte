@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { page } from '$app/state';
+    import { _ } from 'svelte-i18n';
     import { api, type Chore, type Collection } from '$lib/api';
 
     let collection = $state<Collection | null>(null);
@@ -141,9 +142,9 @@
         const diff = Math.round(
             (new Date(isoDate).getTime() - Date.now()) / 86400000
         );
-        if (diff < 0) return `${Math.abs(diff)}d overdue`;
-        if (diff === 0) return 'due today';
-        return `in ${diff}d`;
+        if (diff < 0) return $_('maintenance.days_overdue', { values: { days: Math.abs(diff) } });
+        if (diff === 0) return $_('maintenance.due_today');
+        return $_('maintenance.in_days', { values: { days: diff } });
     }
 
     function isOverdue(isoDate: string | null): boolean {
@@ -155,7 +156,7 @@
 <svelte:head><title>{collection?.name ?? 'Collection'} — Chores</title></svelte:head>
 
 {#if loading}
-    <p class="loading">Loading…</p>
+    <p class="loading">{$_('common.loading')}</p>
 {:else if error}
     <p class="error">{error}</p>
 {:else}
@@ -170,42 +171,42 @@
 
     <div class="page-header">
         <h1>{collection?.name} — Chores</h1>
-        <p class="hint">Recurring household tasks that aren't tied to a specific item.</p>
+        <p class="hint">{$_('chores.page_description')}</p>
     </div>
 
     {#if canEdit}
         <form class="card create-form" onsubmit={createChore}>
-            <h2>Add chore</h2>
+            <h2>{$_('chores.add_heading')}</h2>
             <div class="field-row">
                 <label>
-                    Name
-                    <input bind:value={newName} placeholder="Clean gutters" required />
+                    {$_('chores.name_label')}
+                    <input bind:value={newName} placeholder={$_('chores.name_placeholder')} required />
                 </label>
                 <label>
-                    Repeat every (days)
+                    {$_('chores.interval_label')}
                     <input
                         type="number"
                         bind:value={newIntervalDays}
                         min="1"
                         max="36500"
-                        placeholder="180"
+                        placeholder={$_('chores.interval_placeholder')}
                     />
                 </label>
                 <label>
-                    Next due
+                    {$_('chores.next_due_label')}
                     <input type="date" bind:value={newNextDueAt} />
                 </label>
             </div>
             <label>
-                Notes
-                <textarea bind:value={newNotes} rows="2" placeholder="Optional notes"></textarea>
+                {$_('chores.notes_label')}
+                <textarea bind:value={newNotes} rows="2" placeholder={$_('chores.notes_placeholder')}></textarea>
             </label>
-            <button type="submit" class="btn-primary">Add chore</button>
+            <button type="submit" class="btn-primary">{$_('chores.add_button')}</button>
         </form>
     {/if}
 
     {#if chores.length === 0}
-        <p class="empty">No chores yet.</p>
+        <p class="empty">{$_('chores.no_chores')}</p>
     {:else}
         <ul class="chore-list">
             {#each chores as ch (ch.id)}
@@ -220,10 +221,10 @@
                                 placeholder="Interval (days)"
                             />
                             <input type="date" bind:value={editNextDueAt} />
-                            <textarea bind:value={editNotes} rows="2" placeholder="Notes"></textarea>
+                            <textarea bind:value={editNotes} rows="2" placeholder={$_('chores.notes_placeholder')}></textarea>
                             <div class="btn-row">
-                                <button type="submit" class="btn-primary">Save</button>
-                                <button type="button" onclick={() => (editingId = null)}>Cancel</button>
+                                <button type="submit" class="btn-primary">{$_('chores.save_button')}</button>
+                                <button type="button" onclick={() => (editingId = null)}>{$_('common.cancel')}</button>
                             </div>
                         </form>
                     {:else}
@@ -235,7 +236,7 @@
                                 </span>
                             {/if}
                             {#if ch.interval_days}
-                                <span class="interval">every {ch.interval_days}d</span>
+                                <span class="interval">{$_('chores.interval_display', {values: {days: ch.interval_days}})}</span>
                             {/if}
                         </div>
                         {#if ch.notes}
@@ -243,20 +244,20 @@
                         {/if}
                         {#if ch.last_completed_at}
                             <p class="last-done">
-                                Last done: {new Date(ch.last_completed_at).toLocaleDateString()}
+                                {$_('chores.last_done_label')} {new Date(ch.last_completed_at).toLocaleDateString()}
                             </p>
                         {/if}
                         {#if canEdit}
                             <div class="btn-row">
                                 <button class="btn-success" onclick={() => openComplete(ch.id)}>
-                                    Mark done
+                                    {$_('chores.mark_done_button')}
                                 </button>
-                                <button onclick={() => startEdit(ch)}>Edit</button>
+                                <button onclick={() => startEdit(ch)}>{$_('chores.edit_button')}</button>
                                 <button
                                     class="btn-danger"
                                     onclick={() => confirmDelete(ch.id, ch.name)}
                                 >
-                                    Delete
+                                    {$_('chores.delete_button')}
                                 </button>
                             </div>
                         {/if}
@@ -271,28 +272,28 @@
 {#if completeChoreId}
     <div class="modal-backdrop" role="dialog" aria-modal="true">
         <div class="modal">
-            <h2>Mark chore done</h2>
+            <h2>{$_('chores.mark_done_title')}</h2>
             <label>
-                Notes
-                <textarea bind:value={completeNotes} rows="2" placeholder="What was done?"></textarea>
+                {$_('chores.mark_done_notes_label')}
+                <textarea bind:value={completeNotes} rows="2" placeholder={$_('chores.mark_done_notes_placeholder')}></textarea>
             </label>
             <div class="field-row">
                 <label>
-                    Cost
-                    <input type="number" step="0.01" bind:value={completeCost} placeholder="0.00" />
+                    {$_('chores.mark_done_cost_label')}
+                    <input type="number" step="0.01" bind:value={completeCost} placeholder={$_('chores.mark_done_cost_placeholder')} />
                 </label>
                 <label>
-                    Currency
-                    <input bind:value={completeCurrency} maxlength="3" placeholder="USD" />
+                    {$_('chores.mark_done_currency_label')}
+                    <input bind:value={completeCurrency} maxlength="3" placeholder={$_('chores.mark_done_currency_placeholder')} />
                 </label>
             </div>
             <label>
-                Technician / who
-                <input bind:value={completeTechnician} placeholder="self" />
+                {$_('chores.mark_done_tech_label')}
+                <input bind:value={completeTechnician} placeholder={$_('chores.mark_done_tech_placeholder')} />
             </label>
             <div class="btn-row">
-                <button class="btn-primary" onclick={doComplete}>Save</button>
-                <button onclick={() => (completeChoreId = null)}>Cancel</button>
+                <button class="btn-primary" onclick={doComplete}>{$_('chores.mark_done_save')}</button>
+                <button onclick={() => (completeChoreId = null)}>{$_('common.cancel')}</button>
             </div>
         </div>
     </div>
@@ -302,11 +303,11 @@
 {#if confirmDeleteId}
     <div class="modal-backdrop" role="dialog" aria-modal="true">
         <div class="modal">
-            <p>Delete chore <strong>{confirmDeleteLabel}</strong>? This cannot be undone.</p>
+            <p>{$_('chores.delete_text', {values: {name: confirmDeleteLabel}})}</p>
             <div class="btn-row">
-                <button class="btn-danger" onclick={doDelete}>Delete</button>
+                <button class="btn-danger" onclick={doDelete}>{$_('chores.delete_confirm')}</button>
                 <button onclick={() => { confirmDeleteId = null; confirmDeleteLabel = ''; }}>
-                    Cancel
+                    {$_('common.cancel')}
                 </button>
             </div>
         </div>

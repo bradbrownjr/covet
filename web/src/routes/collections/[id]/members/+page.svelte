@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { page } from '$app/state';
+    import { _ } from 'svelte-i18n';
     import {
         api,
         type AuditLogEntry,
@@ -202,24 +203,24 @@
 
     <form onsubmit={addMember} class="card" style="margin: 1rem 0">
         <div style="display:grid; grid-template-columns: 1fr 140px auto; gap:.5rem">
-            <input bind:value={newIdent} placeholder="Username or email" />
+            <input bind:value={newIdent} placeholder={$_('members.add_placeholder')} />
             <select bind:value={newRole}>
-                <option value="viewer">Viewer</option>
-                <option value="editor">Editor</option>
+                <option value="viewer">{$_('members.role_viewer')}</option>
+                <option value="editor">{$_('members.role_editor')}</option>
             </select>
-            <button type="submit">Add member</button>
+            <button type="submit">{$_('members.add_button')}</button>
         </div>
     </form>
 
     {#if loading}
-        <p class="muted">Loading…</p>
+        <p class="muted">{$_('common.loading')}</p>
     {:else}
         <table>
             <thead>
                 <tr>
-                    <th>User</th>
-                    <th>Email</th>
-                    <th>Role</th>
+                    <th>{$_('members.col_user')}</th>
+                    <th>{$_('members.col_email')}</th>
+                    <th>{$_('members.col_role')}</th>
                     <th></th>
                 </tr>
             </thead>
@@ -230,21 +231,21 @@
                         <td class="muted">{m.email ?? ''}</td>
                         <td>
                             {#if m.role === 'owner'}
-                                <span class="muted">Owner</span>
+                                <span class="muted">{$_('members.role_owner')}</span>
                             {:else}
                                 <select
                                     value={m.role}
                                     onchange={(e) =>
                                         changeRole(m, (e.currentTarget as HTMLSelectElement).value as Role)}
                                 >
-                                    <option value="viewer">Viewer</option>
-                                    <option value="editor">Editor</option>
+                                    <option value="viewer">{$_('members.role_viewer')}</option>
+                                    <option value="editor">{$_('members.role_editor')}</option>
                                 </select>
                             {/if}
                         </td>
                         <td>
                             {#if m.role !== 'owner'}
-                                    <button class="danger" onclick={() => requestRemoveMember(m)}>Remove</button>
+                                    <button class="danger" onclick={() => requestRemoveMember(m)}>{$_('members.remove_button')}</button>
                             {/if}
                         </td>
                     </tr>
@@ -253,10 +254,9 @@
         </table>
     {/if}
 
-    <h2 style="margin-top:2rem">Invitations</h2>
+    <h2 style="margin-top:2rem">{$_('members.invitations_heading')}</h2>
     <p class="muted">
-        Send a single-use invitation link. The invitee opens it while signed in
-        (or after signing up) to gain access at the chosen role.
+        {$_('members.invitations_description')}
     </p>
 
     <form onsubmit={createInvitation} class="card" style="margin: 1rem 0">
@@ -264,34 +264,34 @@
             <input
                 type="email"
                 bind:value={newInviteEmail}
-                placeholder="Email (optional, for your records)"
+                placeholder={$_('members.invite_email_placeholder')}
             />
             <select bind:value={newInviteRole}>
-                <option value="viewer">Viewer</option>
-                <option value="editor">Editor</option>
+                <option value="viewer">{$_('members.role_viewer')}</option>
+                <option value="editor">{$_('members.role_editor')}</option>
             </select>
-            <button type="submit">Create invitation</button>
+            <button type="submit">{$_('members.create_invite_button')}</button>
         </div>
     </form>
 
     {#if lastInviteUrl}
         <p>
-            <strong>One-time link:</strong>
+            <strong>{$_('members.one_time_link_label')}</strong>
             <code>{lastInviteUrl}</code>
-            <span class="muted"> (copy now — won't be shown again)</span>
+            <span class="muted"> ({$_('members.copy_now_note')})</span>
         </p>
     {/if}
 
     {#if invitations.length === 0}
-        <p class="muted">No pending invitations.</p>
+        <p class="muted">{$_('members.no_invitations')}</p>
     {:else}
         <table>
             <thead>
                 <tr>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Expires</th>
-                    <th>Status</th>
+                    <th>{$_('members.col_invite_email')}</th>
+                    <th>{$_('members.col_invite_role')}</th>
+                    <th>{$_('members.col_invite_expires')}</th>
+                    <th>{$_('members.col_invite_status')}</th>
                     <th></th>
                 </tr>
             </thead>
@@ -300,17 +300,17 @@
                     <tr>
                         <td>{inv.email ?? ''}</td>
                         <td>{inv.role}</td>
-                        <td class="muted">{inv.expires_at ?? 'never'}</td>
+                        <td class="muted">{inv.expires_at ?? $_('common.never')}</td>
                         <td>
                             {#if inv.accepted_at}
-                                <span class="muted">accepted</span>
+                                <span class="muted">{$_('members.invite_accepted')}</span>
                             {:else}
-                                pending
+                                {$_('members.invite_pending')}
                             {/if}
                         </td>
                         <td>
                             <button class="danger" onclick={() => requestRevokeInvitation(inv)}>
-                                Revoke
+                                {$_('members.revoke_invite_button')}
                             </button>
                         </td>
                     </tr>
@@ -319,28 +319,27 @@
         </table>
     {/if}
 
-    <h2 style="margin-top:2rem">Public share links</h2>
+    <h2 style="margin-top:2rem">{$_('members.share_links_heading')}</h2>
     <p class="muted">
-        Anyone with a share link gets read-only access to this collection — no
-        sign-in required. Revoke a link to immediately cut off access.
+        {$_('members.share_links_description')}
     </p>
 
     <form onsubmit={createShareLink} class="card" style="margin: 1rem 0">
         <div style="display:grid; grid-template-columns: 1fr auto; gap:.5rem">
-            <input bind:value={newLinkLabel} placeholder="Label (optional, e.g. 'For Mom')" />
-            <button type="submit">Create share link</button>
+            <input bind:value={newLinkLabel} placeholder={$_('members.share_link_label_placeholder')} />
+            <button type="submit">{$_('members.create_share_button')}</button>
         </div>
     </form>
 
     {#if shareLinks.length === 0}
-        <p class="muted">No active share links.</p>
+        <p class="muted">{$_('members.no_share_links')}</p>
     {:else}
         <table>
             <thead>
                 <tr>
-                    <th>Label</th>
-                    <th>URL</th>
-                    <th>Expires</th>
+                    <th>{$_('members.col_share_label')}</th>
+                    <th>{$_('members.col_share_url')}</th>
+                    <th>{$_('members.col_share_expires')}</th>
                     <th></th>
                 </tr>
             </thead>
@@ -353,10 +352,10 @@
                                 {shareUrl(l.slug)}
                             </a>
                         </td>
-                        <td class="muted">{l.expires_at ?? 'never'}</td>
+                        <td class="muted">{l.expires_at ?? $_('common.never')}</td>
                         <td>
                             <button class="danger" onclick={() => requestRevokeShareLink(l)}>
-                                Revoke
+                                {$_('members.revoke_share_button')}
                             </button>
                         </td>
                     </tr>
@@ -364,17 +363,17 @@
             </tbody>
         </table>
     {/if}
-    <h2 style="margin-top:2rem">Activity log</h2>
-    <p class="muted">Recent membership, invitation and share-link events.</p>
+    <h2 style="margin-top:2rem">{$_('members.activity_heading')}</h2>
+    <p class="muted">{$_('members.activity_description')}</p>
     {#if auditLog.length === 0}
-        <p class="muted">No recorded activity yet.</p>
+        <p class="muted">{$_('members.no_activity')}</p>
     {:else}
         <table>
             <thead>
                 <tr>
-                    <th>When</th>
-                    <th>Action</th>
-                    <th>Target</th>
+                    <th>{$_('members.col_activity_when')}</th>
+                    <th>{$_('members.col_activity_action')}</th>
+                    <th>{$_('members.col_activity_target')}</th>
                 </tr>
             </thead>
             <tbody>
@@ -391,17 +390,17 @@
         </table>
     {/if}
 {:else if !loading}
-    <p class="error">Collection not found.</p>
+    <p class="error">{$_('collection.not_found')}</p>
 {/if}
 
 {#if confirmDialog === 'remove-member'}
     <div class="modal-backdrop" role="presentation" onclick={() => (confirmDialog = null)}>
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="remove-member-title" onclick={(e) => e.stopPropagation()}>
-            <h3 id="remove-member-title">Remove member?</h3>
-            <p class="muted">Remove {pendingMember?.username} from this collection.</p>
+            <h3 id="remove-member-title">{$_('members.remove_member_title')}</h3>
+            <p class="muted">{$_('members.remove_member_text', {values: {username: pendingMember?.username ?? ''}})}</p>
             <div class="modal-actions">
-                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>Cancel</button>
-                <button type="button" class="danger" onclick={removeMemberConfirmed}>Remove</button>
+                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>{$_('common.cancel')}</button>
+                <button type="button" class="danger" onclick={removeMemberConfirmed}>{$_('members.remove_button')}</button>
             </div>
         </div>
     </div>
@@ -410,11 +409,11 @@
 {#if confirmDialog === 'revoke-share'}
     <div class="modal-backdrop" role="presentation" onclick={() => (confirmDialog = null)}>
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="revoke-share-title" onclick={(e) => e.stopPropagation()}>
-            <h3 id="revoke-share-title">Revoke share link?</h3>
-            <p class="muted">Anyone holding this link will lose access immediately.</p>
+            <h3 id="revoke-share-title">{$_('members.revoke_share_title')}</h3>
+            <p class="muted">{$_('members.revoke_share_text')}</p>
             <div class="modal-actions">
-                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>Cancel</button>
-                <button type="button" class="danger" onclick={revokeShareLinkConfirmed}>Revoke</button>
+                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>{$_('common.cancel')}</button>
+                <button type="button" class="danger" onclick={revokeShareLinkConfirmed}>{$_('members.revoke_share_button')}</button>
             </div>
         </div>
     </div>
@@ -423,11 +422,11 @@
 {#if confirmDialog === 'revoke-invite'}
     <div class="modal-backdrop" role="presentation" onclick={() => (confirmDialog = null)}>
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="revoke-invite-title" onclick={(e) => e.stopPropagation()}>
-            <h3 id="revoke-invite-title">Revoke invitation?</h3>
-            <p class="muted">The invite link will stop working.</p>
+            <h3 id="revoke-invite-title">{$_('members.revoke_invite_title')}</h3>
+            <p class="muted">{$_('members.revoke_invite_text')}</p>
             <div class="modal-actions">
-                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>Cancel</button>
-                <button type="button" class="danger" onclick={revokeInvitationConfirmed}>Revoke</button>
+                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>{$_('common.cancel')}</button>
+                <button type="button" class="danger" onclick={revokeInvitationConfirmed}>{$_('members.revoke_invite_button')}</button>
             </div>
         </div>
     </div>

@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import { _ } from 'svelte-i18n';
 
     let { onClose }: { onClose: () => void } = $props();
 
@@ -131,14 +132,14 @@
 >
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="whatsnew-title">
         <header>
-            <h2 id="whatsnew-title">What's new</h2>
-            <button class="close" onclick={onClose} aria-label="Close">×</button>
+            <h2 id="whatsnew-title">{$_('whats_new.title')}</h2>
+            <button class="close" onclick={onClose} aria-label={$_('common.close')}>×</button>
         </header>
         <div class="body">
             {#if loading}
-                <p class="muted">Loading…</p>
+                <p class="muted">{$_('common.loading')}</p>
             {:else if error}
-                <p class="error">Couldn't load changelog: {error}</p>
+                <p class="error">{$_('whats_new.error', {values: {error}})}</p>
             {:else}
                 {@html html}
             {/if}

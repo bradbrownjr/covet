@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { page } from '$app/state';
+    import { _ } from 'svelte-i18n';
     import { api, type Collection, type LocationKind, type LocationNode } from '$lib/api';
 
     let collection = $state<Collection | null>(null);
@@ -141,37 +142,37 @@
 
     {#if canEdit}
         <form onsubmit={createLocation} class="card" style="margin: 1rem 0">
-            <h2>Add location</h2>
+            <h2>{$_('locations.add_heading')}</h2>
             <div class="form-row">
                 <input
                     type="text"
                     bind:value={newName}
-                    placeholder="Name (e.g. Garage, Top shelf)"
+                    placeholder={$_('locations.name_placeholder')}
                     required
                 />
-                <select bind:value={newKind} title="Location kind">
-                    <option value="home">Home</option>
-                    <option value="floor">Floor</option>
-                    <option value="room">Room</option>
-                    <option value="zone">Zone</option>
-                    <option value="container">Container</option>
+                <select bind:value={newKind} title={$_('locations.kind_label')}>
+                    <option value="home">{$_('locations.kind_home')}</option>
+                    <option value="floor">{$_('locations.kind_floor')}</option>
+                    <option value="room">{$_('locations.kind_room')}</option>
+                    <option value="zone">{$_('locations.kind_zone')}</option>
+                    <option value="container">{$_('locations.kind_container')}</option>
                 </select>
-                <select bind:value={newParentId} title="Parent location">
-                    <option value="">— Top-level —</option>
+                <select bind:value={newParentId} title={$_('locations.parent_label')}>
+                    <option value="">{$_('locations.parent_toplevel')}</option>
                     {#each flatOptions as opt (opt.id)}
                         <option value={opt.id}>{'\u00a0\u00a0'.repeat(opt.depth)}{opt.label}</option>
                     {/each}
                 </select>
-                <input type="text" bind:value={newNotes} placeholder="Notes (optional)" />
-                <button type="submit" disabled={!newName.trim()}>Add</button>
+                <input type="text" bind:value={newNotes} placeholder={$_('locations.notes_placeholder')} />
+                <button type="submit" disabled={!newName.trim()}>{$_('locations.add_button')}</button>
             </div>
         </form>
     {/if}
 
     {#if loading}
-        <p>Loading…</p>
+        <p>{$_('common.loading')}</p>
     {:else if tree.length === 0}
-        <p class="muted">No locations yet. Create one above to start organizing items.</p>
+        <p class="muted">{$_('locations.no_locations')}</p>
     {:else}
         <ul class="loc-tree">
             {#snippet branch(node: LocationNode, depth: number)}
@@ -180,37 +181,37 @@
                         <div class="form-row">
                             <input bind:value={editName} required />
                             <select bind:value={editKind}>
-                                <option value="home">Home</option>
-                                <option value="floor">Floor</option>
-                                <option value="room">Room</option>
-                                <option value="zone">Zone</option>
-                                <option value="container">Container</option>
+                                <option value="home">{$_('locations.kind_home')}</option>
+                                <option value="floor">{$_('locations.kind_floor')}</option>
+                                <option value="room">{$_('locations.kind_room')}</option>
+                                <option value="zone">{$_('locations.kind_zone')}</option>
+                                <option value="container">{$_('locations.kind_container')}</option>
                             </select>
                             <select bind:value={editParentId}>
-                                <option value="">— Top-level —</option>
+                                <option value="">{$_('locations.parent_toplevel')}</option>
                                 {#each flatOptions as opt (opt.id)}
                                     {#if opt.id !== node.id}
                                         <option value={opt.id}>{'\u00a0\u00a0'.repeat(opt.depth)}{opt.label}</option>
                                     {/if}
                                 {/each}
                             </select>
-                            <input bind:value={editNotes} placeholder="Notes" />
-                            <button type="button" onclick={saveEdit}>Save</button>
-                            <button type="button" class="secondary" onclick={cancelEdit}>Cancel</button>
+                            <input bind:value={editNotes} placeholder={$_('locations.notes_placeholder')} />
+                            <button type="button" onclick={saveEdit}>{$_('locations.save_button')}</button>
+                            <button type="button" class="secondary" onclick={cancelEdit}>{$_('common.cancel')}</button>
                         </div>
                     {:else}
                         <span class="loc-name"><strong>{node.name}</strong></span>
                         <span class="muted">[{node.kind}]</span>
                         {#if node.item_count > 0}
-                            <span class="muted">· {node.item_count} {node.item_count === 1 ? 'item' : 'items'}</span>
+                            <span class="muted">· {node.item_count === 1 ? $_('locations.item_count', {values: {count: node.item_count}}) : $_('locations.items_count', {values: {count: node.item_count}})}</span>
                         {/if}
                         {#if node.notes}
                             <span class="muted">· {node.notes}</span>
                         {/if}
                         {#if canEdit}
                             <span class="loc-actions">
-                                <button type="button" class="secondary" onclick={() => startEdit(node)}>Edit</button>
-                                <button type="button" class="danger" onclick={() => requestDelete(node)}>Delete</button>
+                                <button type="button" class="secondary" onclick={() => startEdit(node)}>{$_('locations.edit_button')}</button>
+                                <button type="button" class="danger" onclick={() => requestDelete(node)}>{$_('locations.delete_button')}</button>
                             </span>
                         {/if}
                     {/if}
@@ -233,12 +234,11 @@
         <div class="modal" role="dialog" aria-modal="true">
             <div class="card">
                 <p>
-                    Delete <strong>{confirmDeleteLabel}</strong> and all its child locations?
-                    Items currently assigned to any of these locations will be unassigned.
+                    {$_('locations.delete_text', {values: {name: confirmDeleteLabel}})}
                 </p>
                 <div class="form-row">
-                    <button type="button" class="danger" onclick={deleteConfirmed}>Delete</button>
-                    <button type="button" class="secondary" onclick={() => (confirmDeleteId = null)}>Cancel</button>
+                    <button type="button" class="danger" onclick={deleteConfirmed}>{$_('locations.delete_button')}</button>
+                    <button type="button" class="secondary" onclick={() => (confirmDeleteId = null)}>{$_('common.cancel')}</button>
                 </div>
             </div>
         </div>

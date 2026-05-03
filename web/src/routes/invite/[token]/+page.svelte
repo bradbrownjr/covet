@@ -2,6 +2,7 @@
     import { onMount } from 'svelte';
     import { page } from '$app/state';
     import { goto } from '$app/navigation';
+    import { _ } from 'svelte-i18n';
     import { api, userLabel, type InvitationPreview } from '$lib/api';
     import { me } from '$lib/session';
 
@@ -37,31 +38,29 @@
     onMount(load);
 </script>
 
-<h1>Collection invitation</h1>
+<h1>{$_('invite.title')}</h1>
 
 {#if loading}
-    <p class="muted">Loading…</p>
+    <p class="muted">{$_('common.loading')}</p>
 {:else if error}
     <p class="error">{error}</p>
-    <p class="muted">This invitation may be expired or revoked.</p>
+    <p class="muted">{$_('invite.expired_message')}</p>
 {:else if preview}
     <div class="card">
         <p>
-            You've been invited to join
-            <strong>{preview.collection_name}</strong>
-            as <strong>{preview.role}</strong>.
+            {$_('invite.joined_as', {values: {name: preview.collection_name, role: preview.role}})}
         </p>
 
         {#if $me}
-            <p class="muted">Signed in as {userLabel($me)}.</p>
+            <p class="muted">{$_('invite.signed_in_as', {values: {user: userLabel($me)}})}</p>
             <button onclick={accept} disabled={accepting}>
-                {accepting ? 'Accepting…' : 'Accept invitation'}
+                {accepting ? $_('invite.accepting_button') : $_('invite.accept_button')}
             </button>
         {:else}
-            <p>You'll need to sign in or create an account to accept.</p>
-            <a href="/login?next={encodeURIComponent(`/invite/${token}`)}">Sign in</a>
+            <p>{$_('invite.sign_in_prompt')}</p>
+            <a href="/login?next={encodeURIComponent(`/invite/${token}`)}">{$_('invite.sign_in_link')}</a>
             ·
-            <a href="/register">Create an account</a>
+            <a href="/register">{$_('invite.create_account_link')}</a>
         {/if}
     </div>
 {/if}

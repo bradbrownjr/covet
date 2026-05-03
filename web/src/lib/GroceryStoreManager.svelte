@@ -1,5 +1,6 @@
 <script lang="ts">
     import { api } from '$lib/api';
+    import { _ } from 'svelte-i18n';
     import { GROCERY_CATEGORIES } from '$lib/groceryCategories';
     import type { GroceryCategory } from '$lib/groceryCategories';
 
@@ -71,7 +72,7 @@
     }
 
     async function deleteStore(id: string) {
-        if (!confirm('Delete this store and all its aisles?')) return;
+        if (!confirm($_('grocery_store.delete_store_confirm'))) return;
         try {
             await api.delete(`/grocery/stores/${id}`);
             stores = stores.filter((s) => s.id !== id);
@@ -199,8 +200,8 @@
 <div class="overlay" role="dialog" aria-modal="true" aria-label="Store manager">
     <div class="panel">
         <div class="panel-header">
-            <h2>My Stores</h2>
-            <button class="close-btn" type="button" onclick={onClose} aria-label="Close">✕</button>
+            <h2>{$_('grocery_store.title')}</h2>
+            <button class="close-btn" type="button" onclick={onClose} aria-label={$_('common.close')}>✕</button>
         </div>
 
         {#if error}
@@ -208,7 +209,7 @@
         {/if}
 
         {#if loading}
-            <p class="muted">Loading…</p>
+            <p class="muted">{$_('common.loading')}</p>
         {:else}
             <div class="layout">
                 <!-- Store sidebar -->
@@ -234,7 +235,7 @@
                         <input
                             type="text"
                             bind:value={newStoreName}
-                            placeholder="New store name…"
+                            placeholder={$_('grocery_store.create_store_placeholder')}
                             required
                         />
                         <button type="submit" disabled={creatingStore || !newStoreName.trim()}>
@@ -246,14 +247,14 @@
                 <!-- Aisle editor -->
                 <div class="aisle-editor">
                     {#if !selectedStore}
-                        <p class="muted empty-hint">Create a store to get started.</p>
+                        <p class="muted empty-hint">{$_('grocery_store.no_store')}</p>
                     {:else if !showNewAisle}
                         <div class="aisle-header">
                             <span class="aisle-title">{selectedStore.name} — Aisles</span>
-                            <button type="button" class="add-aisle-btn" onclick={openNewAisle}>+ Add aisle</button>
+                            <button type="button" class="add-aisle-btn" onclick={openNewAisle}>{$_('grocery_store.add_aisle_button')}</button>
                         </div>
                         {#if sortedAisles.length === 0}
-                            <p class="muted empty-hint">No aisles yet. Add one to sort your shopping list.</p>
+                            <p class="muted empty-hint">{$_('grocery_store.no_aisles')}</p>
                         {:else}
                             <ol class="aisle-list">
                                 {#each sortedAisles as aisle, idx (aisle.id)}
@@ -280,7 +281,7 @@
                                                     disabled={idx === sortedAisles.length - 1}
                                                     onclick={() => moveAisle(aisle.id, 1)}
                                                 >↓</button>
-                                                <button type="button" onclick={() => openEditAisle(aisle)}>Edit</button>
+                                                <button type="button" onclick={() => openEditAisle(aisle)}>{$_('common.edit')}</button>
                                                 <button
                                                     type="button"
                                                     class="del-btn"
@@ -295,22 +296,22 @@
                     {:else}
                         <!-- Aisle form -->
                         <div class="aisle-form-header">
-                            <span class="aisle-title">{editingAisle ? 'Edit aisle' : 'New aisle'}</span>
-                            <button type="button" class="text-btn" onclick={() => { showNewAisle = false; }}>← Back</button>
+                            <span class="aisle-title">{editingAisle ? $_('grocery_store.edit_aisle_heading') : $_('grocery_store.new_aisle_heading')}</span>
+                            <button type="button" class="text-btn" onclick={() => { showNewAisle = false; }}>{$_('grocery_store.back_button')}</button>
                         </div>
                         <form class="aisle-form" onsubmit={(e) => { e.preventDefault(); saveAisle(); }}>
                             <label>
-                                <span>Aisle name</span>
+                                <span>{$_('grocery_store.aisle_name_label')}</span>
                                 <input
                                     type="text"
                                     bind:value={aisleName}
-                                    placeholder="e.g. Dairy, Produce, Aisle 3"
+                                    placeholder={$_('grocery_store.aisle_name_placeholder')}
                                     required
                                 />
                             </label>
 
                             <fieldset>
-                                <legend>Categories in this aisle</legend>
+                                <legend>{$_('grocery_store.categories_legend')}</legend>
                                 <div class="cat-grid">
                                     {#each GROCERY_CATEGORIES as cat (cat.slug)}
                                         <label class="cat-chip-label" class:selected={aisleSelectedSlugs.has(cat.slug)}>
@@ -326,19 +327,19 @@
                             </fieldset>
 
                             <label>
-                                <span>Custom categories <span class="muted">(comma-separated, optional)</span></span>
+                                <span>{$_('grocery_store.custom_categories_label')} <span class="muted">({$_('grocery_store.custom_categories_hint')})</span></span>
                                 <input
                                     type="text"
                                     bind:value={aisleCustomSlug}
-                                    placeholder="e.g. organic-produce, gluten-free"
+                                    placeholder={$_('grocery_store.custom_categories_placeholder')}
                                 />
                             </label>
 
                             <div class="form-actions">
                                 <button type="submit" disabled={savingAisle || !aisleName.trim()}>
-                                    {savingAisle ? 'Saving…' : 'Save aisle'}
+                                    {savingAisle ? $_('grocery_store.saving_button') : $_('grocery_store.save_aisle_button')}
                                 </button>
-                                <button type="button" class="secondary" onclick={() => { showNewAisle = false; }}>Cancel</button>
+                                <button type="button" class="secondary" onclick={() => { showNewAisle = false; }}>{$_('common.cancel')}</button>
                             </div>
                         </form>
                     {/if}

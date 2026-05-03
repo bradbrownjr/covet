@@ -30,9 +30,9 @@
     function daysLabel(isoDate: string | null): string {
         if (!isoDate) return '';
         const diff = Math.round((new Date(isoDate).getTime() - Date.now()) / 86400000);
-        if (diff < 0) return `${Math.abs(diff)}d overdue`;
-        if (diff === 0) return 'due today';
-        return `in ${diff}d`;
+        if (diff < 0) return $_('maintenance.days_overdue', { values: { days: Math.abs(diff) } });
+        if (diff === 0) return $_('maintenance.due_today');
+        return $_('maintenance.in_days', { values: { days: diff } });
     }
 
     const kindLabels = $derived<Record<string, string>>({

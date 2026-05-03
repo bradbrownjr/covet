@@ -5,7 +5,9 @@
     "grocery_list": "Lista della spesa",
     "settings": "Impostazioni",
     "log_out": "Esci",
-    "alerts": "Avvisi"
+    "alerts": "Avvisi",
+    "whats_new": "Novità",
+    "edit_profile": "Modifica profilo"
   },
   "alerts": {
     "no_upcoming": "Nessun avviso imminente.",
@@ -20,7 +22,8 @@
     "close": "Chiudi",
     "loading": "Caricamento…",
     "error": "Errore",
-    "confirm": "Sei sicuro?"
+    "confirm": "Sei sicuro?",
+    "never": "mai"
   },
   "auth": {
     "sign_in": "Accedi",
@@ -200,7 +203,23 @@
     "archive_confirm": "Archivia",
     "scraping_error": "Ricerca fallita: {error}",
     "image_scan_error": "Scansione immagine fallita: {error}",
-    "title_derivation_error": "Impossibile derivare un titolo — inseriscilo manualmente."
+    "title_derivation_error": "Impossibile derivare un titolo — inseriscilo manualmente.",
+    "not_found": "Collezione non trovata.",
+    "item_select_label": "Seleziona",
+    "flag_for_review": "Segnalato per revisione",
+    "looking_up_button": "Ricerca in corso…",
+    "creator_artist": "Artista / Gruppo",
+    "creator_author": "Autore",
+    "creator_director": "Regista",
+    "creator_developer": "Sviluppatore",
+    "creator_designer": "Designer",
+    "quick_action_filter_change": "Registra cambio filtro",
+    "quick_action_filter_service": "Registra manutenzione filtro",
+    "quick_action_run_generator": "Generatore avviato oggi",
+    "consumable_purchased": "Acquistato il",
+    "consumable_use_by": "Da consumarsi entro",
+    "consumable_frozen": "Congelato il",
+    "consumable_opened": "Aperto il"
   },
   "members": {
     "add_placeholder": "Nome utente o e-mail",
@@ -302,7 +321,8 @@
     "upload_button": "Carica",
     "uploading_button": "Caricamento…",
     "delete_bundle_title": "Eliminare bundle?",
-    "delete_bundle_text": "Eliminare il bundle {name}? Tutti i file verranno rimossi. Gli oggetti collegati verranno scollegati ma non eliminati."
+    "delete_bundle_text": "Eliminare il bundle {name}? Tutti i file verranno rimossi. Gli oggetti collegati verranno scollegati ma non eliminati.",
+    "delete_asset_confirm": "Eliminare questo file?"
   },
   "chores": {
     "page_description": "Attività domestiche ricorrenti non legate a un oggetto specifico.",
@@ -333,7 +353,8 @@
     "mark_done_save": "Salva",
     "delete_title": "Eliminare attività?",
     "delete_text": "Eliminare l'attività {name}? Questa operazione non può essere annullata.",
-    "delete_confirm": "Elimina"
+    "delete_confirm": "Elimina",
+    "interval_display": "ogni {days}g"
   },
   "templates": {
     "description": "I modelli aggiungono campi personalizzati agli oggetti. I nuovi modelli vengono creati sotto {target}.",
@@ -442,7 +463,10 @@
     "list_file_label": "O allega un file .txt",
     "restore_file_label": "File JSON di backup",
     "submit_button": "Importa",
-    "working_button": "In corso…"
+    "working_button": "In corso…",
+    "heading": "Importa / Backup",
+    "error_pick_file": "Seleziona un file",
+    "error_no_list": "Incolla un elenco o allega un file .txt"
   },
   "maintenance": {
     "title": "Manutenzione e avvisi",
@@ -466,7 +490,10 @@
     "collection_link": "Collezione",
     "chores_link": "Attività",
     "overdue_label": "Scaduto",
-    "upcoming_label": "In arrivo"
+    "upcoming_label": "In arrivo",
+    "days_overdue": "{days}g di ritardo",
+    "due_today": "scade oggi",
+    "in_days": "tra {days}g"
   },
   "settings": {
     "title": "Impostazioni",
@@ -564,5 +591,67 @@
     "kind_item_expires": "Scadenza oggetto",
     "kind_lot_use_by": "Da usare entro (lotto)",
     "kind_low_stock": "Scorte basse"
+  },
+  "share": {
+    "not_available": "Non disponibile",
+    "expired_message": "Questo link di condivisione potrebbe essere scaduto o revocato.",
+    "read_only_note": "Visualizzazione in sola lettura condivisa dal proprietario.",
+    "no_items": "Nessun articolo da mostrare."
+  },
+  "invite": {
+    "title": "Invito alla collezione",
+    "expired_message": "Questo invito potrebbe essere scaduto o revocato.",
+    "joined_as": "Sei stato/a invitato/a ad unirti a {name} come {role}.",
+    "signed_in_as": "Accesso effettuato come {user}.",
+    "accept_button": "Accetta invito",
+    "accepting_button": "Accettando…",
+    "sign_in_prompt": "Devi accedere o creare un account per accettare.",
+    "sign_in_link": "Accedi",
+    "create_account_link": "Crea un account"
+  },
+  "comments": {
+    "compose_placeholder": "Aggiungi un commento…",
+    "post_button": "Invia",
+    "no_comments": "Ancora nessun commento.",
+    "edit_button": "Modifica",
+    "delete_button": "Elimina",
+    "edited_note": "(modificato)",
+    "reply_button": "Rispondi",
+    "reply_placeholder": "Scrivi una risposta…",
+    "hide_replies_button": "Nascondi risposte",
+    "just_now": "proprio ora",
+    "mins_ago": "{mins}min fa",
+    "hrs_ago": "{hrs}h fa",
+    "days_ago": "{days}g fa",
+    "delete_confirm": "Eliminare questo commento?"
+  },
+  "photos": {
+    "caption_placeholder": "Clic per aggiungere una didascalia…",
+    "primary_badge": "Principale",
+    "set_primary_button": "Imposta come principale",
+    "delete_button": "Elimina"
+  },
+  "whats_new": {
+    "title": "Novità",
+    "error": "Impossibile caricare il registro delle modifiche: {error}"
+  },
+  "grocery_store": {
+    "title": "I miei negozi",
+    "create_store_placeholder": "Nome del negozio…",
+    "no_store": "Crea un negozio per iniziare.",
+    "add_aisle_button": "+ Aggiungi corsia",
+    "no_aisles": "Ancora nessuna corsia. Aggiungine una per ordinare la tua lista.",
+    "edit_aisle_heading": "Modifica corsia",
+    "new_aisle_heading": "Nuova corsia",
+    "aisle_name_label": "Nome della corsia",
+    "aisle_name_placeholder": "es. Latticini, Prodotti, Corsia 3",
+    "categories_legend": "Categorie in questa corsia",
+    "custom_categories_label": "Categorie personalizzate",
+    "custom_categories_hint": "separate da virgola, opzionale",
+    "custom_categories_placeholder": "es. prodotti-bio, senza-glutine",
+    "saving_button": "Salvataggio…",
+    "save_aisle_button": "Salva corsia",
+    "back_button": "← Indietro",
+    "delete_store_confirm": "Eliminare questo negozio e tutte le sue corsie?"
   }
 }

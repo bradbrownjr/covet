@@ -130,8 +130,8 @@
     <button
         class="icon-btn whats-new"
         onclick={openWhatsNew}
-        title="What's new"
-        aria-label="What's new"
+        title={$_('nav.whats_new')}
+        aria-label={$_('nav.whats_new')}
     >
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
             <path
@@ -165,7 +165,7 @@
             <a href="/maintenance" onclick={closeMenu}>{$_('nav.maintenance')}</a>
             <a href="/grocery-list" onclick={closeMenu}>{$_('nav.grocery_list')}{#if groceryCount > 0} <span class="badge">{groceryCount}</span>{/if}</a>
             <a href="/settings" onclick={closeMenu}>{$_('nav.settings')}</a>
-            <a href="/profile" class="user" onclick={closeMenu} title="Edit your profile">{userLabel($me)}</a>
+            <a href="/profile" class="user" onclick={closeMenu} title={$_('nav.edit_profile')}>{userLabel($me)}</a>
             <button class="secondary" onclick={doLogout}>{$_('nav.log_out')}</button>
         {/if}
     </nav>
@@ -175,7 +175,7 @@
     {#if ready}
         {@render children()}
     {:else}
-        <p class="muted">Loading…</p>
+        <p class="muted">{$_('common.loading')}</p>
     {/if}
 </main>
 

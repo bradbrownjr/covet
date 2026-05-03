@@ -5,7 +5,9 @@
     "grocery_list": "Grocery List",
     "settings": "Settings",
     "log_out": "Log out",
-    "alerts": "Alerts"
+    "alerts": "Alerts",
+    "whats_new": "What's new",
+    "edit_profile": "Edit your profile"
   },
   "alerts": {
     "no_upcoming": "No upcoming alerts.",
@@ -20,7 +22,8 @@
     "close": "Close",
     "loading": "Loading…",
     "error": "Error",
-    "confirm": "Are you sure?"
+    "confirm": "Are you sure?",
+    "never": "never"
   },
   "auth": {
     "sign_in": "Sign in",
@@ -200,7 +203,23 @@
     "archive_confirm": "Archive",
     "scraping_error": "Lookup failed: {error}",
     "image_scan_error": "Image scan failed: {error}",
-    "title_derivation_error": "Could not derive a title — please enter one manually."
+    "title_derivation_error": "Could not derive a title — please enter one manually.",
+    "not_found": "Collection not found.",
+    "item_select_label": "Select",
+    "flag_for_review": "Flagged for review",
+    "looking_up_button": "Looking up…",
+    "creator_artist": "Artist / Band",
+    "creator_author": "Author",
+    "creator_director": "Director",
+    "creator_developer": "Developer",
+    "creator_designer": "Designer",
+    "quick_action_filter_change": "Log filter change",
+    "quick_action_filter_service": "Log filter service",
+    "quick_action_run_generator": "Ran generator today",
+    "consumable_purchased": "Purchased",
+    "consumable_use_by": "Use by",
+    "consumable_frozen": "Frozen",
+    "consumable_opened": "Opened"
   },
   "members": {
     "add_placeholder": "Username or email",
@@ -302,7 +321,8 @@
     "upload_button": "Upload",
     "uploading_button": "Uploading…",
     "delete_bundle_title": "Delete bundle?",
-    "delete_bundle_text": "Delete bundle {name}? All assets will be removed. Linked items will be unlinked but not deleted."
+    "delete_bundle_text": "Delete bundle {name}? All assets will be removed. Linked items will be unlinked but not deleted.",
+    "delete_asset_confirm": "Delete this asset?"
   },
   "chores": {
     "page_description": "Recurring household tasks that aren't tied to a specific item.",
@@ -333,7 +353,8 @@
     "mark_done_save": "Save",
     "delete_title": "Delete chore?",
     "delete_text": "Delete chore {name}? This cannot be undone.",
-    "delete_confirm": "Delete"
+    "delete_confirm": "Delete",
+    "interval_display": "every {days}d"
   },
   "templates": {
     "description": "Templates add custom fields to items in this collection. New templates land under {target}.",
@@ -441,8 +462,11 @@
     "list_text_hint": "Each non-blank line becomes a new item. Lines starting with # are skipped.",
     "list_file_label": "Or attach a .txt file",
     "restore_file_label": "Backup JSON file",
+    "heading": "Import / Backup",
     "submit_button": "Import",
-    "working_button": "Working…"
+    "working_button": "Working…",
+    "error_pick_file": "Pick a file",
+    "error_no_list": "Paste a list or attach a .txt file"
   },
   "maintenance": {
     "title": "Maintenance & alerts",
@@ -466,7 +490,10 @@
     "collection_link": "Collection",
     "chores_link": "Chores",
     "overdue_label": "Overdue",
-    "upcoming_label": "Upcoming"
+    "upcoming_label": "Upcoming",
+    "days_overdue": "{days}d overdue",
+    "due_today": "due today",
+    "in_days": "in {days}d"
   },
   "settings": {
     "title": "Settings",
@@ -564,5 +591,67 @@
     "kind_item_expires": "Item expires",
     "kind_lot_use_by": "Package use-by",
     "kind_low_stock": "Low stock"
+  },
+  "share": {
+    "not_available": "Not available",
+    "expired_message": "This share link may be expired or revoked.",
+    "read_only_note": "Read-only view shared by the owner.",
+    "no_items": "No items to show."
+  },
+  "invite": {
+    "title": "Collection invitation",
+    "expired_message": "This invitation may be expired or revoked.",
+    "joined_as": "You've been invited to join {name} as {role}.",
+    "signed_in_as": "Signed in as {user}.",
+    "accept_button": "Accept invitation",
+    "accepting_button": "Accepting…",
+    "sign_in_prompt": "You'll need to sign in or create an account to accept.",
+    "sign_in_link": "Sign in",
+    "create_account_link": "Create an account"
+  },
+  "comments": {
+    "compose_placeholder": "Add a comment…",
+    "post_button": "Post",
+    "no_comments": "No comments yet.",
+    "edit_button": "Edit",
+    "delete_button": "Delete",
+    "edited_note": "(edited)",
+    "reply_button": "Reply",
+    "reply_placeholder": "Write a reply…",
+    "hide_replies_button": "Hide replies",
+    "just_now": "just now",
+    "mins_ago": "{mins}m ago",
+    "hrs_ago": "{hrs}h ago",
+    "days_ago": "{days}d ago",
+    "delete_confirm": "Delete this comment?"
+  },
+  "photos": {
+    "caption_placeholder": "Click to add caption…",
+    "primary_badge": "Primary",
+    "set_primary_button": "Set as primary",
+    "delete_button": "Delete"
+  },
+  "whats_new": {
+    "title": "What's new",
+    "error": "Couldn't load changelog: {error}"
+  },
+  "grocery_store": {
+    "title": "My Stores",
+    "create_store_placeholder": "New store name…",
+    "no_store": "Create a store to get started.",
+    "add_aisle_button": "+ Add aisle",
+    "no_aisles": "No aisles yet. Add one to sort your shopping list.",
+    "edit_aisle_heading": "Edit aisle",
+    "new_aisle_heading": "New aisle",
+    "aisle_name_label": "Aisle name",
+    "aisle_name_placeholder": "e.g. Dairy, Produce, Aisle 3",
+    "categories_legend": "Categories in this aisle",
+    "custom_categories_label": "Custom categories",
+    "custom_categories_hint": "comma-separated, optional",
+    "custom_categories_placeholder": "e.g. organic-produce, gluten-free",
+    "saving_button": "Saving…",
+    "save_aisle_button": "Save aisle",
+    "back_button": "← Back",
+    "delete_store_confirm": "Delete this store and all its aisles?"
   }
 }

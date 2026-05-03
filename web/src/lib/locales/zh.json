@@ -5,7 +5,9 @@
     "grocery_list": "购物清单",
     "settings": "设置",
     "log_out": "退出登录",
-    "alerts": "提醒"
+    "alerts": "提醒",
+    "whats_new": "最新动态",
+    "edit_profile": "编辑个人资料"
   },
   "alerts": {
     "no_upcoming": "暂无即将到来的提醒。",
@@ -20,7 +22,8 @@
     "close": "关闭",
     "loading": "加载中…",
     "error": "错误",
-    "confirm": "确定吗？"
+    "confirm": "确定吗？",
+    "never": "永不"
   },
   "auth": {
     "sign_in": "登录",
@@ -200,7 +203,23 @@
     "archive_confirm": "归档",
     "scraping_error": "查找失败：{error}",
     "image_scan_error": "图片扫描失败：{error}",
-    "title_derivation_error": "无法提取标题 — 请手动输入。"
+    "title_derivation_error": "无法提取标题 — 请手动输入。",
+    "not_found": "未找到收藏集。",
+    "item_select_label": "选择",
+    "flag_for_review": "标记以供审核",
+    "looking_up_button": "查找中…",
+    "creator_artist": "艺术家/乐队",
+    "creator_author": "作者",
+    "creator_director": "导演",
+    "creator_developer": "开发者",
+    "creator_designer": "设计师",
+    "quick_action_filter_change": "记录更换滤芯",
+    "quick_action_filter_service": "记录滤芯维修",
+    "quick_action_run_generator": "今日启动发电机",
+    "consumable_purchased": "购买日期",
+    "consumable_use_by": "有效期至",
+    "consumable_frozen": "冷冻日期",
+    "consumable_opened": "开封日期"
   },
   "members": {
     "add_placeholder": "用户名或电子邮件",
@@ -302,7 +321,8 @@
     "upload_button": "上传",
     "uploading_button": "上传中…",
     "delete_bundle_title": "删除资料包？",
-    "delete_bundle_text": "删除资料包 {name}？所有文件将被删除。已关联的物品将取消关联但不会被删除。"
+    "delete_bundle_text": "删除资料包 {name}？所有文件将被删除。已关联的物品将取消关联但不会被删除。",
+    "delete_asset_confirm": "删除此资源？"
   },
   "chores": {
     "page_description": "不与具体物品挂钩的周期性家务任务。",
@@ -333,7 +353,8 @@
     "mark_done_save": "保存",
     "delete_title": "删除任务？",
     "delete_text": "删除任务 {name}？此操作不可撤销。",
-    "delete_confirm": "删除"
+    "delete_confirm": "删除",
+    "interval_display": "每{days}天"
   },
   "templates": {
     "description": "模板为此收藏中的物品添加自定义字段。新模板将在 {target} 下创建。",
@@ -442,7 +463,10 @@
     "list_file_label": "或附加 .txt 文件",
     "restore_file_label": "备份 JSON 文件",
     "submit_button": "导入",
-    "working_button": "处理中…"
+    "working_button": "处理中…",
+    "heading": "导入 / 备份",
+    "error_pick_file": "请选择文件",
+    "error_no_list": "请粘贴列表或附加 .txt 文件"
   },
   "maintenance": {
     "title": "维护与提醒",
@@ -466,7 +490,10 @@
     "collection_link": "收藏",
     "chores_link": "任务",
     "overdue_label": "已逾期",
-    "upcoming_label": "即将到来"
+    "upcoming_label": "即将到来",
+    "days_overdue": "逾期{days}天",
+    "due_today": "今天到期",
+    "in_days": "{days}天后"
   },
   "settings": {
     "title": "设置",
@@ -564,5 +591,67 @@
     "kind_item_expires": "物品到期",
     "kind_lot_use_by": "批次使用期限",
     "kind_low_stock": "低库存"
+  },
+  "share": {
+    "not_available": "不可用",
+    "expired_message": "此分享链接可能已过期或被撤销。",
+    "read_only_note": "所有者共享的只读视图。",
+    "no_items": "没有可显示的物品。"
+  },
+  "invite": {
+    "title": "收藏集邀请",
+    "expired_message": "此邀请可能已过期或被撤销。",
+    "joined_as": "您已被邀请以 {role} 身份加入 {name}。",
+    "signed_in_as": "已以 {user} 身份登录。",
+    "accept_button": "接受邀请",
+    "accepting_button": "接受中…",
+    "sign_in_prompt": "您需要登录或创建账户才能接受。",
+    "sign_in_link": "登录",
+    "create_account_link": "创建账户"
+  },
+  "comments": {
+    "compose_placeholder": "添加评论…",
+    "post_button": "发送",
+    "no_comments": "暂无评论。",
+    "edit_button": "编辑",
+    "delete_button": "删除",
+    "edited_note": "(已编辑)",
+    "reply_button": "回复",
+    "reply_placeholder": "写回复…",
+    "hide_replies_button": "隐藏回复",
+    "just_now": "刚刚",
+    "mins_ago": "{mins}分钟前",
+    "hrs_ago": "{hrs}小时前",
+    "days_ago": "{days}天前",
+    "delete_confirm": "删除此评论？"
+  },
+  "photos": {
+    "caption_placeholder": "点击添加说明…",
+    "primary_badge": "主要",
+    "set_primary_button": "设为主要",
+    "delete_button": "删除"
+  },
+  "whats_new": {
+    "title": "最新动态",
+    "error": "无法加载更新日志：{error}"
+  },
+  "grocery_store": {
+    "title": "我的门店",
+    "create_store_placeholder": "新店名…",
+    "no_store": "请创建一家门店开始使用。",
+    "add_aisle_button": "+ 添加通道",
+    "no_aisles": "暂无通道。添加一个以整理您的购物清单。",
+    "edit_aisle_heading": "编辑通道",
+    "new_aisle_heading": "新通道",
+    "aisle_name_label": "通道名称",
+    "aisle_name_placeholder": "如 乳制品、农产品、3号通道",
+    "categories_legend": "此通道的分类",
+    "custom_categories_label": "自定义分类",
+    "custom_categories_hint": "逗号分隔，可选",
+    "custom_categories_placeholder": "如 有机产品、无麸质",
+    "saving_button": "保存中…",
+    "save_aisle_button": "保存通道",
+    "back_button": "← 返回",
+    "delete_store_confirm": "删除此门店及其所有通道？"
   }
 }

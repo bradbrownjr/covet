@@ -5,7 +5,9 @@
     "grocery_list": "買い物リスト",
     "settings": "設定",
     "log_out": "ログアウト",
-    "alerts": "アラート"
+    "alerts": "アラート",
+    "whats_new": "新機能",
+    "edit_profile": "プロフィールを編集"
   },
   "alerts": {
     "no_upcoming": "今後のアラートはありません。",
@@ -20,7 +22,8 @@
     "close": "閉じる",
     "loading": "読み込み中…",
     "error": "エラー",
-    "confirm": "よろしいですか？"
+    "confirm": "よろしいですか？",
+    "never": "なし"
   },
   "auth": {
     "sign_in": "サインイン",
@@ -200,7 +203,23 @@
     "archive_confirm": "アーカイブ",
     "scraping_error": "検索失敗：{error}",
     "image_scan_error": "画像スキャン失敗：{error}",
-    "title_derivation_error": "タイトルを導出できません。手動で入力してください。"
+    "title_derivation_error": "タイトルを導出できません。手動で入力してください。",
+    "not_found": "コレクションが見つかりません。",
+    "item_select_label": "選択",
+    "flag_for_review": "レビュー用にフラグ",
+    "looking_up_button": "検索中…",
+    "creator_artist": "アーティスト / バンド",
+    "creator_author": "著者",
+    "creator_director": "監督",
+    "creator_developer": "開発者",
+    "creator_designer": "デザイナー",
+    "quick_action_filter_change": "フィルター交換を記録",
+    "quick_action_filter_service": "フィルターサービスを記録",
+    "quick_action_run_generator": "本日発電機起動",
+    "consumable_purchased": "購入日",
+    "consumable_use_by": "賞味期限",
+    "consumable_frozen": "冷凍日",
+    "consumable_opened": "開封日"
   },
   "members": {
     "add_placeholder": "ユーザー名またはメールアドレス",
@@ -302,7 +321,8 @@
     "upload_button": "アップロード",
     "uploading_button": "アップロード中…",
     "delete_bundle_title": "バンドルを削除しますか？",
-    "delete_bundle_text": "バンドル {name} を削除しますか？すべてのアセットが削除されます。リンク済みアイテムはリンク解除されますが、削除されません。"
+    "delete_bundle_text": "バンドル {name} を削除しますか？すべてのアセットが削除されます。リンク済みアイテムはリンク解除されますが、削除されません。",
+    "delete_asset_confirm": "このアセットを削除しますか？"
   },
   "chores": {
     "page_description": "特定のアイテムに結びつかない定期的な家事。",
@@ -333,7 +353,8 @@
     "mark_done_save": "保存",
     "delete_title": "家事を削除しますか？",
     "delete_text": "家事 {name} を削除しますか？これは取り消せません。",
-    "delete_confirm": "削除"
+    "delete_confirm": "削除",
+    "interval_display": "{days}日ごと"
   },
   "templates": {
     "description": "テンプレートはこのコレクション内のアイテムにカスタムフィールドを追加します。新しいテンプレートは {target} の下に配置されます。",
@@ -442,7 +463,10 @@
     "list_file_label": "または .txt ファイルを添付",
     "restore_file_label": "バックアップJSONファイル",
     "submit_button": "インポート",
-    "working_button": "処理中…"
+    "working_button": "処理中…",
+    "heading": "インポート / バックアップ",
+    "error_pick_file": "ファイルを選択してください",
+    "error_no_list": "リストを貼り付けるか .txt ファイルを添付してください"
   },
   "maintenance": {
     "title": "メンテナンスとアラート",
@@ -466,7 +490,10 @@
     "collection_link": "コレクション",
     "chores_link": "家事",
     "overdue_label": "期限超過",
-    "upcoming_label": "予定"
+    "upcoming_label": "予定",
+    "days_overdue": "{days}日超過",
+    "due_today": "本日期限",
+    "in_days": "{days}日後"
   },
   "settings": {
     "title": "設定",
@@ -564,5 +591,67 @@
     "kind_item_expires": "アイテム有効期限",
     "kind_lot_use_by": "パッケージ使用期限",
     "kind_low_stock": "在庫不足"
+  },
+  "share": {
+    "not_available": "利用できません",
+    "expired_message": "この共有リンクは有効期限切れまたは失効している可能性があります。",
+    "read_only_note": "オーナーが共有した読み取り専用ビューです。",
+    "no_items": "表示するアイテムがありません。"
+  },
+  "invite": {
+    "title": "コレクションへの招待",
+    "expired_message": "この招待は有効期限切れまたは失効している可能性があります。",
+    "joined_as": "{role} として {name} に招待されました。",
+    "signed_in_as": "{user} としてサインイン中。",
+    "accept_button": "招待を受け入れる",
+    "accepting_button": "受け入れ中…",
+    "sign_in_prompt": "承認するにはサインインまたはアカウント作成が必要です。",
+    "sign_in_link": "サインイン",
+    "create_account_link": "アカウントを作成"
+  },
+  "comments": {
+    "compose_placeholder": "コメントを追加…",
+    "post_button": "投稿",
+    "no_comments": "まだコメントがありません。",
+    "edit_button": "編集",
+    "delete_button": "削除",
+    "edited_note": "(編集済み)",
+    "reply_button": "返信",
+    "reply_placeholder": "返信を書く…",
+    "hide_replies_button": "返信を非表示",
+    "just_now": "たった今",
+    "mins_ago": "{mins}分前",
+    "hrs_ago": "{hrs}時間前",
+    "days_ago": "{days}日前",
+    "delete_confirm": "このコメントを削除しますか？"
+  },
+  "photos": {
+    "caption_placeholder": "クリックしてキャプションを追加…",
+    "primary_badge": "メイン",
+    "set_primary_button": "メインに設定",
+    "delete_button": "削除"
+  },
+  "whats_new": {
+    "title": "新機能",
+    "error": "変更履歴を読み込めませんでした: {error}"
+  },
+  "grocery_store": {
+    "title": "マイストア",
+    "create_store_placeholder": "店名…",
+    "no_store": "開始するには店舗を作成してください。",
+    "add_aisle_button": "+ 通路を追加",
+    "no_aisles": "通路がありません。追加してリストを整理しましょう。",
+    "edit_aisle_heading": "通路を編集",
+    "new_aisle_heading": "新しい通路",
+    "aisle_name_label": "通路名",
+    "aisle_name_placeholder": "例：乳製品、青果、通路3",
+    "categories_legend": "この通路のカテゴリ",
+    "custom_categories_label": "カスタムカテゴリ",
+    "custom_categories_hint": "カンマ区切り、省略可",
+    "custom_categories_placeholder": "例：オーガニック、グルテンフリー",
+    "saving_button": "保存中…",
+    "save_aisle_button": "通路を保存",
+    "back_button": "← 戻る",
+    "delete_store_confirm": "この店舗とすべての通路を削除しますか？"
   }
 }

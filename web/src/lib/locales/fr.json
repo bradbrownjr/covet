@@ -5,7 +5,9 @@
     "grocery_list": "Liste de courses",
     "settings": "Paramètres",
     "log_out": "Déconnexion",
-    "alerts": "Alertes"
+    "alerts": "Alertes",
+    "whats_new": "Nouveautés",
+    "edit_profile": "Modifier votre profil"
   },
   "alerts": {
     "no_upcoming": "Aucune alerte à venir.",
@@ -20,7 +22,8 @@
     "close": "Fermer",
     "loading": "Chargement…",
     "error": "Erreur",
-    "confirm": "Êtes-vous sûr·e ?"
+    "confirm": "Êtes-vous sûr·e ?",
+    "never": "jamais"
   },
   "auth": {
     "sign_in": "Se connecter",
@@ -200,7 +203,23 @@
     "archive_confirm": "Archiver",
     "scraping_error": "Recherche échouée : {error}",
     "image_scan_error": "Scan d'image échoué : {error}",
-    "title_derivation_error": "Impossible de dériver un titre — veuillez en saisir un manuellement."
+    "title_derivation_error": "Impossible de dériver un titre — veuillez en saisir un manuellement.",
+    "not_found": "Collection introuvable.",
+    "item_select_label": "Sélectionner",
+    "flag_for_review": "Signalé pour révision",
+    "looking_up_button": "Recherche en cours…",
+    "creator_artist": "Artiste / Groupe",
+    "creator_author": "Auteur",
+    "creator_director": "Réalisateur",
+    "creator_developer": "Développeur",
+    "creator_designer": "Concepteur",
+    "quick_action_filter_change": "Enregistrer le changement de filtre",
+    "quick_action_filter_service": "Enregistrer l'entretien du filtre",
+    "quick_action_run_generator": "Générateur lancé aujourd'hui",
+    "consumable_purchased": "Acheté le",
+    "consumable_use_by": "À consommer avant",
+    "consumable_frozen": "Surgelé le",
+    "consumable_opened": "Ouvert le"
   },
   "members": {
     "add_placeholder": "Nom d'utilisateur ou e-mail",
@@ -302,7 +321,8 @@
     "upload_button": "Téléverser",
     "uploading_button": "Téléversement…",
     "delete_bundle_title": "Supprimer l'ensemble ?",
-    "delete_bundle_text": "Supprimer l'ensemble {name} ? Tous les fichiers seront supprimés. Les articles liés seront déliés."
+    "delete_bundle_text": "Supprimer l'ensemble {name} ? Tous les fichiers seront supprimés. Les articles liés seront déliés.",
+    "delete_asset_confirm": "Supprimer cet asset ?"
   },
   "chores": {
     "page_description": "Tâches ménagères récurrentes non liées à un article spécifique.",
@@ -333,7 +353,8 @@
     "mark_done_save": "Enregistrer",
     "delete_title": "Supprimer la tâche ?",
     "delete_text": "Supprimer la tâche {name} ? Impossible à annuler.",
-    "delete_confirm": "Supprimer"
+    "delete_confirm": "Supprimer",
+    "interval_display": "tous les {days}j"
   },
   "templates": {
     "description": "Les modèles ajoutent des champs personnalisés aux articles. Les nouveaux modèles sont créés sous {target}.",
@@ -442,7 +463,10 @@
     "list_file_label": "Ou joindre un fichier .txt",
     "restore_file_label": "Fichier JSON de sauvegarde",
     "submit_button": "Importer",
-    "working_button": "En cours…"
+    "working_button": "En cours…",
+    "heading": "Import / Sauvegarde",
+    "error_pick_file": "Sélectionnez un fichier",
+    "error_no_list": "Collez une liste ou joignez un fichier .txt"
   },
   "maintenance": {
     "title": "Maintenance & alertes",
@@ -466,7 +490,10 @@
     "collection_link": "Collection",
     "chores_link": "Tâches",
     "overdue_label": "En retard",
-    "upcoming_label": "À venir"
+    "upcoming_label": "À venir",
+    "days_overdue": "{days}j de retard",
+    "due_today": "dû aujourd'hui",
+    "in_days": "dans {days}j"
   },
   "settings": {
     "title": "Paramètres",
@@ -564,5 +591,67 @@
     "kind_item_expires": "Expiration article",
     "kind_lot_use_by": "Expiration lot",
     "kind_low_stock": "Stock faible"
+  },
+  "share": {
+    "not_available": "Non disponible",
+    "expired_message": "Ce lien de partage est peut-être expiré ou révoqué.",
+    "read_only_note": "Vue en lecture seule partagée par le propriétaire.",
+    "no_items": "Aucun article à afficher."
+  },
+  "invite": {
+    "title": "Invitation à la collection",
+    "expired_message": "Cette invitation est peut-être expirée ou révoquée.",
+    "joined_as": "Vous avez été invité·e à rejoindre {name} en tant que {role}.",
+    "signed_in_as": "Connecté·e en tant que {user}.",
+    "accept_button": "Accepter l'invitation",
+    "accepting_button": "Acceptation…",
+    "sign_in_prompt": "Vous devez vous connecter ou créer un compte pour accepter.",
+    "sign_in_link": "Se connecter",
+    "create_account_link": "Créer un compte"
+  },
+  "comments": {
+    "compose_placeholder": "Ajouter un commentaire…",
+    "post_button": "Publier",
+    "no_comments": "Aucun commentaire pour l'instant.",
+    "edit_button": "Modifier",
+    "delete_button": "Supprimer",
+    "edited_note": "(modifié)",
+    "reply_button": "Répondre",
+    "reply_placeholder": "Écrire une réponse…",
+    "hide_replies_button": "Masquer les réponses",
+    "just_now": "à l'instant",
+    "mins_ago": "il y a {mins}min",
+    "hrs_ago": "il y a {hrs}h",
+    "days_ago": "il y a {days}j",
+    "delete_confirm": "Supprimer ce commentaire ?"
+  },
+  "photos": {
+    "caption_placeholder": "Cliquer pour ajouter une légende…",
+    "primary_badge": "Principal",
+    "set_primary_button": "Définir comme principal",
+    "delete_button": "Supprimer"
+  },
+  "whats_new": {
+    "title": "Nouveautés",
+    "error": "Impossible de charger le journal : {error}"
+  },
+  "grocery_store": {
+    "title": "Mes magasins",
+    "create_store_placeholder": "Nom du magasin…",
+    "no_store": "Créez un magasin pour commencer.",
+    "add_aisle_button": "+ Ajouter une allée",
+    "no_aisles": "Aucune allée. Ajoutez-en une pour trier votre liste.",
+    "edit_aisle_heading": "Modifier l'allée",
+    "new_aisle_heading": "Nouvelle allée",
+    "aisle_name_label": "Nom de l'allée",
+    "aisle_name_placeholder": "ex. Produits laitiers, Fruits, Allée 3",
+    "categories_legend": "Catégories dans cette allée",
+    "custom_categories_label": "Catégories personnalisées",
+    "custom_categories_hint": "séparées par des virgules, facultatif",
+    "custom_categories_placeholder": "ex. produits-bio, sans-gluten",
+    "saving_button": "Enregistrement…",
+    "save_aisle_button": "Enregistrer l'allée",
+    "back_button": "← Retour",
+    "delete_store_confirm": "Supprimer ce magasin et toutes ses allées ?"
   }
 }
