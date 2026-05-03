@@ -432,7 +432,96 @@ Long-term work that makes Tangible a foundation other things build on.
 
 ---
 
-## Phase 15 — Polish, themes & real-time (planned)
+## Phase 15 — Shopping Lists expansion (planned)
+
+The Grocery List feature becomes a general-purpose shopping and want-tracking
+hub. A new **Lists** menu in the nav replaces the single "Grocery List" link
+and exposes four list types: **Groceries**, **Hardware**, **Home Goods**, and
+**Wish Lists**. All four share the same underlying model and API; the type
+field drives category presets, auto-created backing collections, and per-list
+UI copy.
+
+### Step 1 — Data model
+
+- Add a `list_type` enum column to `GroceryItem`:
+  `groceries` (default, preserves all existing rows) | `hardware` |
+  `home_goods` | `wish_list`.
+- Write an Alembic migration; backfill existing rows to `groceries`.
+- Extend all `GroceryItem` API routes (`GET`, `POST`, `PATCH`, `DELETE`,
+  `POST /purchase`, `GET /count`) to accept and filter on `list_type`.
+  Unversioned callers default to `groceries` for backward compatibility.
+- Wish List items add two optional fields: `url` (link to product page) and
+  `priority` (integer 1–3: low / medium / high).
+
+### Step 2 — Category presets
+
+- **Groceries** — existing 17 categories (no change).
+- **Hardware** — preset category chips: Adhesives & Tape, Caulk & Sealant,
+  Concrete & Masonry, Electrical, Fasteners, Flooring, Hand Tools,
+  Hardware & Hinges, HVAC & Filters, Lumber & Sheet Goods, Paint & Finishes,
+  Plumbing, Power Tool Accessories, Safety & PPE, Storage & Organization.
+- **Home Goods** — preset category chips: Bathroom, Bedding & Pillows,
+  Candles & Fragrance, Cleaning Supplies, Cookware & Bakeware, Curtains &
+  Blinds, Decor & Accents, Furniture, Kitchen Gadgets, Lighting, Linens &
+  Towels, Outdoor & Garden, Rugs & Mats, Small Appliances, Storage.
+- **Wish Lists** — no mandatory category; optional free-text tag field.
+- Implement as typed constant arrays in `web/src/lib/shoppingCategories.ts`
+  (replacing `groceryCategories.ts`) exported per type. Android mirrors
+  the same sets in a `ShoppingCategory.kt` sealed class.
+
+### Step 3 — Auto-created backing collections
+
+- Each list type auto-creates a dedicated collection on first item add if
+  one does not already exist: "Pantry" (groceries), "Hardware" (hardware),
+  "Home Goods" (home_goods). Wish List items do not require a backing
+  collection (they are intent records, not owned inventory).
+- `createBackingCollection(listType)` replaces the current `createPantry()`
+  helper in the web grocery page.
+
+### Step 4 — Web navigation
+
+- Replace the single "Grocery List" nav link with a **Lists** dropdown button.
+- The dropdown shows four entries: Groceries, Hardware, Home Goods, Wish Lists.
+- Each entry navigates to `/lists/[type]` (e.g. `/lists/groceries`).
+- The bell-icon unread count (`GET /grocery/count`) is summed across all
+  four types and shown on the Lists dropdown trigger.
+
+### Step 5 — Web list routes
+
+- Add `/lists/[type]/+page.svelte` as the shared list page, parameterized
+  by `type` from the URL segment.
+- The page heading, empty-state copy, placeholder text, and category picker
+  all derive from the `type` param.
+- Wish List variant adds URL and Priority fields to the add form; replaces
+  the "Bought" purchase action with a "Mark as gifted / received" action.
+- The existing `/grocery-list` route redirects to `/lists/groceries` for
+  backward compatibility (bookmarks and Android deep links still work).
+
+### Step 6 — Android navigation
+
+- Add a **Lists** bottom-nav entry (or drawer section) that expands into
+  tabs: Groceries, Hardware, Home Goods, Wish Lists.
+- The shared `GroceryListScreen` is parameterized by `listType`; tabs
+  switch the active type and reload the list.
+- Category picker in the add-item sheet updates its chip set based on the
+  active list type.
+- Wish List add sheet gains URL and Priority fields.
+
+### Step 7 — MCP tool
+
+- Rename `list_grocery` MCP tool to `list_shopping_items`; add optional
+  `list_type` parameter so AI assistants can query any list type.
+
+### Step 8 — i18n
+
+- Add translation keys for all four list type names, nav label, empty-state
+  messages, category chips (hardware + home goods), wish list fields
+  (URL, priority, gifted/received), and the Lists dropdown in all 7 locale
+  files (en, fr, de, es, it, ja, zh).
+
+---
+
+## Phase 16 — Polish, themes & real-time (planned)
 
 Quality-of-life improvements that make existing features shine plus
 the first steps toward live collaboration.
