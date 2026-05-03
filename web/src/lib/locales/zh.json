@@ -4,7 +4,12 @@
     "maintenance": "维护",
     "grocery_list": "购物清单",
     "settings": "设置",
-    "log_out": "退出登录"
+    "log_out": "退出登录",
+    "alerts": "提醒"
+  },
+  "alerts": {
+    "no_upcoming": "暂无即将到来的提醒。",
+    "preferences_link": "通知偏好设置"
   },
   "common": {
     "save": "保存",

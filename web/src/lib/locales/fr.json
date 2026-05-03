@@ -4,7 +4,12 @@
     "maintenance": "Maintenance",
     "grocery_list": "Liste de courses",
     "settings": "Paramètres",
-    "log_out": "Déconnexion"
+    "log_out": "Déconnexion",
+    "alerts": "Alertes"
+  },
+  "alerts": {
+    "no_upcoming": "Aucune alerte à venir.",
+    "preferences_link": "Préférences de notification"
   },
   "common": {
     "save": "Enregistrer",

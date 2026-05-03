@@ -4,7 +4,12 @@
     "maintenance": "Wartung",
     "grocery_list": "Einkaufsliste",
     "settings": "Einstellungen",
-    "log_out": "Abmelden"
+    "log_out": "Abmelden",
+    "alerts": "Benachrichtigungen"
+  },
+  "alerts": {
+    "no_upcoming": "Keine bevorstehenden Benachrichtigungen.",
+    "preferences_link": "Benachrichtigungseinstellungen"
   },
   "common": {
     "save": "Speichern",

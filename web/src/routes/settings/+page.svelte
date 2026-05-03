@@ -16,18 +16,6 @@
         created_at: string;
     }
 
-    interface DueAlert {
-        id: string;
-        kind: string;
-        severity: string;
-        title: string;
-        collection_id: string;
-        item_id: string | null;
-        lot_id: string | null;
-        due_at: string;
-        details: string | null;
-    }
-
     interface NotificationPref {
         kind: string;
         email_enabled: boolean;
@@ -46,8 +34,7 @@
     });
 
     let tokens = $state<Token[]>([]);
-    let alerts = $state<DueAlert[]>([]);
-    let notifPrefs = $state<NotificationPref[]>([]);
+    let notifPrefs = $state<NotificationPref[]>([]);;
     let digestQueued = $state(false);
     let digestMessage = $state('');
     let newName = $state('');
@@ -92,9 +79,8 @@
 
     async function load() {
         try {
-            [tokens, alerts, notifPrefs] = await Promise.all([
+            [tokens, notifPrefs] = await Promise.all([
                 api.get<Token[]>('/auth/tokens'),
-                api.get<DueAlert[]>('/alerts?within_days=14'),
                 api.get<NotificationPref[]>('/notifications')
             ]);
         } catch (e) {
@@ -354,24 +340,6 @@
 
 {#if error}<p class="error">{error}</p>{/if}
 {#if scrubResult}<p class="ok">{scrubResult}</p>{/if}
-
-<div class="card" style="margin-bottom: 1rem">
-    <h3 style="margin-top:0">{$_('settings.upcoming_alerts_heading')}</h3>
-    <p class="muted">{$_('settings.upcoming_alerts_description')}</p>
-    {#if alerts.length === 0}
-        <p class="muted">{$_('settings.no_alerts')}</p>
-    {:else}
-        <ul class="alerts">
-            {#each alerts as a (a.id)}
-                <li class={`alert ${a.severity}`}>
-                    <strong>{a.title}</strong>
-                    <span>{new Date(a.due_at).toLocaleString()}</span>
-                    {#if a.details}<span class="muted">{a.details}</span>{/if}
-                </li>
-            {/each}
-        </ul>
-    {/if}
-</div>
 
 <div class="card" style="margin-bottom: 1rem">
     <h3 style="margin-top:0">{$_('settings.appearance_heading')}</h3>
@@ -703,31 +671,6 @@
         display: flex;
         gap: 0.5rem;
         flex-wrap: wrap;
-    }
-
-    .alerts {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: grid;
-        gap: 0.5rem;
-    }
-
-    .alert {
-        display: grid;
-        gap: 0.2rem;
-        padding: 0.65rem 0.75rem;
-        border-radius: 8px;
-        border: 1px solid var(--border);
-        background: var(--surface-2);
-    }
-
-    .alert.warning {
-        border-color: #f59e0b;
-    }
-
-    .alert.critical {
-        border-color: #ef4444;
     }
 
     .ok {

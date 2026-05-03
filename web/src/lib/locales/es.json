@@ -4,7 +4,12 @@
     "maintenance": "Mantenimiento",
     "grocery_list": "Lista de la compra",
     "settings": "Configuración",
-    "log_out": "Cerrar sesión"
+    "log_out": "Cerrar sesión",
+    "alerts": "Alertas"
+  },
+  "alerts": {
+    "no_upcoming": "Sin alertas próximas.",
+    "preferences_link": "Preferencias de notificación"
   },
   "common": {
     "save": "Guardar",

@@ -4,7 +4,12 @@
     "maintenance": "メンテナンス",
     "grocery_list": "買い物リスト",
     "settings": "設定",
-    "log_out": "ログアウト"
+    "log_out": "ログアウト",
+    "alerts": "アラート"
+  },
+  "alerts": {
+    "no_upcoming": "今後のアラートはありません。",
+    "preferences_link": "通知設定"
   },
   "common": {
     "save": "保存",

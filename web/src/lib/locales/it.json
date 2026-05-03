@@ -4,7 +4,12 @@
     "maintenance": "Manutenzione",
     "grocery_list": "Lista della spesa",
     "settings": "Impostazioni",
-    "log_out": "Esci"
+    "log_out": "Esci",
+    "alerts": "Avvisi"
+  },
+  "alerts": {
+    "no_upcoming": "Nessun avviso imminente.",
+    "preferences_link": "Preferenze di notifica"
   },
   "common": {
     "save": "Salva",

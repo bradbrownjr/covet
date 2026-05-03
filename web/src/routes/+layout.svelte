@@ -10,6 +10,7 @@
     import { _, locale } from 'svelte-i18n';
     import { initI18n } from '$lib/i18n';
     import WhatsNew from '$lib/WhatsNew.svelte';
+    import AlertsDropdown from '$lib/AlertsDropdown.svelte';
 
     // Initialise i18n synchronously so strings are ready before first render.
     initI18n();
@@ -140,6 +141,8 @@
         </svg>
         {#if hasUnseen}<span class="dot" aria-hidden="true"></span>{/if}
     </button>
+    <span class="header-spacer"></span>
+    {#if $me}<AlertsDropdown />{/if}
     {#if $me}
         <button
             class="icon-btn hamburger"
@@ -223,16 +226,18 @@
         background: var(--accent);
         border: 2px solid var(--surface);
     }
+    /* spacer pushes bell + hamburger to the right on all screen sizes */
+    .header-spacer {
+        flex: 1;
+    }
     /* hamburger: hidden on desktop, shown on mobile */
     .hamburger {
         display: none;
-        margin-left: auto;
     }
     nav {
         display: flex;
         gap: 1rem;
         align-items: center;
-        margin-left: auto;
     }
     nav a {
         color: var(--text);
