@@ -1,8 +1,8 @@
 <script lang="ts">
     import { api } from '$lib/api';
     import { _ } from 'svelte-i18n';
-    import { GROCERY_CATEGORIES } from '$lib/groceryCategories';
-    import type { GroceryCategory } from '$lib/groceryCategories';
+    import { GROCERY_CATEGORIES } from '$lib/shoppingCategories';
+    import type { ShoppingCategory } from '$lib/shoppingCategories';
 
     const PRESET_SLUGS = new Set(GROCERY_CATEGORIES.map((c) => c.slug));
 

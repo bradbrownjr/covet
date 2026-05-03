@@ -10,7 +10,6 @@ from tangible.models.category import Category
 from tangible.models.collection import Collection
 from tangible.models.contact import Contact
 from tangible.models.document import Document
-from tangible.models.grocery import GroceryItem, GroceryStore, GroceryStoreAisle
 from tangible.models.invitation import Invitation
 from tangible.models.item import Item
 from tangible.models.item_comment import ItemComment
@@ -31,6 +30,7 @@ from tangible.models.notification import NotificationPreference
 from tangible.models.photo import Photo
 from tangible.models.scraper_registry_pin import ScraperRegistryPin
 from tangible.models.share_link import ShareLink
+from tangible.models.shopping import ShoppingItem, ShoppingStore, ShoppingStoreAisle
 from tangible.models.sync_doc import AutomergeChange, AutomergeDoc
 from tangible.models.tag import ItemTag, Tag
 from tangible.models.user import (
@@ -57,9 +57,6 @@ __all__ = [
     "CollectionMembership",
     "Contact",
     "Document",
-    "GroceryItem",
-    "GroceryStore",
-    "GroceryStoreAisle",
     "Invitation",
     "Item",
     "ItemComment",
@@ -79,6 +76,9 @@ __all__ = [
     "ScraperRegistryPin",
     "Session",
     "ShareLink",
+    "ShoppingItem",
+    "ShoppingStore",
+    "ShoppingStoreAisle",
     "Tag",
     "TimestampMixin",
     "ULIDPrimaryKey",

@@ -1,10 +1,10 @@
-"""Grocery list models.
+"""Shopping list models.
 
 Shared, ad-hoc shopping items per collection. When linked to an existing
 ``Item`` (typically a pantry/consumable item), marking it purchased
 calls the restock flow on that item.
 
-``GroceryStore`` and ``GroceryStoreAisle`` let users map category slugs to
+``ShoppingStore`` and ``ShoppingStoreAisle`` let users map category slugs to
 physical store aisles so the shopping feed can be sorted aisle-by-aisle.
 """
 
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from tangible.models.user import User
 
 
-class GroceryItem(ULIDPrimaryKey, TimestampMixin, Base):
+class ShoppingItem(ULIDPrimaryKey, TimestampMixin, Base):
     __tablename__ = "grocery_items"
 
     collection_id: Mapped[str] = mapped_column(
@@ -74,8 +74,8 @@ class GroceryItem(ULIDPrimaryKey, TimestampMixin, Base):
     linked_item: Mapped[Item | None] = relationship(lazy="joined")
 
 
-class GroceryStore(ULIDPrimaryKey, TimestampMixin, Base):
-    """A named store whose aisles define grocery-list sort order."""
+class ShoppingStore(ULIDPrimaryKey, TimestampMixin, Base):
+    """A named store whose aisles define shopping-list sort order."""
 
     __tablename__ = "grocery_stores"
 
@@ -87,15 +87,15 @@ class GroceryStore(ULIDPrimaryKey, TimestampMixin, Base):
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    aisles: Mapped[list[GroceryStoreAisle]] = relationship(
+    aisles: Mapped[list[ShoppingStoreAisle]] = relationship(
         back_populates="store",
         cascade="all, delete-orphan",
-        order_by="GroceryStoreAisle.position",
+        order_by="ShoppingStoreAisle.position",
         lazy="select",
     )
 
 
-class GroceryStoreAisle(ULIDPrimaryKey, TimestampMixin, Base):
+class ShoppingStoreAisle(ULIDPrimaryKey, TimestampMixin, Base):
     """One aisle within a store with its associated category slugs."""
 
     __tablename__ = "grocery_store_aisles"
@@ -113,7 +113,7 @@ class GroceryStoreAisle(ULIDPrimaryKey, TimestampMixin, Base):
         "category_slugs", Text, nullable=False, default="[]"
     )
 
-    store: Mapped[GroceryStore] = relationship(back_populates="aisles")
+    store: Mapped[ShoppingStore] = relationship(back_populates="aisles")
 
     @property
     def category_slugs(self) -> list[str]:

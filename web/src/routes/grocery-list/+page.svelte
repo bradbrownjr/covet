@@ -1,8 +1,8 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { api, type Collection } from '$lib/api';
-    import GroceryStoreManager from '$lib/GroceryStoreManager.svelte';
-    import { GROCERY_CATEGORIES } from '$lib/groceryCategories';
+    import ShoppingStoreManager from '$lib/ShoppingStoreManager.svelte';
+    import { GROCERY_CATEGORIES } from '$lib/shoppingCategories';
     import { _ } from 'svelte-i18n';
 
     interface FeedEntry {
@@ -148,7 +148,7 @@
 <p class="muted">{$_('grocery.description')}</p>
 
 {#if showStoreManager}
-    <GroceryStoreManager onClose={() => { showStoreManager = false; }} />
+    <ShoppingStoreManager onClose={() => { showStoreManager = false; }} />
 {/if}
 
 <form class="add-form" onsubmit={addItem}>

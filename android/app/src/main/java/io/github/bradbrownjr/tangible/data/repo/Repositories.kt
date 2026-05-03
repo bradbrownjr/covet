@@ -32,14 +32,14 @@ import io.github.bradbrownjr.tangible.data.remote.ManualBundleDto
 import io.github.bradbrownjr.tangible.data.remote.PhotoDto
 import io.github.bradbrownjr.tangible.data.remote.RestockRequest
 import io.github.bradbrownjr.tangible.data.remote.TagDto
-import io.github.bradbrownjr.tangible.data.remote.GroceryFeedEntryDto
-import io.github.bradbrownjr.tangible.data.remote.GroceryItemCreateRequest
-import io.github.bradbrownjr.tangible.data.remote.GroceryStoreDto
-import io.github.bradbrownjr.tangible.data.remote.GroceryAisleDto
-import io.github.bradbrownjr.tangible.data.remote.GroceryStoreCreate
-import io.github.bradbrownjr.tangible.data.remote.GroceryStorePatch
-import io.github.bradbrownjr.tangible.data.remote.GroceryAisleCreate
-import io.github.bradbrownjr.tangible.data.remote.GroceryAislePatch
+import io.github.bradbrownjr.tangible.data.remote.ShoppingFeedEntryDto
+import io.github.bradbrownjr.tangible.data.remote.ShoppingItemCreateRequest
+import io.github.bradbrownjr.tangible.data.remote.ShoppingStoreDto
+import io.github.bradbrownjr.tangible.data.remote.ShoppingAisleDto
+import io.github.bradbrownjr.tangible.data.remote.ShoppingStoreCreate
+import io.github.bradbrownjr.tangible.data.remote.ShoppingStorePatch
+import io.github.bradbrownjr.tangible.data.remote.ShoppingAisleCreate
+import io.github.bradbrownjr.tangible.data.remote.ShoppingAislePatch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -193,8 +193,8 @@ class ItemRepository @Inject constructor(
         return update(id, patch)
     }
 
-    suspend fun groceryList(): List<ItemDto> {
-        return api.getGroceryList()
+    suspend fun shoppingList(): List<ItemDto> {
+        return api.getShoppingList()
     }
 
     suspend fun restock(itemId: String, quantity: Int = 1, useByDate: String? = null) {
@@ -378,10 +378,10 @@ class BundleRepository @Inject constructor(
 }
 
 @Singleton
-class GroceryRepository @Inject constructor(
+class ShoppingRepository @Inject constructor(
     private val api: TangibleApi,
 ) {
-    suspend fun feed(): List<GroceryFeedEntryDto> = api.getGroceryFeed()
+    suspend fun feed(): List<ShoppingFeedEntryDto> = api.getShoppingFeed()
 
     suspend fun addItem(
         collectionId: String,
@@ -390,8 +390,8 @@ class GroceryRepository @Inject constructor(
         unit: String? = null,
         notes: String? = null,
         categorySlug: String? = null,
-    ): GroceryFeedEntryDto = api.createGroceryItem(
-        GroceryItemCreateRequest(
+    ): ShoppingFeedEntryDto = api.createShoppingItem(
+        ShoppingItemCreateRequest(
             collection_id = collectionId,
             name = name,
             quantity = quantity,
@@ -401,33 +401,33 @@ class GroceryRepository @Inject constructor(
         )
     )
 
-    suspend fun deleteItem(id: String) = api.deleteGroceryItem(id)
+    suspend fun deleteItem(id: String) = api.deleteShoppingItem(id)
 
-    suspend fun purchaseItem(id: String) = api.purchaseGroceryItem(id)
+    suspend fun purchaseItem(id: String) = api.purchaseShoppingItem(id)
 
     // Stores
-    suspend fun listStores(): List<GroceryStoreDto> = api.listGroceryStores()
+    suspend fun listStores(): List<ShoppingStoreDto> = api.listShoppingStores()
 
-    suspend fun createStore(name: String): GroceryStoreDto =
-        api.createGroceryStore(GroceryStoreCreate(name))
+    suspend fun createStore(name: String): ShoppingStoreDto =
+        api.createShoppingStore(ShoppingStoreCreate(name))
 
-    suspend fun updateStore(id: String, name: String): GroceryStoreDto =
-        api.updateGroceryStore(id, GroceryStorePatch(name))
+    suspend fun updateStore(id: String, name: String): ShoppingStoreDto =
+        api.updateShoppingStore(id, ShoppingStorePatch(name))
 
-    suspend fun deleteStore(id: String) = api.deleteGroceryStore(id)
+    suspend fun deleteStore(id: String) = api.deleteShoppingStore(id)
 
     // Aisles
-    suspend fun listAisles(storeId: String): List<GroceryAisleDto> =
-        api.listGroceryAisles(storeId)
+    suspend fun listAisles(storeId: String): List<ShoppingAisleDto> =
+        api.listShoppingAisles(storeId)
 
     suspend fun createAisle(
         storeId: String,
         name: String,
         position: Int = 0,
         categorySlugs: List<String> = emptyList(),
-    ): GroceryAisleDto = api.createGroceryAisle(
+    ): ShoppingAisleDto = api.createShoppingAisle(
         storeId,
-        GroceryAisleCreate(name = name, position = position, category_slugs = categorySlugs),
+        ShoppingAisleCreate(name = name, position = position, category_slugs = categorySlugs),
     )
 
     suspend fun updateAisle(
@@ -436,15 +436,15 @@ class GroceryRepository @Inject constructor(
         name: String? = null,
         position: Int? = null,
         categorySlugs: List<String>? = null,
-    ): GroceryAisleDto = api.updateGroceryAisle(
+    ): ShoppingAisleDto = api.updateShoppingAisle(
         storeId,
         aisleId,
-        GroceryAislePatch(name = name, position = position, category_slugs = categorySlugs),
+        ShoppingAislePatch(name = name, position = position, category_slugs = categorySlugs),
     )
 
     suspend fun deleteAisle(storeId: String, aisleId: String) =
-        api.deleteGroceryAisle(storeId, aisleId)
+        api.deleteShoppingAisle(storeId, aisleId)
 
     suspend fun reorderAisles(storeId: String, aisleIds: List<String>) =
-        api.reorderGroceryAisles(storeId, aisleIds)
+        api.reorderShoppingAisles(storeId, aisleIds)
 }

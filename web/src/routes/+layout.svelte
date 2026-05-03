@@ -20,22 +20,22 @@
 
     interface NotificationPref { kind: string; browser_enabled: boolean; lead_days: number; }
     interface DueAlert { id: string; title: string; details: string | null; due_at: string; kind: string; severity: string; }
-    interface GroceryCount { total: number; ad_hoc: number; depleted_items: number; }
+    interface ShoppingCount { total: number; ad_hoc: number; depleted_items: number; }
 
     let { children } = $props();
     let ready = $state(false);
     let whatsNewOpen = $state(false);
     let lastSeen = $state<string | null>(null);
-    let groceryCount = $state(0);
+    let shoppingCount = $state(0);
     let menuOpen = $state(false);
 
-    async function refreshGroceryCount() {
-        if (!$me) { groceryCount = 0; return; }
+    async function refreshShoppingCount() {
+        if (!$me) { shoppingCount = 0; return; }
         try {
-            const c = await api.get<GroceryCount>('/grocery/count');
-            groceryCount = c.total;
+            const c = await api.get<ShoppingCount>("/lists/count");
+            shoppingCount = c.total;
         } catch {
-            groceryCount = 0;
+            shoppingCount = 0;
         }
     }
 
@@ -68,7 +68,7 @@
         }
         await Promise.all([refreshMe(), loadPublicConfig()]);
         ready = true;
-        await refreshGroceryCount();
+        await refreshShoppingCount();
         const path = page.url.pathname;
         const onAuth = path === '/login' || path === '/register';
         const isPublic = path.startsWith('/share/') || path.startsWith('/invite/');
@@ -163,7 +163,7 @@
         {#if $me}
             <a href="/" onclick={closeMenu}>{$_('nav.collections')}</a>
             <a href="/maintenance" onclick={closeMenu}>{$_('nav.maintenance')}</a>
-            <a href="/grocery-list" onclick={closeMenu}>{$_('nav.grocery_list')}{#if groceryCount > 0} <span class="badge">{groceryCount}</span>{/if}</a>
+            <a href="/grocery-list" onclick={closeMenu}>{$_('nav.grocery_list')}{#if shoppingCount > 0} <span class="badge">{shoppingCount}</span>{/if}</a>
             <a href="/settings" onclick={closeMenu}>{$_('nav.settings')}</a>
             <a href="/profile" class="user" onclick={closeMenu} title={$_('nav.edit_profile')}>{userLabel($me)}</a>
             <button class="secondary" onclick={doLogout}>{$_('nav.log_out')}</button>

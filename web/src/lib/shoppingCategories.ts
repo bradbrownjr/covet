@@ -1,9 +1,9 @@
-export interface GroceryCategory {
+export interface ShoppingCategory {
     slug: string;
     label: string;
 }
 
-export const GROCERY_CATEGORIES: GroceryCategory[] = [
+export const GROCERY_CATEGORIES: ShoppingCategory[] = [
     { slug: 'alcohol',            label: 'Alcohol' },
     { slug: 'bakery',             label: 'Bakery' },
     { slug: 'beverages',          label: 'Beverages' },

@@ -28,24 +28,24 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import io.github.bradbrownjr.tangible.data.remote.GroceryAisleDto
-import io.github.bradbrownjr.tangible.data.remote.GroceryStoreDto
-import io.github.bradbrownjr.tangible.data.repo.GroceryRepository
+import io.github.bradbrownjr.tangible.data.remote.ShoppingAisleDto
+import io.github.bradbrownjr.tangible.data.remote.ShoppingStoreDto
+import io.github.bradbrownjr.tangible.data.repo.ShoppingRepository
 import io.github.bradbrownjr.tangible.R
 import javax.inject.Inject
 
-data class GroceryStoreListUi(
-    val stores: List<GroceryStoreDto> = emptyList(),
+data class ShoppingStoreListUi(
+    val stores: List<ShoppingStoreDto> = emptyList(),
     val loading: Boolean = false,
     val error: String? = null,
 )
 
 @HiltViewModel
-class GroceryStoreListViewModel @Inject constructor(
-    private val groceryRepo: GroceryRepository,
+class ShoppingStoreListViewModel @Inject constructor(
+    private val shoppingRepo: ShoppingRepository,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(GroceryStoreListUi())
-    val state: StateFlow<GroceryStoreListUi> = _state.asStateFlow()
+    private val _state = MutableStateFlow(ShoppingStoreListUi())
+    val state: StateFlow<ShoppingStoreListUi> = _state.asStateFlow()
 
     init { load() }
 
@@ -53,7 +53,7 @@ class GroceryStoreListViewModel @Inject constructor(
         _state.value = _state.value.copy(loading = true, error = null)
         viewModelScope.launch {
             try {
-                val stores = groceryRepo.listStores()
+                val stores = shoppingRepo.listStores()
                 _state.value = _state.value.copy(stores = stores, loading = false)
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(loading = false, error = t.message)
@@ -64,7 +64,7 @@ class GroceryStoreListViewModel @Inject constructor(
     fun createStore(name: String) {
         viewModelScope.launch {
             try {
-                groceryRepo.createStore(name)
+                shoppingRepo.createStore(name)
                 load()
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(error = t.message)
@@ -75,7 +75,7 @@ class GroceryStoreListViewModel @Inject constructor(
     fun deleteStore(id: String) {
         viewModelScope.launch {
             try {
-                groceryRepo.deleteStore(id)
+                shoppingRepo.deleteStore(id)
                 _state.value = _state.value.copy(stores = _state.value.stores.filter { it.id != id })
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(error = t.message)
@@ -86,14 +86,14 @@ class GroceryStoreListViewModel @Inject constructor(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GroceryStoreListScreen(
-    viewModel: GroceryStoreListViewModel = hiltViewModel(),
+fun ShoppingStoreListScreen(
+    viewModel: ShoppingStoreListViewModel = hiltViewModel(),
     onBack: () -> Unit,
     onOpenStore: (storeId: String) -> Unit,
 ) {
     val ui by viewModel.state.collectAsState()
     var showCreateDialog by remember { mutableStateOf(false) }
-    var confirmDeleteStore by remember { mutableStateOf<GroceryStoreDto?>(null) }
+    var confirmDeleteStore by remember { mutableStateOf<ShoppingStoreDto?>(null) }
 
     Scaffold(
         topBar = {
@@ -197,20 +197,20 @@ fun GroceryStoreListScreen(
 // Aisle editor screen
 // ---------------------------------------------------------------------------
 
-data class GroceryAisleEditorUi(
-    val store: GroceryStoreDto? = null,
+data class ShoppingAisleEditorUi(
+    val store: ShoppingStoreDto? = null,
     val loading: Boolean = false,
     val error: String? = null,
 )
 
 @HiltViewModel
-class GroceryAisleEditorViewModel @Inject constructor(
-    private val groceryRepo: GroceryRepository,
+class ShoppingAisleEditorViewModel @Inject constructor(
+    private val shoppingRepo: ShoppingRepository,
     savedState: SavedStateHandle,
 ) : ViewModel() {
     private val storeId: String = checkNotNull(savedState["storeId"])
-    private val _state = MutableStateFlow(GroceryAisleEditorUi())
-    val state: StateFlow<GroceryAisleEditorUi> = _state.asStateFlow()
+    private val _state = MutableStateFlow(ShoppingAisleEditorUi())
+    val state: StateFlow<ShoppingAisleEditorUi> = _state.asStateFlow()
 
     init { load() }
 
@@ -218,7 +218,7 @@ class GroceryAisleEditorViewModel @Inject constructor(
         _state.value = _state.value.copy(loading = true, error = null)
         viewModelScope.launch {
             try {
-                val stores = groceryRepo.listStores()
+                val stores = shoppingRepo.listStores()
                 _state.value = _state.value.copy(
                     store = stores.find { it.id == storeId },
                     loading = false,
@@ -233,7 +233,7 @@ class GroceryAisleEditorViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val position = (_state.value.store?.aisles?.maxOfOrNull { it.position } ?: -1) + 1
-                groceryRepo.createAisle(storeId, name, position, categorySlugs)
+                shoppingRepo.createAisle(storeId, name, position, categorySlugs)
                 load()
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(error = t.message)
@@ -244,7 +244,7 @@ class GroceryAisleEditorViewModel @Inject constructor(
     fun updateAisle(aisleId: String, name: String, categorySlugs: List<String>) {
         viewModelScope.launch {
             try {
-                groceryRepo.updateAisle(storeId, aisleId, name = name, categorySlugs = categorySlugs)
+                shoppingRepo.updateAisle(storeId, aisleId, name = name, categorySlugs = categorySlugs)
                 load()
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(error = t.message)
@@ -255,7 +255,7 @@ class GroceryAisleEditorViewModel @Inject constructor(
     fun deleteAisle(aisleId: String) {
         viewModelScope.launch {
             try {
-                groceryRepo.deleteAisle(storeId, aisleId)
+                shoppingRepo.deleteAisle(storeId, aisleId)
                 _state.value = _state.value.copy(
                     store = _state.value.store?.copy(
                         aisles = _state.value.store!!.aisles.filter { it.id != aisleId }
@@ -275,7 +275,7 @@ class GroceryAisleEditorViewModel @Inject constructor(
         }
         viewModelScope.launch {
             try {
-                groceryRepo.reorderAisles(storeId, reordered.map { it.id })
+                shoppingRepo.reorderAisles(storeId, reordered.map { it.id })
                 load()
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(error = t.message)
@@ -291,7 +291,7 @@ class GroceryAisleEditorViewModel @Inject constructor(
         }
         viewModelScope.launch {
             try {
-                groceryRepo.reorderAisles(storeId, reordered.map { it.id })
+                shoppingRepo.reorderAisles(storeId, reordered.map { it.id })
                 load()
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(error = t.message)
@@ -302,14 +302,14 @@ class GroceryAisleEditorViewModel @Inject constructor(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GroceryAisleEditorScreen(
-    viewModel: GroceryAisleEditorViewModel = hiltViewModel(),
+fun ShoppingAisleEditorScreen(
+    viewModel: ShoppingAisleEditorViewModel = hiltViewModel(),
     onBack: () -> Unit,
 ) {
     val ui by viewModel.state.collectAsState()
     var showCreateDialog by remember { mutableStateOf(false) }
-    var editAisle by remember { mutableStateOf<GroceryAisleDto?>(null) }
-    var confirmDeleteAisle by remember { mutableStateOf<GroceryAisleDto?>(null) }
+    var editAisle by remember { mutableStateOf<ShoppingAisleDto?>(null) }
+    var confirmDeleteAisle by remember { mutableStateOf<ShoppingAisleDto?>(null) }
 
     Scaffold(
         topBar = {

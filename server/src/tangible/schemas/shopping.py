@@ -1,4 +1,4 @@
-"""Grocery list schemas."""
+"""Shopping list schemas."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class GrocerySource(BaseModel):
+class ShoppingSource(BaseModel):
     """Sub-schema describing where a grocery feed entry comes from."""
 
     model_config = ConfigDict(from_attributes=True)
@@ -16,7 +16,7 @@ class GrocerySource(BaseModel):
     item_id: str | None = None  # populated for "depleted_item" or when ad-hoc has linked_item
 
 
-class GroceryItemRead(BaseModel):
+class ShoppingItemRead(BaseModel):
     """A user-created grocery list entry."""
 
     model_config = ConfigDict(from_attributes=True)
@@ -36,7 +36,7 @@ class GroceryItemRead(BaseModel):
     updated_at: datetime
 
 
-class GroceryFeedEntry(BaseModel):
+class ShoppingFeedEntry(BaseModel):
     """A single row in the unified grocery feed.
 
     Either an ad-hoc grocery_item or a depleted Item shown as a virtual
@@ -46,7 +46,7 @@ class GroceryFeedEntry(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: str  # grocery_item.id OR item.id (with prefix)
-    source: GrocerySource
+    source: ShoppingSource
     collection_id: str
     name: str
     subtitle: str | None = None
@@ -59,7 +59,7 @@ class GroceryFeedEntry(BaseModel):
     created_at: datetime
 
 
-class GroceryItemCreate(BaseModel):
+class ShoppingItemCreate(BaseModel):
     collection_id: str
     name: str = Field(min_length=1, max_length=255)
     quantity: int = Field(default=1, ge=1)
@@ -69,7 +69,7 @@ class GroceryItemCreate(BaseModel):
     linked_item_id: str | None = None
 
 
-class GroceryItemUpdate(BaseModel):
+class ShoppingItemUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=255)
     quantity: int | None = Field(default=None, ge=1)
     unit: str | None = Field(default=None, max_length=32)
@@ -78,7 +78,7 @@ class GroceryItemUpdate(BaseModel):
     linked_item_id: str | None = None
 
 
-class GroceryPurchaseRequest(BaseModel):
+class ShoppingPurchaseRequest(BaseModel):
     """Optional metadata for the purchase event."""
 
     purchased_at: datetime | None = None
@@ -90,7 +90,7 @@ class GroceryPurchaseRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class GroceryAisleRead(BaseModel):
+class ShoppingAisleRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
@@ -102,38 +102,38 @@ class GroceryAisleRead(BaseModel):
     updated_at: datetime
 
 
-class GroceryAisleCreate(BaseModel):
+class ShoppingAisleCreate(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     position: int = Field(default=0, ge=0)
     category_slugs: list[str] = Field(default_factory=list)
 
 
-class GroceryAisleUpdate(BaseModel):
+class ShoppingAisleUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=255)
     position: int | None = Field(default=None, ge=0)
     category_slugs: list[str] | None = None
 
 
-class GroceryStoreRead(BaseModel):
+class ShoppingStoreRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
     owner_user_id: str
     name: str
-    aisles: list[GroceryAisleRead] = Field(default_factory=list)
+    aisles: list[ShoppingAisleRead] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 
 
-class GroceryStoreCreate(BaseModel):
+class ShoppingStoreCreate(BaseModel):
     name: str = Field(min_length=1, max_length=255)
 
 
-class GroceryStoreUpdate(BaseModel):
+class ShoppingStoreUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=255)
 
 
-class GroceryCount(BaseModel):
+class ShoppingCount(BaseModel):
     """Lightweight count for nav badge."""
 
     total: int

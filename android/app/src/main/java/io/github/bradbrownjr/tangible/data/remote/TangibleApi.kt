@@ -108,55 +108,55 @@ interface TangibleApi {
     suspend fun bulkLendItems(@Body body: ItemBulkLendRequest): List<LoanDto>
 
     @GET("items/grocery-list")
-    suspend fun getGroceryList(): List<ItemDto>
+    suspend fun getShoppingList(): List<ItemDto>
 
     @GET("grocery")
-    suspend fun getGroceryFeed(): List<GroceryFeedEntryDto>
+    suspend fun getShoppingFeed(): List<ShoppingFeedEntryDto>
 
     @POST("grocery")
-    suspend fun createGroceryItem(@Body body: GroceryItemCreateRequest): GroceryFeedEntryDto
+    suspend fun createShoppingItem(@Body body: ShoppingItemCreateRequest): ShoppingFeedEntryDto
 
     @DELETE("grocery/{id}")
-    suspend fun deleteGroceryItem(@Path("id") id: String)
+    suspend fun deleteShoppingItem(@Path("id") id: String)
 
     @POST("grocery/{id}/purchase")
-    suspend fun purchaseGroceryItem(@Path("id") id: String)
+    suspend fun purchaseShoppingItem(@Path("id") id: String)
 
-    // Grocery stores
+    // Shopping stores
     @GET("grocery/stores")
-    suspend fun listGroceryStores(): List<GroceryStoreDto>
+    suspend fun listShoppingStores(): List<ShoppingStoreDto>
 
     @POST("grocery/stores")
-    suspend fun createGroceryStore(@Body body: GroceryStoreCreate): GroceryStoreDto
+    suspend fun createShoppingStore(@Body body: ShoppingStoreCreate): ShoppingStoreDto
 
     @PATCH("grocery/stores/{id}")
-    suspend fun updateGroceryStore(@Path("id") id: String, @Body body: GroceryStorePatch): GroceryStoreDto
+    suspend fun updateShoppingStore(@Path("id") id: String, @Body body: ShoppingStorePatch): ShoppingStoreDto
 
     @DELETE("grocery/stores/{id}")
-    suspend fun deleteGroceryStore(@Path("id") id: String)
+    suspend fun deleteShoppingStore(@Path("id") id: String)
 
-    // Grocery aisles
+    // Shopping aisles
     @GET("grocery/stores/{storeId}/aisles")
-    suspend fun listGroceryAisles(@Path("storeId") storeId: String): List<GroceryAisleDto>
+    suspend fun listShoppingAisles(@Path("storeId") storeId: String): List<ShoppingAisleDto>
 
     @POST("grocery/stores/{storeId}/aisles")
-    suspend fun createGroceryAisle(@Path("storeId") storeId: String, @Body body: GroceryAisleCreate): GroceryAisleDto
+    suspend fun createShoppingAisle(@Path("storeId") storeId: String, @Body body: ShoppingAisleCreate): ShoppingAisleDto
 
     @PATCH("grocery/stores/{storeId}/aisles/{aisleId}")
-    suspend fun updateGroceryAisle(
+    suspend fun updateShoppingAisle(
         @Path("storeId") storeId: String,
         @Path("aisleId") aisleId: String,
-        @Body body: GroceryAislePatch,
-    ): GroceryAisleDto
+        @Body body: ShoppingAislePatch,
+    ): ShoppingAisleDto
 
     @DELETE("grocery/stores/{storeId}/aisles/{aisleId}")
-    suspend fun deleteGroceryAisle(
+    suspend fun deleteShoppingAisle(
         @Path("storeId") storeId: String,
         @Path("aisleId") aisleId: String,
     )
 
     @PUT("grocery/stores/{storeId}/aisles/reorder")
-    suspend fun reorderGroceryAisles(@Path("storeId") storeId: String, @Body order: List<String>)
+    suspend fun reorderShoppingAisles(@Path("storeId") storeId: String, @Body order: List<String>)
 
     @POST("items/{id}/restock")
     suspend fun restockItem(@Path("id") id: String, @Body body: RestockRequest): ItemLotDto

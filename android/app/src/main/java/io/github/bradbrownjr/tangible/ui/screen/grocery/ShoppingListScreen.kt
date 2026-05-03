@@ -31,18 +31,18 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import io.github.bradbrownjr.tangible.data.remote.CollectionDto
-import io.github.bradbrownjr.tangible.data.remote.GroceryAisleDto
-import io.github.bradbrownjr.tangible.data.remote.GroceryFeedEntryDto
-import io.github.bradbrownjr.tangible.data.remote.GroceryStoreDto
+import io.github.bradbrownjr.tangible.data.remote.ShoppingAisleDto
+import io.github.bradbrownjr.tangible.data.remote.ShoppingFeedEntryDto
+import io.github.bradbrownjr.tangible.data.remote.ShoppingStoreDto
 import io.github.bradbrownjr.tangible.data.repo.CollectionRepository
-import io.github.bradbrownjr.tangible.data.repo.GroceryRepository
+import io.github.bradbrownjr.tangible.data.repo.ShoppingRepository
 import io.github.bradbrownjr.tangible.R
 import javax.inject.Inject
 
-data class GroceryListUi(
-    val items: List<GroceryFeedEntryDto> = emptyList(),
+data class ShoppingListUi(
+    val items: List<ShoppingFeedEntryDto> = emptyList(),
     val collections: Map<String, CollectionDto> = emptyMap(),
-    val stores: List<GroceryStoreDto> = emptyList(),
+    val stores: List<ShoppingStoreDto> = emptyList(),
     val selectedStoreId: String? = null,
     val loading: Boolean = false,
     val refreshing: Boolean = false,
@@ -53,12 +53,12 @@ data class GroceryListUi(
 )
 
 @HiltViewModel
-class GroceryListViewModel @Inject constructor(
-    private val groceryRepo: GroceryRepository,
+class ShoppingListViewModel @Inject constructor(
+    private val shoppingRepo: ShoppingRepository,
     private val collectionRepo: CollectionRepository,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(GroceryListUi())
-    val state: StateFlow<GroceryListUi> = _state.asStateFlow()
+    private val _state = MutableStateFlow(ShoppingListUi())
+    val state: StateFlow<ShoppingListUi> = _state.asStateFlow()
 
     init { refresh() }
 
@@ -73,9 +73,9 @@ class GroceryListViewModel @Inject constructor(
         }
         viewModelScope.launch {
             try {
-                val items = groceryRepo.feed()
+                val items = shoppingRepo.feed()
                 val collections = collectionRepo.list()
-                val stores = groceryRepo.listStores()
+                val stores = shoppingRepo.listStores()
                 _state.value = _state.value.copy(
                     items = items,
                     collections = collections.associateBy { it.id },
@@ -113,7 +113,7 @@ class GroceryListViewModel @Inject constructor(
         _state.value = _state.value.copy(showAddDialog = false)
         viewModelScope.launch {
             try {
-                groceryRepo.addItem(
+                shoppingRepo.addItem(
                     collectionId = collectionId,
                     name = name,
                     quantity = quantity,
@@ -137,7 +137,7 @@ class GroceryListViewModel @Inject constructor(
                         updating = _state.value.updating - entryId,
                     )
                 } else {
-                    groceryRepo.purchaseItem(entryId)
+                    shoppingRepo.purchaseItem(entryId)
                     _state.value = _state.value.copy(
                         items = _state.value.items.filter { it.id != entryId },
                         updating = _state.value.updating - entryId,
@@ -157,7 +157,7 @@ class GroceryListViewModel @Inject constructor(
         _state.value = _state.value.copy(updating = _state.value.updating + entryId)
         viewModelScope.launch {
             try {
-                groceryRepo.deleteItem(entryId)
+                shoppingRepo.deleteItem(entryId)
                 _state.value = _state.value.copy(
                     items = _state.value.items.filter { it.id != entryId },
                     updating = _state.value.updating - entryId,
@@ -178,21 +178,21 @@ class GroceryListViewModel @Inject constructor(
 
 private data class AisleGroup(
     val name: String,
-    val items: List<GroceryFeedEntryDto>,
+    val items: List<ShoppingFeedEntryDto>,
 )
 
 private fun groupByAisle(
-    items: List<GroceryFeedEntryDto>,
-    aisles: List<GroceryAisleDto>,
+    items: List<ShoppingFeedEntryDto>,
+    aisles: List<ShoppingAisleDto>,
     otherLabel: String = "Other",
 ): List<AisleGroup> {
-    val slugToAisle = mutableMapOf<String, GroceryAisleDto>()
+    val slugToAisle = mutableMapOf<String, ShoppingAisleDto>()
     for (aisle in aisles) {
         for (slug in aisle.category_slugs) {
             slugToAisle[slug] = aisle
         }
     }
-    val grouped = LinkedHashMap<String?, MutableList<GroceryFeedEntryDto>>()
+    val grouped = LinkedHashMap<String?, MutableList<ShoppingFeedEntryDto>>()
     for (item in items) {
         val aisleName = item.category_slug?.let { slug ->
             slugToAisle[slug]?.name ?: slugToAisle[slug.substringBeforeLast(".", slug)]?.name
@@ -215,8 +215,8 @@ private fun groupByAisle(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GroceryListScreen(
-    viewModel: GroceryListViewModel = hiltViewModel(),
+fun ShoppingListScreen(
+    viewModel: ShoppingListViewModel = hiltViewModel(),
     onBack: () -> Unit,
     onNavigateToCollection: (collectionId: String) -> Unit,
     onManageStores: () -> Unit,
@@ -302,7 +302,7 @@ fun GroceryListScreen(
                                         AisleHeader(group.name)
                                     }
                                     items(group.items, key = { it.id }) { entry ->
-                                        GroceryEntryCard(
+                                        ShoppingEntryCard(
                                             entry = entry,
                                             collectionName = ui.collections[entry.collection_id]?.name ?: entry.collection_id,
                                             isUpdating = entry.id in ui.updating,
@@ -314,7 +314,7 @@ fun GroceryListScreen(
                                 }
                             } else {
                                 items(ui.items, key = { it.id }) { entry ->
-                                    GroceryEntryCard(
+                                    ShoppingEntryCard(
                                         entry = entry,
                                         collectionName = ui.collections[entry.collection_id]?.name ?: entry.collection_id,
                                         isUpdating = entry.id in ui.updating,
@@ -350,7 +350,7 @@ fun GroceryListScreen(
     }
 
     if (ui.showAddDialog) {
-        AddGroceryItemDialog(
+        AddShoppingItemDialog(
             collections = ui.collections.values.toList(),
             onDismiss = { viewModel.dismissAddDialog() },
             onAdd = { collId, itemName, qty, catSlug ->
@@ -373,8 +373,8 @@ private fun AisleHeader(name: String) {
 }
 
 @Composable
-private fun GroceryEntryCard(
-    entry: GroceryFeedEntryDto,
+private fun ShoppingEntryCard(
+    entry: ShoppingFeedEntryDto,
     collectionName: String,
     isUpdating: Boolean,
     onMarkPurchased: () -> Unit,
@@ -453,7 +453,7 @@ private fun GroceryEntryCard(
 
 @Composable
 private fun StoreSelectorDialog(
-    stores: List<GroceryStoreDto>,
+    stores: List<ShoppingStoreDto>,
     selectedStoreId: String?,
     onSelect: (String?) -> Unit,
     onManageStores: () -> Unit,
@@ -490,7 +490,7 @@ private fun StoreSelectorDialog(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AddGroceryItemDialog(
+private fun AddShoppingItemDialog(
     collections: List<CollectionDto>,
     onDismiss: () -> Unit,
     onAdd: (collectionId: String, name: String, quantity: Int, categorySlug: String?) -> Unit,
@@ -549,7 +549,7 @@ private fun AddGroceryItemDialog(
                 ) {
                     OutlinedTextField(
                         value = if (categorySlug.isBlank()) stringResource(R.string.no_category)
-                                else GROCERY_CATEGORY_PRESETS.find { it.slug == categorySlug }
+                                else SHOPPING_CATEGORY_PRESETS.find { it.slug == categorySlug }
                                     ?.let { stringResource(it.labelRes) } ?: categorySlug,
                         onValueChange = {},
                         readOnly = true,
@@ -565,7 +565,7 @@ private fun AddGroceryItemDialog(
                             text = { Text(stringResource(R.string.no_category)) },
                             onClick = { categorySlug = ""; categoryMenuExpanded = false },
                         )
-                        GROCERY_CATEGORY_PRESETS.forEach { cat ->
+                        SHOPPING_CATEGORY_PRESETS.forEach { cat ->
                             DropdownMenuItem(
                                 text = { Text(stringResource(cat.labelRes)) },
                                 onClick = { categorySlug = cat.slug; categoryMenuExpanded = false },

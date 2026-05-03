@@ -1,8 +1,8 @@
-"""Grocery list endpoints.
+"""Shopping list endpoints.
 
 Combines two sources into a unified shopping feed per collection:
 
-1. Ad-hoc ``GroceryItem`` rows added by household members.
+1. Ad-hoc ``ShoppingItem`` rows added by household members.
 2. ``Item`` rows where ``depleted=True`` (auto-suggested re-stocks).
 
 Marking an entry purchased optionally restocks the linked pantry item
@@ -24,31 +24,31 @@ from tangible.auth.deps import AuthContext, collection_role, require_user
 from tangible.db import get_session
 from tangible.models import (
     Collection,
-    GroceryItem,
-    GroceryStore,
-    GroceryStoreAisle,
     Item,
     ItemLot,
+    ShoppingItem,
+    ShoppingStore,
+    ShoppingStoreAisle,
 )
 from tangible.models.user import CollectionMembership
 from tangible.schemas import (
-    GroceryAisleCreate,
-    GroceryAisleRead,
-    GroceryAisleUpdate,
-    GroceryCount,
-    GroceryFeedEntry,
-    GroceryItemCreate,
-    GroceryItemRead,
-    GroceryItemUpdate,
-    GroceryPurchaseRequest,
-    GrocerySource,
-    GroceryStoreCreate,
-    GroceryStoreRead,
-    GroceryStoreUpdate,
+    ShoppingAisleCreate,
+    ShoppingAisleRead,
+    ShoppingAisleUpdate,
+    ShoppingCount,
+    ShoppingFeedEntry,
+    ShoppingItemCreate,
+    ShoppingItemRead,
+    ShoppingItemUpdate,
+    ShoppingPurchaseRequest,
+    ShoppingSource,
+    ShoppingStoreCreate,
+    ShoppingStoreRead,
+    ShoppingStoreUpdate,
 )
 from tangible.services import audit
 
-router = APIRouter(prefix="/grocery", tags=["grocery"])
+router = APIRouter(prefix="/lists", tags=["shopping"])
 
 _EDITOR_ROLES = {"editor", "owner"}
 _VIEWER_ROLES = {"viewer", "editor", "owner"}
@@ -76,10 +76,10 @@ def _require_role(db: DBSession, auth: AuthContext, collection_id: str, allowed:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
 
-def _ad_hoc_to_feed(g: GroceryItem) -> GroceryFeedEntry:
-    return GroceryFeedEntry(
+def _ad_hoc_to_feed(g: ShoppingItem) -> ShoppingFeedEntry:
+    return ShoppingFeedEntry(
         id=g.id,
-        source=GrocerySource(kind="ad_hoc", item_id=g.linked_item_id),
+        source=ShoppingSource(kind="ad_hoc", item_id=g.linked_item_id),
         collection_id=g.collection_id,
         name=g.name,
         subtitle=None,
@@ -93,10 +93,10 @@ def _ad_hoc_to_feed(g: GroceryItem) -> GroceryFeedEntry:
     )
 
 
-def _depleted_to_feed(item: Item) -> GroceryFeedEntry:
-    return GroceryFeedEntry(
+def _depleted_to_feed(item: Item) -> ShoppingFeedEntry:
+    return ShoppingFeedEntry(
         id=f"item:{item.id}",
-        source=GrocerySource(kind="depleted_item", item_id=item.id),
+        source=ShoppingSource(kind="depleted_item", item_id=item.id),
         collection_id=item.collection_id,
         name=item.title,
         subtitle=item.subtitle,
@@ -110,22 +110,22 @@ def _depleted_to_feed(item: Item) -> GroceryFeedEntry:
     )
 
 
-@router.get("", response_model=list[GroceryFeedEntry])
+@router.get("", response_model=list[ShoppingFeedEntry])
 def list_grocery_feed(
     include_purchased: bool = Query(default=False),
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
-) -> list[GroceryFeedEntry]:
+) -> list[ShoppingFeedEntry]:
     """Unified shopping feed across every collection the user can access."""
     cids = _readable_collection_ids(db, auth)
     if not cids:
         return []
 
     # Ad-hoc rows
-    g_stmt = select(GroceryItem).where(GroceryItem.collection_id.in_(cids))
+    g_stmt = select(ShoppingItem).where(ShoppingItem.collection_id.in_(cids))
     if not include_purchased:
-        g_stmt = g_stmt.where(GroceryItem.purchased_at.is_(None))
-    g_stmt = g_stmt.order_by(GroceryItem.created_at.desc())
+        g_stmt = g_stmt.where(ShoppingItem.purchased_at.is_(None))
+    g_stmt = g_stmt.order_by(ShoppingItem.created_at.desc())
     ad_hoc = [_ad_hoc_to_feed(g) for g in db.scalars(g_stmt).all()]
 
     # Depleted items (skip those already linked from an open ad-hoc entry to
@@ -133,10 +133,10 @@ def list_grocery_feed(
     open_linked = {
         gid
         for gid in db.scalars(
-            select(GroceryItem.linked_item_id).where(
-                GroceryItem.collection_id.in_(cids),
-                GroceryItem.linked_item_id.is_not(None),
-                GroceryItem.purchased_at.is_(None),
+            select(ShoppingItem.linked_item_id).where(
+                ShoppingItem.collection_id.in_(cids),
+                ShoppingItem.linked_item_id.is_not(None),
+                ShoppingItem.purchased_at.is_(None),
             )
         ).all()
         if gid
@@ -157,32 +157,32 @@ def list_grocery_feed(
     return ad_hoc + depleted
 
 
-@router.get("/count", response_model=GroceryCount)
+@router.get("/count", response_model=ShoppingCount)
 def grocery_count(
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
-) -> GroceryCount:
+) -> ShoppingCount:
     """Lightweight count for the nav badge / conditional menu visibility."""
     cids = _readable_collection_ids(db, auth)
     if not cids:
-        return GroceryCount(total=0, ad_hoc=0, depleted_items=0)
+        return ShoppingCount(total=0, ad_hoc=0, depleted_items=0)
 
     open_linked = {
         gid
         for gid in db.scalars(
-            select(GroceryItem.linked_item_id).where(
-                GroceryItem.collection_id.in_(cids),
-                GroceryItem.linked_item_id.is_not(None),
-                GroceryItem.purchased_at.is_(None),
+            select(ShoppingItem.linked_item_id).where(
+                ShoppingItem.collection_id.in_(cids),
+                ShoppingItem.linked_item_id.is_not(None),
+                ShoppingItem.purchased_at.is_(None),
             )
         ).all()
         if gid
     }
     ad_hoc = int(
         db.scalar(
-            select(func.count(GroceryItem.id)).where(
-                GroceryItem.collection_id.in_(cids),
-                GroceryItem.purchased_at.is_(None),
+            select(func.count(ShoppingItem.id)).where(
+                ShoppingItem.collection_id.in_(cids),
+                ShoppingItem.purchased_at.is_(None),
             )
         )
         or 0
@@ -197,15 +197,15 @@ def grocery_count(
         ).all()
     )
     depleted = sum(1 for iid in depleted_ids if iid not in open_linked)
-    return GroceryCount(total=ad_hoc + depleted, ad_hoc=ad_hoc, depleted_items=depleted)
+    return ShoppingCount(total=ad_hoc + depleted, ad_hoc=ad_hoc, depleted_items=depleted)
 
 
-@router.post("", response_model=GroceryItemRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ShoppingItemRead, status_code=status.HTTP_201_CREATED)
 def create_grocery_item(
-    payload: GroceryItemCreate,
+    payload: ShoppingItemCreate,
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
-) -> GroceryItemRead:
+) -> ShoppingItemRead:
     _require_role(db, auth, payload.collection_id, _VIEWER_ROLES)
     if payload.linked_item_id is not None:
         item = db.get(Item, payload.linked_item_id)
@@ -214,7 +214,7 @@ def create_grocery_item(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid linked_item_id"
             )
 
-    g = GroceryItem(
+    g = ShoppingItem(
         collection_id=payload.collection_id,
         created_by_user_id=auth.user.id,
         name=payload.name,
@@ -228,25 +228,25 @@ def create_grocery_item(
     audit.log(
         db,
         actor_user_id=auth.user.id,
-        action="grocery.create",
+        action="shopping.create",
         collection_id=g.collection_id,
-        target_type="grocery_item",
+        target_type="shopping_item",
         target_id=g.id,
         payload={"name": g.name, "quantity": g.quantity, "linked_item_id": g.linked_item_id},
     )
     db.commit()
     db.refresh(g)
-    return GroceryItemRead.model_validate(g)
+    return ShoppingItemRead.model_validate(g)
 
 
-@router.patch("/{grocery_id}", response_model=GroceryItemRead)
+@router.patch("/{grocery_id}", response_model=ShoppingItemRead)
 def update_grocery_item(
     grocery_id: str,
-    payload: GroceryItemUpdate,
+    payload: ShoppingItemUpdate,
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
-) -> GroceryItemRead:
-    g = db.get(GroceryItem, grocery_id)
+) -> ShoppingItemRead:
+    g = db.get(ShoppingItem, grocery_id)
     if g is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     _require_role(db, auth, g.collection_id, _VIEWER_ROLES)
@@ -264,15 +264,15 @@ def update_grocery_item(
     audit.log(
         db,
         actor_user_id=auth.user.id,
-        action="grocery.update",
+        action="shopping.update",
         collection_id=g.collection_id,
-        target_type="grocery_item",
+        target_type="shopping_item",
         target_id=g.id,
         payload={"changes": list(data.keys())},
     )
     db.commit()
     db.refresh(g)
-    return GroceryItemRead.model_validate(g)
+    return ShoppingItemRead.model_validate(g)
 
 
 @router.delete("/{grocery_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -281,16 +281,16 @@ def delete_grocery_item(
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
 ) -> None:
-    g = db.get(GroceryItem, grocery_id)
+    g = db.get(ShoppingItem, grocery_id)
     if g is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     _require_role(db, auth, g.collection_id, _VIEWER_ROLES)
     audit.log(
         db,
         actor_user_id=auth.user.id,
-        action="grocery.delete",
+        action="shopping.delete",
         collection_id=g.collection_id,
-        target_type="grocery_item",
+        target_type="shopping_item",
         target_id=g.id,
         payload={"name": g.name},
     )
@@ -298,19 +298,19 @@ def delete_grocery_item(
     db.commit()
 
 
-@router.post("/{grocery_id}/purchase", response_model=GroceryItemRead)
+@router.post("/{grocery_id}/purchase", response_model=ShoppingItemRead)
 def purchase_grocery_item(
     grocery_id: str,
-    payload: GroceryPurchaseRequest | None = None,
+    payload: ShoppingPurchaseRequest | None = None,
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
-) -> GroceryItemRead:
+) -> ShoppingItemRead:
     """Mark an ad-hoc grocery entry purchased.
 
     When ``linked_item_id`` is set, also creates an ``ItemLot`` so the
     pantry quantity is restocked and ``depleted`` is cleared.
     """
-    g = db.get(GroceryItem, grocery_id)
+    g = db.get(ShoppingItem, grocery_id)
     if g is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     _require_role(db, auth, g.collection_id, _EDITOR_ROLES)
@@ -351,9 +351,9 @@ def purchase_grocery_item(
     audit.log(
         db,
         actor_user_id=auth.user.id,
-        action="grocery.purchase",
+        action="shopping.purchase",
         collection_id=g.collection_id,
-        target_type="grocery_item",
+        target_type="shopping_item",
         target_id=g.id,
         payload={
             "linked_item_id": g.linked_item_id,
@@ -363,7 +363,7 @@ def purchase_grocery_item(
     )
     db.commit()
     db.refresh(g)
-    return GroceryItemRead.model_validate(g)
+    return ShoppingItemRead.model_validate(g)
 
 
 # ---------------------------------------------------------------------------
@@ -371,46 +371,46 @@ def purchase_grocery_item(
 # ---------------------------------------------------------------------------
 
 
-def _own_store(db: DBSession, store_id: str, user_id: str) -> GroceryStore:
-    store = db.get(GroceryStore, store_id)
+def _own_store(db: DBSession, store_id: str, user_id: str) -> ShoppingStore:
+    store = db.get(ShoppingStore, store_id)
     if store is None or store.owner_user_id != user_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Store not found")
     return store
 
 
-@router.get("/stores", response_model=list[GroceryStoreRead])
+@router.get("/stores", response_model=list[ShoppingStoreRead])
 def list_stores(
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
-) -> list[GroceryStore]:
+) -> list[ShoppingStore]:
     """List all stores belonging to the current user."""
     return list(
         db.scalars(
-            select(GroceryStore).where(GroceryStore.owner_user_id == auth.user.id)
+            select(ShoppingStore).where(ShoppingStore.owner_user_id == auth.user.id)
         ).all()
     )
 
 
-@router.post("/stores", response_model=GroceryStoreRead, status_code=status.HTTP_201_CREATED)
+@router.post("/stores", response_model=ShoppingStoreRead, status_code=status.HTTP_201_CREATED)
 def create_store(
-    payload: GroceryStoreCreate,
+    payload: ShoppingStoreCreate,
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
-) -> GroceryStore:
-    store = GroceryStore(owner_user_id=auth.user.id, name=payload.name)
+) -> ShoppingStore:
+    store = ShoppingStore(owner_user_id=auth.user.id, name=payload.name)
     db.add(store)
     db.commit()
     db.refresh(store)
     return store
 
 
-@router.patch("/stores/{store_id}", response_model=GroceryStoreRead)
+@router.patch("/stores/{store_id}", response_model=ShoppingStoreRead)
 def update_store(
     store_id: str,
-    payload: GroceryStoreUpdate,
+    payload: ShoppingStoreUpdate,
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
-) -> GroceryStore:
+) -> ShoppingStore:
     store = _own_store(db, store_id, auth.user.id)
     if payload.name is not None:
         store.name = payload.name
@@ -430,29 +430,29 @@ def delete_store(
     db.commit()
 
 
-@router.get("/stores/{store_id}/aisles", response_model=list[GroceryAisleRead])
+@router.get("/stores/{store_id}/aisles", response_model=list[ShoppingAisleRead])
 def list_aisles(
     store_id: str,
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
-) -> list[GroceryStoreAisle]:
+) -> list[ShoppingStoreAisle]:
     store = _own_store(db, store_id, auth.user.id)
     return list(store.aisles)
 
 
 @router.post(
     "/stores/{store_id}/aisles",
-    response_model=GroceryAisleRead,
+    response_model=ShoppingAisleRead,
     status_code=status.HTTP_201_CREATED,
 )
 def create_aisle(
     store_id: str,
-    payload: GroceryAisleCreate,
+    payload: ShoppingAisleCreate,
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
-) -> GroceryStoreAisle:
+) -> ShoppingStoreAisle:
     store = _own_store(db, store_id, auth.user.id)
-    aisle = GroceryStoreAisle(store_id=store.id, name=payload.name, position=payload.position)
+    aisle = ShoppingStoreAisle(store_id=store.id, name=payload.name, position=payload.position)
     aisle.category_slugs = payload.category_slugs
     db.add(aisle)
     db.commit()
@@ -460,16 +460,16 @@ def create_aisle(
     return aisle
 
 
-@router.patch("/stores/{store_id}/aisles/{aisle_id}", response_model=GroceryAisleRead)
+@router.patch("/stores/{store_id}/aisles/{aisle_id}", response_model=ShoppingAisleRead)
 def update_aisle(
     store_id: str,
     aisle_id: str,
-    payload: GroceryAisleUpdate,
+    payload: ShoppingAisleUpdate,
     db: DBSession = Depends(get_session),
     auth: AuthContext = Depends(require_user),
-) -> GroceryStoreAisle:
+) -> ShoppingStoreAisle:
     _own_store(db, store_id, auth.user.id)
-    aisle = db.get(GroceryStoreAisle, aisle_id)
+    aisle = db.get(ShoppingStoreAisle, aisle_id)
     if aisle is None or aisle.store_id != store_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aisle not found")
     if payload.name is not None:
@@ -493,7 +493,7 @@ def delete_aisle(
     auth: AuthContext = Depends(require_user),
 ) -> None:
     _own_store(db, store_id, auth.user.id)
-    aisle = db.get(GroceryStoreAisle, aisle_id)
+    aisle = db.get(ShoppingStoreAisle, aisle_id)
     if aisle is None or aisle.store_id != store_id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Aisle not found")
     db.delete(aisle)

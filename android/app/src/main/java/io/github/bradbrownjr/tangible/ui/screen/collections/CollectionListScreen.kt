@@ -116,7 +116,7 @@ class CollectionListViewModel @Inject constructor(
 @Composable
 fun CollectionListScreen(
     onOpen: (String) -> Unit,
-    onGroceryList: () -> Unit,
+    onShoppingList: () -> Unit,
     onMaintenance: () -> Unit,
     onSettings: () -> Unit,
     onAbout: () -> Unit,
@@ -140,7 +140,7 @@ fun CollectionListScreen(
                         ) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.grocery_list)) },
-                                onClick = { menuExpanded = false; onGroceryList() },
+                                onClick = { menuExpanded = false; onShoppingList() },
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.maintenance)) },
