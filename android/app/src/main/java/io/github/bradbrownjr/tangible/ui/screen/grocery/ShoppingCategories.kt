@@ -26,4 +26,4 @@ internal val SHOPPING_CATEGORY_PRESETS: List<ShoppingCategoryPreset> = listOf(
     ShoppingCategoryPreset("snacks",              R.string.cat_snacks),
 )
 
-internal val PRESET_SLUGS: Set<String> = GROCERY_CATEGORY_PRESETS.map { it.slug }.toSet()
+internal val PRESET_SLUGS: Set<String> = SHOPPING_CATEGORY_PRESETS.map { it.slug }.toSet()

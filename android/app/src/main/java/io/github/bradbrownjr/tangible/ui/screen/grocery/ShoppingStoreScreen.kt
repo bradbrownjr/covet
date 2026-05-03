@@ -511,7 +511,7 @@ private fun AisleInputDialog(
                 )
                 Text(stringResource(R.string.categories), style = MaterialTheme.typography.labelMedium)
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    GROCERY_CATEGORY_PRESETS.forEach { cat ->
+                    SHOPPING_CATEGORY_PRESETS.forEach { cat ->
                         FilterChip(
                             selected = cat.slug in selectedSlugs.value,
                             onClick = {
