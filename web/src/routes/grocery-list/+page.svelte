@@ -28,9 +28,7 @@
 
     let feed = $state<FeedEntry[]>([]);
     let collections = $state<Map<string, Collection>>(new Map());
-    let hasPantry = $state(false);
     let loading = $state(true);
-    let creatingPantry = $state(false);
     let error = $state('');
 
     let newCollectionId = $state('');
@@ -54,7 +52,6 @@
             feed = fetched;
             collections = new Map(fetchedCollections.map((c) => [c.id, c]));
             const pantry = fetchedCollections.find((c) => c.name.toLowerCase() === 'pantry');
-            hasPantry = !!pantry;
             if (!newCollectionId) {
                 newCollectionId = pantry?.id ?? (fetchedCollections[0]?.id ?? '');
             }
@@ -66,19 +63,15 @@
     }
 
     async function createPantry() {
-        creatingPantry = true;
         try {
             const created = await api.post<Collection>('/collections', {
                 name: 'Pantry',
                 description: 'Grocery and pantry items',
             });
-            hasPantry = true;
             collections.set(created.id, created);
             newCollectionId = created.id;
         } catch (err) {
             error = (err as Error).message;
-        } finally {
-            creatingPantry = false;
         }
     }
 
@@ -156,15 +149,6 @@
 
 {#if showStoreManager}
     <GroceryStoreManager onClose={() => { showStoreManager = false; }} />
-{/if}
-
-{#if !loading && !hasPantry}
-    <div class="pantry-notice">
-        {$_('grocery.no_pantry')}
-        <button type="button" class="inline-btn" onclick={createPantry} disabled={creatingPantry}>
-            {creatingPantry ? $_('grocery.creating_button') : $_('grocery.create_pantry_button')}
-        </button>
-    </div>
 {/if}
 
 <form class="add-form" onsubmit={addItem}>
@@ -255,8 +239,8 @@
     .page-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem; }
     .page-heading h1 { margin: 0; }
     .store-mgr-btn {
-        background: none; border: 1px solid var(--border, #334); border-radius: 6px;
-        padding: 0.35rem 0.75rem; font-size: 0.85rem; cursor: pointer; color: var(--text, #f1f5f9);
+        background: none; border: 1px solid var(--border, #d1d5db); border-radius: 6px;
+        padding: 0.35rem 0.75rem; font-size: 0.85rem; cursor: pointer; color: var(--text, #111);
     }
     .store-mgr-btn:hover { border-color: var(--accent, #3b82f6); color: var(--accent, #3b82f6); }
     .pantry-notice {
@@ -265,11 +249,11 @@
         gap: 0.75rem;
         padding: 0.6rem 1rem;
         border-radius: 6px;
-        background: var(--surface-alt, #1e2a3a);
-        border: 1px solid var(--border, #334);
+        background: var(--surface-alt, #f1f5f9);
+        border: 1px solid var(--border, #d1d5db);
         margin-bottom: 1rem;
         font-size: 0.875rem;
-        color: var(--muted, #94a3b8);
+        color: var(--muted, #6b7280);
     }
     .inline-btn {
         background: var(--accent, #3b82f6);
