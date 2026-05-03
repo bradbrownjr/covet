@@ -16,6 +16,9 @@ maintenance.
   - [Inviting a user](#inviting-a-user)
   - [Resetting a password](#resetting-a-password)
   - [Disabling / removing a user](#disabling--removing-a-user)
+  - [Server Settings panel](#server-settings-panel)
+  - [Enforcing two-factor authentication site-wide](#enforcing-two-factor-authentication-site-wide)
+- [MCP server (AI assistant integration)](#mcp-server-ai-assistant-integration)
 - [SSO / OIDC](#sso--oidc)
   - [Authentik](#authentik)
   - [Keycloak](#keycloak)
@@ -104,6 +107,32 @@ sets a one-time password the user must change on next login.
 Disable from the admin UI to keep their content (loans, audit trail)
 intact. Deleting a user transfers ownership of their collections to
 the deleting admin and removes their sessions and tokens.
+
+### Server Settings panel
+
+Admins can edit all meaningful `TANGIBLE_*` configuration knobs without
+restarting the container via **Settings → Server Settings** (admin-only).
+
+- Security, sessions, integrations, SMTP, and storage settings are
+  presented as labeled fields. Each field shows its current **source**
+  (`database` / `environment` / `default`) and the corresponding env var
+  name. Sensitive values are masked.
+- Changes written here are stored in the `app_settings` table and take
+  precedence over environment variables instantly, with no restart needed.
+- To revert to the environment-variable value, clear the field in the UI
+  or remove the row from `app_settings` in the database.
+
+### Enforcing two-factor authentication site-wide
+
+Toggle **Require 2FA** in the Server Settings panel (or set
+`TANGIBLE_REQUIRE_2FA=true` in the environment). Once enabled:
+
+- Any user who has not enrolled TOTP is redirected to Settings on every
+  page load and shown an enrollment prompt until setup is complete.
+- `GET /auth/me` returns `enrollment_required: true` for unenrolled users;
+  clients use this to surface the prompt without waiting for a redirect.
+- Already-enrolled users are not affected.
+- Admins are subject to the same rule.
 
 ## SSO / OIDC
 
@@ -482,6 +511,41 @@ Owner-visible per collection; admin-visible globally from
 link creation/use, role changes, and bulk imports. Retained
 indefinitely; prune with `DELETE FROM audit_log_entries WHERE
 created_at < ...` if you need to.
+
+## MCP server (AI assistant integration)
+
+Tangible exposes a [Model Context Protocol](https://modelcontextprotocol.io/)
+endpoint at `/mcp`. AI clients that support MCP can query collections,
+search items, and check maintenance/stock status in natural language.
+
+**No extra configuration is required** — the endpoint is active by default.
+
+To connect an AI client:
+
+1. The user generates a Bearer API token from **Settings → Tokens**.
+2. The client is configured with the server URL (`https://tangible.example.com/mcp`)
+   and `Authorization: Bearer <token>`.
+
+Available MCP tools:
+
+| Tool | What it returns |
+|---|---|
+| `list_collections` | All collections the token owner can see |
+| `search_items` | Items matching a title/keyword query |
+| `get_item` | Full detail of one item by ID |
+| `list_maintenance` | Upcoming and overdue maintenance tasks |
+| `list_due_alerts` | Items/docs with expiry within a window |
+| `list_low_stock` | Items whose quantity is at or below minimum |
+
+To verify the endpoint is running:
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" https://tangible.example.com/mcp
+```
+
+The endpoint uses the same rate limits as the standard API
+(`TANGIBLE_RATE_LIMIT_API`). The path `/mcp` can be blocked at the reverse-
+proxy layer if you do not want AI access.
 
 ## Rate limiting
 

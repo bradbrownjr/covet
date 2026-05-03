@@ -46,7 +46,9 @@
     "fr": "Français",
     "de": "Deutsch",
     "es": "Español",
-    "ja": "日本語"
+    "ja": "日本語",
+    "zh": "中文",
+    "it": "Italiano"
   },
   "profile": {
     "title": "プロフィール",

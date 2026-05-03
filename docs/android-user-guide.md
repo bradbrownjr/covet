@@ -145,6 +145,41 @@ Access Settings from the hamburger menu on the Collections screen.
 
 ---
 
+## Grocery list
+
+Access **Grocery List** from the hamburger menu on the Collections screen.
+
+The grocery list is a shared shopping list across all your collections. It
+combines two sources:
+
+- **Depleted items** — any pantry or inventory item marked as depleted (or
+  whose quantity has fallen below its minimum) appears automatically.
+- **Ad-hoc items** — tap the **+** (FAB) in the bottom-right corner to add
+  a one-off item (name, optional quantity and unit) that is not tied to an
+  existing inventory item.
+
+### Shopping
+
+- Tap **Mark purchased** on a row to check it off. For depleted inventory
+  items this also restocks the item on the server (clears the depleted flag).
+- Ad-hoc entries are removed from the list when marked purchased.
+
+### Store and aisle sorting
+
+Tap the **store icon** in the top bar to open store management.
+
+1. Create a store (e.g. "Whole Foods").
+2. Add aisles in the order you walk them (Produce, Dairy, Frozen, ...).
+3. Assign one or more category slugs to each aisle so Tangible knows which
+   items belong there.
+4. Select the store from the grocery list screen. Items are re-sorted into
+   aisle order so you can shop top-to-bottom without backtracking.
+
+Store and aisle configuration is shared with the web client and stored on
+the server; changes made on one device are immediately visible on the other.
+
+---
+
 ## About
 
 The About screen (hamburger menu → About) shows:

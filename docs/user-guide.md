@@ -35,6 +35,13 @@ After logging in, the **Collections** page is your home base.
 A light/dark/system toggle lives in **Settings**. Your choice is stored
 in the browser and tracked by the OS when set to *system*.
 
+### Language
+
+A language picker in the navigation bar lets you switch the web UI between
+**English, French, German, Spanish, Japanese, Chinese (Simplified), and Italian**.
+Your preference is saved to the browser and applied on every page load. The
+`<html lang>` attribute updates automatically for assistive technology.
+
 ## Collections
 
 1. Click **New collection** on the Collections page.
@@ -210,6 +217,14 @@ in **Settings → Notifications**:
 
 Each alert kind (maintenance tasks, chores, use-by dates, expiry, lot use-by, low stock) can be toggled independently per channel. The **Lead time** (days) column controls how far ahead of the due date an alert becomes active — this applies to all three channels.
 
+### Comments
+
+Each item has a collapsible **Comments** panel. Any collection member
+(viewer or above) can post a comment or reply to an existing one (one level
+of threading). Authors can edit or delete their own comments; editors and
+owners can delete any comment. Comments are shown in the item card (collection
+view) and in the item detail panel.
+
 ### Loans
 
 Mark an item as **lent out** to a contact. Set an optional due date.
@@ -265,6 +280,26 @@ or fixes can be contributed through pull requests.
   items are hidden from default views and can be shown/restored via the
   archived filter in collection view.
 - Filter by tag from the collection page.
+
+## Grocery list
+
+The **Grocery List** page (nav bar link) is a shared shopping list visible
+to all members of any collection you own or share.
+
+- **Ad-hoc items** — type a name, optional quantity, and unit, then press
+  **Add**. Anyone in your household can see and check off items.
+- **Depleted-item feed** — any pantry item (or any item with a minimum
+  quantity) that is marked depleted or falls below its minimum stock level
+  appears automatically on the grocery list. Marking it purchased restocks
+  the item (clears the depleted flag and, if it has lots, creates a new lot).
+- **Collection filter** — use the dropdown at the top to focus on one
+  collection's items or see everything at once.
+- **Store/aisle sorting** — tap the store icon to manage stores. Each store
+  has ordered aisles mapped to category slugs. Select an active store while
+  shopping to sort your grocery list in aisle order so you walk the store
+  efficiently.
+- Items are checked off with **Mark purchased** and can be deleted
+  individually; the list clears completed items on the next load.
 
 ## Importing your existing inventory
 
@@ -325,6 +360,22 @@ sign out from **Settings → Account** and re-enroll.
 
 See the [Admin guide](admin-guide.md#backups) for full-volume backup
 strategies.
+
+## AI assistants (MCP)
+
+Tangible exposes a [Model Context Protocol](https://modelcontextprotocol.io/)
+endpoint at `/mcp`. AI assistants that support MCP (Claude, GitHub Copilot,
+ChatGPT plugins, etc.) can query your inventory, maintenance history, and
+stock levels in natural language.
+
+To connect your AI client:
+
+1. Generate an API token in **Settings → Tokens**.
+2. Configure your AI client with your server URL (`https://tangible.example.com/mcp`)
+   and `Authorization: Bearer <token>`.
+
+Available tools: `list_collections`, `search_items`, `get_item`,
+`list_maintenance`, `list_due_alerts`, `list_low_stock`.
 
 ## API tokens and CLI access
 

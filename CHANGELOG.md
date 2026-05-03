@@ -6,6 +6,17 @@ All notable changes to **Tangible** are documented here. Format follows
 
 ## [Unreleased]
 
+## [0.17.3] — 2026-05-03
+
+- **Chinese and Italian translations** — the web UI now supports Simplified
+  Chinese (zh) and Italian (it), bringing the total to 7 languages (English,
+  French, German, Spanish, Japanese, Chinese, Italian). The language picker in
+  the navigation bar lists all seven; the preference is saved to the browser.
+- **Updated documentation** — user guide, admin guide, Android user guide, and
+  README updated to cover the grocery list (including store/aisle sorting),
+  item comments, multilingual support, Admin Server Settings panel,
+  site-wide 2FA enforcement, and the MCP server (AI assistant integration).
+
 ## [0.17.2] — 2026-05-03
 
 - **Grocery list: back button and add item** — the Android grocery list screen

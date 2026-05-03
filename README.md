@@ -11,10 +11,13 @@ internet connection.
 - **Offline-first** Android app with CRDT-based sync
 - **Web UI** for management at home
 - **Multi-user** with local accounts and OIDC/SSO
+- **Multilingual** web UI (English, French, German, Spanish, Japanese, Chinese, Italian)
 - **Pluggable database**: SQLite, PostgreSQL, MySQL/MariaDB
 - **Imports** from CLZ products, generic CSV (with column mapping), and
   Tangible JSON backups
 - **Exports** to CSV and JSON
+- **Shared grocery list** with depleted-item feed and store/aisle sorting
+- **MCP server** at `/mcp` for AI assistant integration (Claude, Copilot, etc.)
 - **Self-hosted**, container-first (Docker/Unraid)
 
 > Status: pre-alpha. Active development.
