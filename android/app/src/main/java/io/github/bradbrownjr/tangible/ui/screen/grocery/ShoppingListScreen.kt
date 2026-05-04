@@ -536,7 +536,6 @@ fun ShoppingListScreen(
                     onDismiss = { viewModel.dismissStoreSelector() },
                 )
             }
-        } // end PullToRefreshBox
         } // end HorizontalPager
         } // end Column
     }
