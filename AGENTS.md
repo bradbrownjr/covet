@@ -298,6 +298,30 @@ JUnit backtick names compile to JVM method names, which forbid
 `Name contains illegal characters: >`. Use `to`/`then`/`-` instead of
 arrows, slashes, dots, etc.
 
+### New Kotlin types used in a file must be explicitly imported
+
+Kotlin does not auto-import. Any new DTO or class introduced into a
+file (even from the same package's sibling module) requires an explicit
+`import` statement. Always verify imports compile after adding a new
+type reference — the compiler error is `Unresolved reference 'XyzDto'`
+cascading into multiple spurious secondary errors. Caught too late in CI.
+
+Example: adding `availableCategories: List<CategoryDto>` to `ShoppingListUi`
+without `import io.github.bradbrownjr.tangible.data.remote.CategoryDto`
+caused 8 compile errors across the file.
+
+### Android `strings.xml` — new strings must be added to ALL locale files
+
+Android lint (`MissingTranslation`) is **an error, not a warning** and
+will fail the build. When adding any `<string name="...">` to
+`values/strings.xml`, immediately add translations for the same key in:
+`values-de/`, `values-es/`, `values-fr/`, `values-it/`, `values-ja/`,
+`values-zh-rCN/`.
+
+If a good translation is not available, use `tools:ignore="MissingTranslation"`
+on the element in the base file rather than shipping untranslated text or
+skipping the locales.
+
 ### Local Android build environment (no toolchain in dev container)
 
 CI is the only place this used to build. To validate Android changes
