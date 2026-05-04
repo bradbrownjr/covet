@@ -4,6 +4,10 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.17] — 2026-05-04
+
+- **Android: Fixed shopping lists build error** — corrected a brace mismatch in the shopping list screen that caused the 0.17.15 and 0.17.16 Android builds to fail.
+
 ## [0.17.16] — 2026-05-04
 
 - **Android: Fixed crash on shopping lists screen** — a stray brace from the swipe-tabs refactor caused the app to fail to build in 0.17.15; now corrected.
