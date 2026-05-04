@@ -121,6 +121,9 @@
     <!-- Grocery list -->
     <string name="add_grocery_item">Añadir artículo</string>
     <string name="cd_add_grocery_item">Añadir artículo a la lista</string>
+    <string name="add_item_for_list">Agregar artículo de %1$s</string>
+    <string name="barcode_looking_up">Buscando producto…</string>
+    <string name="wish_list_create_collection_prompt">Aún no hay colección – elige un tipo para crear una:</string>
     <string name="cd_select_store">Seleccionar tienda</string>
     <string name="all_stocked">¡Todo abastecido! 🎉</string>
     <string name="all_stocked_subtitle">Todo está bien surtido.</string>

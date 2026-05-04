@@ -119,8 +119,9 @@
     <string name="location_button">位置：%s</string>
 
     <!-- Grocery list -->
-    <string name="add_grocery_item">添加物品</string>
-    <string name="cd_add_grocery_item">添加购物物品</string>
+    <string name="add_grocery_item">添加物品</string>    <string name="add_item_for_list">添加%1$s商品</string>
+    <string name="barcode_looking_up">正在查找产品…</string>
+    <string name="wish_list_create_collection_prompt">还没有收藏集 – 选择一个类型来创建：</string>    <string name="cd_add_grocery_item">添加购物物品</string>
     <string name="cd_select_store">选择商店</string>
     <string name="all_stocked">全部备货！🎉</string>
     <string name="all_stocked_subtitle">库存充足。</string>
