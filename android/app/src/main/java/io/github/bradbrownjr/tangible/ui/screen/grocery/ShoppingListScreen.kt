@@ -33,6 +33,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import io.github.bradbrownjr.tangible.data.remote.BarcodeLookupRequest
 import io.github.bradbrownjr.tangible.data.remote.CategoryDto
 import io.github.bradbrownjr.tangible.data.remote.CollectionDto
@@ -406,10 +408,24 @@ fun ShoppingListScreen(
             }
         },
     ) { innerPadding ->
+        val pagerState = rememberPagerState(pageCount = { LIST_TYPES.size })
+        // Sync pager → ViewModel when user swipes
+        LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) {
+            if (!pagerState.isScrollInProgress) {
+                viewModel.setListType(LIST_TYPES[pagerState.currentPage])
+            }
+        }
+        // Sync ViewModel → pager when tab is tapped
+        LaunchedEffect(ui.listType) {
+            val targetPage = LIST_TYPES.indexOf(ui.listType).coerceAtLeast(0)
+            if (pagerState.currentPage != targetPage) {
+                pagerState.animateScrollToPage(targetPage)
+            }
+        }
         Column(modifier = Modifier.padding(innerPadding)) {
             // List type tabs
             ScrollableTabRow(
-                selectedTabIndex = LIST_TYPES.indexOf(ui.listType).coerceAtLeast(0),
+                selectedTabIndex = pagerState.currentPage,
                 edgePadding = 0.dp,
             ) {
                 val tabLabels = mapOf(
@@ -418,15 +434,20 @@ fun ShoppingListScreen(
                     "home_goods" to stringResource(R.string.list_type_home_goods),
                     "wish_list"  to stringResource(R.string.list_type_wish_list),
                 )
-                LIST_TYPES.forEach { type ->
+                LIST_TYPES.forEachIndexed { index, type ->
                     Tab(
-                        selected = ui.listType == type,
+                        selected = pagerState.currentPage == index,
                         onClick = { viewModel.setListType(type) },
                         text = { Text(tabLabels[type] ?: type) },
                     )
                 }
             }
-        Box(modifier = Modifier.weight(1f)) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.weight(1f),
+            beyondViewportPageCount = 0,
+        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
             PullToRefreshBox(
                 isRefreshing = ui.refreshing,
                 onRefresh = { viewModel.pullRefresh() },
@@ -509,6 +530,8 @@ fun ShoppingListScreen(
                 )
             }
         } // end inner Box
+        } // end HorizontalPager page
+        } // end HorizontalPager
         } // end Column
     }
 
