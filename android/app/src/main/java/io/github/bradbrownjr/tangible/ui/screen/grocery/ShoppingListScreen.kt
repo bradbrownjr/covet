@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import io.github.bradbrownjr.tangible.data.remote.BarcodeLookupRequest
+import io.github.bradbrownjr.tangible.data.remote.CategoryDto
 import io.github.bradbrownjr.tangible.data.remote.CollectionDto
 import io.github.bradbrownjr.tangible.data.remote.ShoppingAisleDto
 import io.github.bradbrownjr.tangible.data.remote.ShoppingFeedEntryDto
