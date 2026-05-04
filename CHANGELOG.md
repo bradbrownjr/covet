@@ -4,6 +4,13 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.15] — 2026-05-04
+
+- **Android: Pull-to-refresh fixed on shopping lists** — swiping down to refresh now works correctly on all tabs after the HorizontalPager swipe-tabs change in 0.17.14.
+- **Android: Error notifications via Snackbar** — errors (network failures, save errors) are now shown as a brief Snackbar at the bottom of the screen instead of a centered text overlay that blocked interaction.
+- **Android: Depleted-item visual cue** — inventory-feed items in shopping lists now show a small arrow icon next to the action buttons, making it clear that tapping navigates to the collection rather than opening an edit dialog.
+- **Web: Toast notifications for API errors** — any API error now surfaces a brief toast notification at the bottom of the screen that fades out automatically, so no error is ever silently swallowed.
+
 ## [0.17.14] — 2026-05-04
 
 - **Android: Barcode scan fills separate Notes field** — scanning a barcode now puts the product title in the Name field and the description (brand/category context) in an optional Notes field, so you can trim the name without losing brand details.
