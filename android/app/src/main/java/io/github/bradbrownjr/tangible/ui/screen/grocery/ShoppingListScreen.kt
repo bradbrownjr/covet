@@ -537,7 +537,6 @@ fun ShoppingListScreen(
                 )
             }
         } // end PullToRefreshBox
-        } // end HorizontalPager page
         } // end HorizontalPager
         } // end Column
     }
