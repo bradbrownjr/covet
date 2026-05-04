@@ -4,6 +4,10 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.12] — 2026-05-04
+
+- **Fix: Collections dropdown** — removed duplicate plus sign on "New collection" and opening one nav dropdown now closes the other.
+
 ## [0.17.11] — 2026-05-04
 
 - **Redesigned navigation menu** — order is now Collections, Lists, Maintenance, Settings, Profile, Log out.
