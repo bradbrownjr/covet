@@ -139,3 +139,22 @@ class ShoppingStoreAisle(ULIDPrimaryKey, TimestampMixin, Base):
     def category_slugs(self, value: list[str]) -> None:
         self._category_slugs_json = json.dumps(value)
 
+
+class BarcodeHint(Base):
+    """Server-side memory of barcode -> category_slug associations.
+
+    When a user manually assigns (or confirms) a category for a scanned
+    barcode, this record is upserted so subsequent scans of the same
+    barcode can suggest the same category automatically.
+    """
+
+    __tablename__ = "barcode_category_hints"
+
+    barcode: Mapped[str] = mapped_column(String(18), primary_key=True)
+    category_slug: Mapped[str] = mapped_column(String(120), nullable=False)
+    list_type: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="groceries", server_default="groceries"
+    )
+    hit_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+

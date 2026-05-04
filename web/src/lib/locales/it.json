@@ -17,6 +17,7 @@
   },
   "common": {
     "save": "Salva",
+    "saving": "Salvataggio…",
     "cancel": "Annulla",
     "delete": "Elimina",
     "edit": "Modifica",
@@ -432,7 +433,9 @@
     "no_category": "Nessuna categoria",
     "custom_option": "Personalizzato…",
     "custom_placeholder": "Nome categoria",
-    "col_category": "Categoria"
+    "col_category": "Categoria",
+    "edit_button": "Modifica",
+    "edit_item_title": "Modifica articolo"
   },
   "import_page": {
     "title": "Importa",

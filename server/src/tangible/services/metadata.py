@@ -16,7 +16,7 @@ import re
 import socket
 from dataclasses import dataclass, field
 from html.parser import HTMLParser
-from typing import Any, Protocol
+from typing import Any, ClassVar, Protocol
 from urllib.parse import urlparse
 
 import httpx
@@ -319,6 +319,80 @@ class MusicBrainzBarcodeAdapter:
 class OpenFoodFactsBarcodeAdapter:
     name = "openfoodfacts"
 
+    # Map OpenFoodFacts category tags (without the "en:" prefix) to our grocery slugs.
+    # Ordered from most-specific to least-specific; first match wins.
+    _CATEGORY_MAP: ClassVar[list[tuple[str, str]]] = [
+        # Alcohol (check before beverages)
+        ("alcoholic-beverages", "alcohol"), ("wines", "alcohol"), ("beers", "alcohol"),
+        ("spirits", "alcohol"), ("ciders", "alcohol"), ("liqueurs", "alcohol"),
+        # Dairy and eggs
+        ("dairies", "dairy-eggs"), ("dairy-products", "dairy-eggs"), ("milks", "dairy-eggs"),
+        ("cheeses", "dairy-eggs"), ("yogurts", "dairy-eggs"), ("butters", "dairy-eggs"),
+        ("creams", "dairy-eggs"), ("eggs", "dairy-eggs"), ("egg-products", "dairy-eggs"),
+        # Beverages
+        ("beverages", "beverages"), ("waters", "beverages"), ("sodas", "beverages"),
+        ("carbonated-drinks", "beverages"), ("fruit-juices", "beverages"),
+        ("coffees", "beverages"), ("teas", "beverages"), ("energy-drinks", "beverages"),
+        ("non-alcoholic-beverages", "beverages"),
+        # Bakery (check before bread)
+        ("pastries", "bakery"), ("cakes", "bakery"), ("muffins", "bakery"),
+        ("bakery-products", "bakery"), ("croissants", "bakery"),
+        # Bread
+        ("breads", "bread"), ("sliced-breads", "bread"), ("breads-and-rolls", "bread"),
+        ("rolls", "bread"), ("buns", "bread"),
+        # Breakfast
+        ("breakfast-cereals", "breakfast-cereal"), ("cereals", "breakfast-cereal"),
+        ("granola", "breakfast-cereal"), ("oatmeals", "breakfast-cereal"),
+        # Deli (before meats)
+        ("deli-meats", "deli"), ("ready-meals", "deli"), ("prepared-foods", "deli"),
+        ("deli", "deli"),
+        # Meat and seafood
+        ("meats", "meat-seafood"), ("seafoods", "meat-seafood"), ("fish-products", "meat-seafood"),
+        ("poultry", "meat-seafood"), ("pork", "meat-seafood"), ("beef", "meat-seafood"),
+        ("lamb", "meat-seafood"), ("shellfish", "meat-seafood"),
+        # Frozen
+        ("frozen-foods", "frozen"), ("frozen-vegetables", "frozen"),
+        ("frozen-meals", "frozen"), ("ice-creams", "frozen"),
+        # Canned and pantry
+        ("canned-foods", "canned-pantry"), ("tinned-goods", "canned-pantry"),
+        ("jarred-foods", "canned-pantry"), ("soups", "canned-pantry"),
+        ("legumes", "canned-pantry"), ("beans", "canned-pantry"),
+        ("dried-foods", "canned-pantry"), ("pasta-sauces", "canned-pantry"),
+        # Cleaning
+        ("cleaning-products", "cleaning-household"), ("household-products", "cleaning-household"),
+        ("detergents", "cleaning-household"), ("laundry-detergents", "cleaning-household"),
+        ("paper-goods", "cleaning-household"),
+        # Condiments and spices
+        ("condiments", "condiments-spices"), ("spices", "condiments-spices"),
+        ("sauces", "condiments-spices"), ("herbs", "condiments-spices"),
+        ("oils", "condiments-spices"), ("vinegars", "condiments-spices"),
+        ("seasonings", "condiments-spices"), ("dressings", "condiments-spices"),
+        # Health and beauty
+        ("health-personal-care", "health-beauty"), ("vitamins", "health-beauty"),
+        ("cosmetics", "health-beauty"), ("personal-care", "health-beauty"),
+        # Pasta and grains
+        ("pastas", "pasta-grains"), ("pasta", "pasta-grains"), ("rice", "pasta-grains"),
+        ("grains", "pasta-grains"), ("noodles", "pasta-grains"), ("couscous", "pasta-grains"),
+        ("quinoa", "pasta-grains"), ("flours", "pasta-grains"),
+        # Pet supplies
+        ("pet-foods", "pet-supplies"), ("cat-food", "pet-supplies"), ("dog-food", "pet-supplies"),
+        # Produce
+        ("fruits", "produce"), ("vegetables", "produce"), ("fresh-vegetables", "produce"),
+        ("fresh-fruits", "produce"), ("produce", "produce"), ("salads", "produce"),
+        # Snacks
+        ("chips-and-crisps", "snacks"), ("cookies-and-biscuits", "snacks"),
+        ("candies", "snacks"), ("chocolates", "snacks"), ("nuts", "snacks"),
+        ("crackers", "snacks"), ("popcorns", "snacks"), ("snacks", "snacks"),
+    ]
+
+    def _category_slug(self, categories_tags: list[str]) -> str | None:
+        """Return first matching grocery slug for a list of OFF category tags."""
+        tag_set = {t.removeprefix("en:").lower() for t in categories_tags}
+        for tag, slug in self._CATEGORY_MAP:
+            if tag in tag_set:
+                return slug
+        return None
+
     def lookup(self, barcode: str, *, client: httpx.Client) -> list[ScrapeResult]:
         code = re.sub(r"\D", "", barcode)
         if len(code) < 8:
@@ -343,12 +417,14 @@ class OpenFoodFactsBarcodeAdapter:
             attrs["creator"] = brand
         if product.get("quantity"):
             attrs["quantity_label"] = product["quantity"]
+        category = self._category_slug(product.get("categories_tags") or [])
         return [ScrapeResult(
             provider=self.name,
             url=f"https://world.openfoodfacts.org/product/{code}",
             title=title,
             description=brand or None,
             image_url=image,
+            category=category,
             attrs=attrs,
         )]
 

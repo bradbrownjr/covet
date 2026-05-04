@@ -4,7 +4,14 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
-## [0.17.18] — 2026-05-04
+## [0.17.19] — 2026-05-04
+
+- **Web: Edit shopping list items** — ad-hoc list entries now have an Edit button that opens a dialog to update name, category, quantity, unit, and notes without removing and re-adding the item.
+- **Web: Category aisle picker on edit** — the edit dialog shows the full preset aisle list for the list type (groceries, hardware, home goods) plus a free-text custom option.
+- **Server: OpenFoodFacts category detection** — barcode lookups for food items now automatically map the product's category tags to a grocery aisle slug (e.g. whole milk maps to Dairy & Eggs), so the category is pre-filled when adding a scanned item.
+- **Server: Barcode category memory** — after a user confirms or changes a category for a scanned barcode, the server records the association. Subsequent scans of the same UPC return a `hint_category_slug` so the app can pre-select the same aisle automatically.
+
+
 
 - **Android: Fixed Add Item dialog crash on shopping lists** — restored a missing `if (showCollectionPicker)` wrapper and a missing `PullToRefreshBox` closing brace in `ShoppingListScreen`. Together they caused the 0.17.13 through 0.17.17 Android builds to fail. Locally verified with `lintDebug + testDebugUnitTest + assembleDebug` before tagging.
 - **Android: Add Item dialog only shows the collection picker for the wish list** — previously the picker was always rendered (groceries, hardware, home goods all showed an empty dropdown). Now it only appears for the wish list when at least one collection exists.

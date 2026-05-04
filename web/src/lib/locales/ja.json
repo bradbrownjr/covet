@@ -17,6 +17,7 @@
   },
   "common": {
     "save": "保存",
+    "saving": "保存中…",
     "cancel": "キャンセル",
     "delete": "削除",
     "edit": "編集",
@@ -432,7 +433,9 @@
     "no_category": "カテゴリーなし",
     "custom_option": "カスタム…",
     "custom_placeholder": "カテゴリー名",
-    "col_category": "カテゴリー"
+    "col_category": "カテゴリー",
+    "edit_button": "編集",
+    "edit_item_title": "アイテムを編集"
   },
   "import_page": {
     "title": "インポート",

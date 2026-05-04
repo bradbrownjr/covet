@@ -17,6 +17,7 @@
   },
   "common": {
     "save": "Save",
+    "saving": "Saving…",
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
@@ -432,7 +433,9 @@
     "no_category": "No category",
     "custom_option": "Custom…",
     "custom_placeholder": "Category name",
-    "col_category": "Category"
+    "col_category": "Category",
+    "edit_button": "Edit",
+    "edit_item_title": "Edit item"
   },
   "import_page": {
     "title": "Import",

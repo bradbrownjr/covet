@@ -17,6 +17,7 @@
   },
   "common": {
     "save": "保存",
+    "saving": "保存中…",
     "cancel": "取消",
     "delete": "删除",
     "edit": "编辑",
@@ -432,7 +433,9 @@
     "no_category": "无类别",
     "custom_option": "自定义…",
     "custom_placeholder": "类别名称",
-    "col_category": "类别"
+    "col_category": "类别",
+    "edit_button": "编辑",
+    "edit_item_title": "编辑条目"
   },
   "import_page": {
     "title": "导入",

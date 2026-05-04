@@ -81,6 +81,74 @@
 
     let showStoreManager = $state(false);
 
+    // ---- edit state ----
+    let editEntry = $state<FeedEntry | null>(null);
+    let editDialog = $state<HTMLDialogElement | null>(null);
+    let editName = $state('');
+    let editCategorySlug = $state('');
+    let editCustomCategory = $state('');
+    let editQuantity = $state(1);
+    let editUnit = $state('');
+    let editNotes = $state('');
+    let editWishUrl = $state('');
+    let editWishPriority = $state<number | ''>('');
+    let saving = $state(false);
+
+    function startEdit(entry: FeedEntry) {
+        editEntry = entry;
+        editName = entry.name;
+        editQuantity = entry.quantity;
+        editUnit = entry.unit ?? '';
+        editNotes = entry.notes ?? '';
+        editWishUrl = entry.wish_url ?? '';
+        editWishPriority = entry.wish_priority ?? '';
+        const preset = categories.find((c) => c.slug === entry.category_slug);
+        if (entry.category_slug && !preset) {
+            editCategorySlug = 'custom';
+            editCustomCategory = entry.category_slug;
+        } else {
+            editCategorySlug = entry.category_slug ?? '';
+            editCustomCategory = '';
+        }
+        editDialog?.showModal();
+    }
+
+    function cancelEdit() {
+        editDialog?.close();
+        editEntry = null;
+    }
+
+    async function saveEdit(e: SubmitEvent) {
+        e.preventDefault();
+        if (!editEntry || !editName.trim()) return;
+        const resolvedSlug =
+            editCategorySlug === 'custom'
+                ? (editCustomCategory.trim().toLowerCase().replace(/\s+/g, '-') || null)
+                : (editCategorySlug || null);
+        saving = true;
+        try {
+            const body: Record<string, unknown> = {
+                name: editName.trim(),
+                quantity: Math.max(1, editQuantity || 1),
+                unit: editUnit.trim() || null,
+                notes: editNotes.trim() || null,
+                category_slug: resolvedSlug,
+            };
+            if (editEntry.list_type === 'wish_list') {
+                body.wish_url = editWishUrl.trim() || null;
+                body.wish_priority = editWishPriority || null;
+            }
+            await api.patch(`/lists/${editEntry.id}`, body);
+            editDialog?.close();
+            editEntry = null;
+            await load();
+        } catch (err) {
+            error = (err as Error).message;
+        } finally {
+            saving = false;
+        }
+    }
+
     async function load() {
         loading = true;
         try {
@@ -325,6 +393,9 @@
                             {listType === 'wish_list' ? $_('lists.mark_received_button') : $_('grocery.mark_purchased_button')}
                         </button>
                         {#if entry.source.kind === 'ad_hoc'}
+                            <button type="button" class="secondary" onclick={() => startEdit(entry)}>
+                                {$_('grocery.edit_button')}
+                            </button>
                             <button type="button" class="secondary" onclick={() => removeItem(entry)}>
                                 {$_('grocery.remove_button')}
                             </button>
@@ -335,6 +406,66 @@
         </tbody>
     </table>
 {/if}
+
+<dialog bind:this={editDialog} class="edit-dialog">
+    <form onsubmit={saveEdit}>
+        <h2 class="dialog-title">{$_('grocery.edit_item_title')}</h2>
+        <div class="dialog-field">
+            <label>{$_('lists.item_name_placeholder')}</label>
+            <input type="text" bind:value={editName} required />
+        </div>
+        {#if editEntry && editEntry.list_type !== 'wish_list'}
+            <div class="dialog-field">
+                <label>{$_('grocery.col_category')}</label>
+                <select bind:value={editCategorySlug}>
+                    <option value="">{$_('grocery.no_category')}</option>
+                    {#each categories as cat (cat.slug)}
+                        <option value={cat.slug}>{cat.label}</option>
+                    {/each}
+                    <option value="custom">{$_('grocery.custom_option')}</option>
+                </select>
+                {#if editCategorySlug === 'custom'}
+                    <input type="text" bind:value={editCustomCategory} placeholder={$_('grocery.custom_placeholder')} class="custom-cat" />
+                {/if}
+            </div>
+            <div class="dialog-row">
+                <div class="dialog-field">
+                    <label>{$_('grocery.col_qty')}</label>
+                    <input type="number" min="1" bind:value={editQuantity} class="qty" />
+                </div>
+                <div class="dialog-field">
+                    <label>{$_('grocery.unit_placeholder')}</label>
+                    <input type="text" bind:value={editUnit} />
+                </div>
+            </div>
+        {/if}
+        <div class="dialog-field">
+            <label>{$_('grocery.notes_placeholder')}</label>
+            <input type="text" bind:value={editNotes} />
+        </div>
+        {#if editEntry && editEntry.list_type === 'wish_list'}
+            <div class="dialog-field">
+                <label>{$_('lists.wish_url_placeholder')}</label>
+                <input type="url" bind:value={editWishUrl} />
+            </div>
+            <div class="dialog-field">
+                <label>{$_('lists.col_priority')}</label>
+                <select bind:value={editWishPriority}>
+                    <option value="">{$_('lists.wish_priority_any')}</option>
+                    <option value={1}>{$_('lists.priority.low')}</option>
+                    <option value={2}>{$_('lists.priority.medium')}</option>
+                    <option value={3}>{$_('lists.priority.high')}</option>
+                </select>
+            </div>
+        {/if}
+        <div class="dialog-actions">
+            <button type="submit" disabled={saving || !editName.trim()}>
+                {saving ? $_('common.saving') : $_('common.save')}
+            </button>
+            <button type="button" class="secondary" onclick={cancelEdit}>{$_('common.cancel')}</button>
+        </div>
+    </form>
+</dialog>
 
 <style>
     .page-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem; }
@@ -385,4 +516,18 @@
     [data-theme='dark'] .priority-2 { background: #451a03; color: #fde68a; }
     [data-theme='dark'] .priority-3 { background: #450a0a; color: #fca5a5; }
     .wish-link { color: var(--accent); font-size: 0.85rem; }
+    .edit-dialog {
+        border: 1px solid var(--border, #e5e7eb); border-radius: 10px;
+        padding: 1.5rem; min-width: 22rem; max-width: 95vw;
+        background: var(--surface, #fff); color: var(--text, #111);
+        box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+    }
+    .edit-dialog::backdrop { background: rgba(0,0,0,0.35); }
+    .dialog-title { margin: 0 0 1rem; font-size: 1.1rem; }
+    .dialog-field { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.75rem; }
+    .dialog-field label { font-size: 0.82rem; color: var(--muted, #6b7280); }
+    .dialog-field input, .dialog-field select { width: 100%; }
+    .dialog-row { display: flex; gap: 0.75rem; }
+    .dialog-row .dialog-field { flex: 1; }
+    .dialog-actions { display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: flex-end; }
 </style>

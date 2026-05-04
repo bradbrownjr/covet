@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import re
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -9,7 +12,7 @@ from sqlalchemy.orm import Session as DBSession
 
 from tangible.auth.deps import AuthContext, collection_role, require_admin, require_user
 from tangible.db import get_session
-from tangible.models import ItemTemplate, ScraperRegistryPin
+from tangible.models import BarcodeHint, ItemTemplate, ScraperRegistryPin
 from tangible.schemas import ItemTemplateRead
 from tangible.services.metadata import ScrapeError, barcode_lookup, list_adapters, scrape
 from tangible.services.scraper_registry import get_entry, list_entries
@@ -37,6 +40,21 @@ class BarcodeLookupRequest(BaseModel):
 
 class BarcodeLookupResponse(BaseModel):
     candidates: list[ScrapeResponse]
+    # Learned from prior user-confirmed scans; None when no record exists.
+    hint_category_slug: str | None = None
+
+
+class BarcodeHintRequest(BaseModel):
+    barcode: str = Field(min_length=8, max_length=18, pattern=r"^[0-9Xx]+$")
+    category_slug: str = Field(min_length=1, max_length=120)
+    list_type: str = Field(default="groceries", max_length=32)
+
+
+class BarcodeHintResponse(BaseModel):
+    barcode: str
+    category_slug: str
+    list_type: str
+    hit_count: int
 
 
 class RegistryEntryResponse(BaseModel):
@@ -67,9 +85,12 @@ class AdaptersResponse(BaseModel):
 @router.post("/barcode", response_model=BarcodeLookupResponse)
 def barcode_lookup_endpoint(
     payload: BarcodeLookupRequest,
+    db: DBSession = Depends(get_session),
     _: AuthContext = Depends(require_user),
 ) -> BarcodeLookupResponse:
     results = barcode_lookup(payload.barcode)
+    normalized = re.sub(r"\D", "", payload.barcode)
+    hint = db.get(BarcodeHint, normalized)
     return BarcodeLookupResponse(
         candidates=[
             ScrapeResponse(
@@ -82,7 +103,42 @@ def barcode_lookup_endpoint(
                 attrs=r.attrs,
             )
             for r in results
-        ]
+        ],
+        hint_category_slug=hint.category_slug if hint else None,
+    )
+
+
+@router.post("/barcode/hint", response_model=BarcodeHintResponse, status_code=status.HTTP_200_OK)
+def record_barcode_hint(
+    payload: BarcodeHintRequest,
+    db: DBSession = Depends(get_session),
+    _: AuthContext = Depends(require_user),
+) -> BarcodeHintResponse:
+    """Record or reinforce a user-confirmed barcode -> category_slug mapping."""
+    normalized = re.sub(r"\D", "", payload.barcode)
+    hint = db.get(BarcodeHint, normalized)
+    now = datetime.now(UTC)
+    if hint is None:
+        hint = BarcodeHint(
+            barcode=normalized,
+            category_slug=payload.category_slug,
+            list_type=payload.list_type,
+            hit_count=1,
+            updated_at=now,
+        )
+        db.add(hint)
+    else:
+        hint.category_slug = payload.category_slug
+        hint.list_type = payload.list_type
+        hint.hit_count = hint.hit_count + 1
+        hint.updated_at = now
+    db.commit()
+    db.refresh(hint)
+    return BarcodeHintResponse(
+        barcode=hint.barcode,
+        category_slug=hint.category_slug,
+        list_type=hint.list_type,
+        hit_count=hint.hit_count,
     )
 
 

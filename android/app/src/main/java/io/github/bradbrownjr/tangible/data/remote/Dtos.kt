@@ -121,7 +121,10 @@ data class BarcodeCandidateDto(
 )
 
 @JsonClass(generateAdapter = true)
-data class BarcodeLookupResponse(val candidates: List<BarcodeCandidateDto>)
+data class BarcodeLookupResponse(
+    val candidates: List<BarcodeCandidateDto>,
+    val hint_category_slug: String? = null,
+)
 
 @JsonClass(generateAdapter = true)
 data class ItemDto(
