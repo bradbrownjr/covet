@@ -131,7 +131,7 @@ data class BarcodeLookupResponse(
 data class ItemDto(
     val id: String,
     val collection_id: String,
-    val category_id: String,
+    val category_id: String? = null,
     val category_slug: String? = null,
     val primary_photo_id: String? = null,
     val title: String,

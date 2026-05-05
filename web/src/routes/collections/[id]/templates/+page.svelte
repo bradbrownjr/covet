@@ -3,12 +3,14 @@
     import { page } from '$app/state';
     import {
         api,
+        type Category,
         type Collection,
         type ItemTemplate,
         type ScraperRegistryEntry,
         type TemplateField,
         type TemplateFieldType
     } from '$lib/api';
+    import { loadCategories } from '$lib/categories';
     import { ConfirmDialog } from '$lib/components';
 
     const FIELD_TYPES: TemplateFieldType[] = [
@@ -26,6 +28,7 @@
     let templates = $state<ItemTemplate[]>([]);
     let scaffoldNames = $state<string[]>([]);
     let registryEntries = $state<ScraperRegistryEntry[]>([]);
+    let categories = $state<Category[]>([]);
     let importingRegistryId = $state<string | null>(null);
     let loading = $state(true);
     let error = $state('');
@@ -64,6 +67,15 @@
                   .join(' ')
             : 'default'
     );
+
+    function categoryLabel(slug: string | null | undefined): string {
+        if (!slug) return '';
+        const leaf = categories.find((c) => c.slug === slug);
+        if (!leaf) return slug;
+        if (!leaf.parent_id) return leaf.name;
+        const parent = categories.find((c) => c.id === leaf.parent_id);
+        return parent ? `${parent.name} \u203a ${leaf.name}` : leaf.name;
+    }
 
     function addField() {
         fields = [...fields, { key: '', label: '', type: 'text', required: false }];
@@ -118,11 +130,12 @@
         loading = true;
         error = '';
         try {
-            [collection, templates, scaffoldNames, registryEntries] = await Promise.all([
+            [collection, templates, scaffoldNames, registryEntries, categories] = await Promise.all([
                 api.get<Collection>(`/collections/${cid}`),
                 api.get<ItemTemplate[]>(`/collections/${cid}/templates`),
                 api.get<string[]>(`/collections/${cid}/scaffold-templates`),
                 api.get<ScraperRegistryEntry[]>(`/metadata/registry`),
+                loadCategories(),
             ]);
         } catch (e) {
             error = (e as Error).message;
@@ -304,7 +317,7 @@
                             {#if entry.trusted}<span class="trusted-pill">Trusted</span>{/if}
                         </div>
                         <p class="muted" style="margin:0">{entry.description}</p>
-                        <p class="muted" style="margin:0">Provider: {entry.provider} · Category: {entry.category_slug}</p>
+                        <p class="muted" style="margin:0">Provider: {entry.provider} · Category: {categoryLabel(entry.category_slug)}</p>
                         <div class="registry-actions">
                             <a href={entry.homepage} target="_blank" rel="noreferrer">Source</a>
                             {#if canEdit}
@@ -508,7 +521,7 @@
                 {#each templates as t (t.id)}
                     <tr>
                         <td><strong>{t.name}</strong></td>
-                        <td><code>{t.category_slug}</code></td>
+                        <td><code title={t.category_slug}>{categoryLabel(t.category_slug)}</code></td>
                         <td class="muted">
                             {t.fields
                                 .map((f) => `${f.key}:${f.type}${f.required ? '*' : ''}`)

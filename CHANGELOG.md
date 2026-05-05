@@ -4,6 +4,13 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.36] — 2026-05-05
+
+### Fixed
+
+- **Android: Pantry / Collections shows items again** — items created server-side without a category (notably items created by the shopping-list "purchase" flow) crashed the Android JSON parser, causing the entire collection to render as "No items yet" until a manual `clear app data`. The item DTO now treats the category as optional.
+- **Web: Templates page shows readable category names** — the community scraper presets and template list now display the human category path (for example `Pantry › Pantry Item`) instead of the raw `spices.pantry` slug, removing the "why does it say spices?" confusion.
+
 ## [0.17.35] — 2026-05-05
 
 ### Fixed

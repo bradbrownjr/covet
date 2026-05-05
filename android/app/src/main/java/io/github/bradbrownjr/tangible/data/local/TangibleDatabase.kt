@@ -50,7 +50,7 @@ data class CategoryEntity(
 data class ItemEntity(
     @PrimaryKey val id: String,
     @ColumnInfo(name = "collection_id", index = true) val collectionId: String,
-    @ColumnInfo(name = "category_id") val categoryId: String,
+    @ColumnInfo(name = "category_id") val categoryId: String?,
     @ColumnInfo(name = "category_slug") val categorySlug: String?,
     val title: String,
     val subtitle: String?,
@@ -215,7 +215,7 @@ interface ShoppingFeedItemDao {
         LocationEntity::class,
         ShoppingFeedItemEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
