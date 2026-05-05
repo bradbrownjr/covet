@@ -4,6 +4,10 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.29] — 2026-05-05
+
+- **Android: shopping list rows show brand instead of collection name** — the second-line label on each list row now shows the brand when present (the collection is implied by the list type, so it was redundant). Depleted-item entries still fall back to the collection name when no brand is set so the navigation hint is preserved.
+
 ## [0.17.28] — 2026-05-05
 
 - **Fixed: brand not saved when adding shopping list items** — the create endpoint silently dropped the `brand` field on insert, so brands captured from barcode scans (or typed manually) disappeared as soon as the item was added. The brand is now persisted and returned on the create response, edit dialog, and feed.

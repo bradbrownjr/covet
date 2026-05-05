@@ -725,12 +725,18 @@ private fun ShoppingEntryCard(
                     style = MaterialTheme.typography.bodyLarge,
                     maxLines = 1,
                 )
-                Text(
-                    text = collectionName,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = if (!isAdHoc) Modifier.clickable { onNavigateToCollection() } else Modifier,
-                )
+                // Prefer brand (collection is implied by the list type). Fall back to collection
+                // name only for depleted-item entries so the user still sees where it lives.
+                val secondaryLabel = entry.brand?.takeIf { it.isNotBlank() }
+                    ?: collectionName.takeIf { !isAdHoc }
+                if (!secondaryLabel.isNullOrBlank()) {
+                    Text(
+                        text = secondaryLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = if (!isAdHoc) Modifier.clickable { onNavigateToCollection() } else Modifier,
+                    )
+                }
                 if (!entry.category_slug.isNullOrBlank()) {
                     Text(
                         text = entry.category_slug!!.split(".").last(),
