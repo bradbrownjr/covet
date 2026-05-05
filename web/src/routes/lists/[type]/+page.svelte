@@ -309,12 +309,12 @@
         {/if}
     </div>
     <div class="add-row-details">
+        <input type="text" bind:value={newBrand} placeholder={$_('grocery.brand_placeholder')} class="brand" />
+        <input type="text" bind:value={newNotes} placeholder={$_('grocery.notes_placeholder')} class="notes" />
         {#if listType !== 'wish_list'}
             <input type="number" min="1" bind:value={newQuantity} class="qty" />
             <input type="text" bind:value={newUnit} placeholder={$_('grocery.unit_placeholder')} class="unit" />
         {/if}
-        <input type="text" bind:value={newBrand} placeholder={$_('grocery.brand_placeholder')} class="brand" />
-        <input type="text" bind:value={newNotes} placeholder={$_('grocery.notes_placeholder')} class="notes" />
         {#if listType === 'wish_list'}
             <input type="url" bind:value={newWishUrl} placeholder={$_('lists.wish_url_placeholder')} class="wish-url" />
             <select bind:value={newWishPriority} class="wish-priority">
@@ -419,6 +419,10 @@
     <form onsubmit={saveEdit}>
         <h2 class="dialog-title">{$_('grocery.edit_item_title')}</h2>
         <div class="dialog-field">
+            <label>{$_('grocery.brand_placeholder')}</label>
+            <input type="text" bind:value={editBrand} />
+        </div>
+        <div class="dialog-field">
             <label>{$_('lists.item_name_placeholder')}</label>
             <input type="text" bind:value={editName} required />
         </div>
@@ -436,6 +440,12 @@
                     <input type="text" bind:value={editCustomCategory} placeholder={$_('grocery.custom_placeholder')} class="custom-cat" />
                 {/if}
             </div>
+        {/if}
+        <div class="dialog-field">
+            <label>{$_('grocery.notes_placeholder')}</label>
+            <input type="text" bind:value={editNotes} />
+        </div>
+        {#if listType !== 'wish_list'}
             <div class="dialog-row">
                 <div class="dialog-field">
                     <label>{$_('grocery.col_qty')}</label>
@@ -447,14 +457,6 @@
                 </div>
             </div>
         {/if}
-        <div class="dialog-field">
-            <label>{$_('grocery.brand_placeholder')}</label>
-            <input type="text" bind:value={editBrand} />
-        </div>
-        <div class="dialog-field">
-            <label>{$_('grocery.notes_placeholder')}</label>
-            <input type="text" bind:value={editNotes} />
-        </div>
         {#if listType === 'wish_list'}
             <div class="dialog-field">
                 <label>{$_('lists.wish_url_placeholder')}</label>

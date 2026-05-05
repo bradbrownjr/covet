@@ -124,6 +124,7 @@
     <string name="add_grocery_item">Aggiungi articolo</string>
     <string name="add_item_for_list">Aggiungi articolo %1$s</string>
     <string name="barcode_looking_up">Ricerca prodotto…</string>
+    <string name="barcode_not_found_hint">Prodotto non trovato — inserisci i dettagli qui sotto.</string>
     <string name="wish_list_create_collection_prompt">Nessuna collezione ancora – scegli un tipo per crearne una:</string>
     <string name="cd_add_grocery_item">Aggiungi articolo alla lista</string>
     <string name="cd_select_store">Seleziona negozio</string>
@@ -191,6 +192,7 @@
     <string name="cat_breakfast_cereal">Colazione e cereali</string>
     <string name="cat_condiments_spices">Condimenti e spezie</string>
     <string name="cat_cleaning_household">Pulizia e casa</string>
+    <string name="cat_coffee_tea_drink_mixes">Caffè, tè e miscele di bevande</string>
     <string name="cat_health_beauty">Salute e bellezza</string>
     <string name="cat_pet_supplies">Animali</string>
     <string name="cat_alcohol">Alcol</string>

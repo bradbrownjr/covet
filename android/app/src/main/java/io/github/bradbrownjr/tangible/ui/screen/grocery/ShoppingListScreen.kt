@@ -77,6 +77,7 @@ data class ShoppingListUi(
     val addDialogPreFillCategorySlug: String = "",
     val impliedCollectionId: String? = null,
     val barcodeLookupLoading: Boolean = false,
+    val addDialogBarcodeNotFound: Boolean = false,
     val availableCategories: List<CategoryDto> = emptyList(),
     val editingEntry: ShoppingFeedEntryDto? = null,
 )
@@ -143,7 +144,7 @@ class ShoppingListViewModel @Inject constructor(
     }
 
     fun dismissAddDialog() {
-        _state.value = _state.value.copy(showAddDialog = false, addDialogPreFillName = "", addDialogPreFillBrand = "", addDialogPreFillNotes = "", addDialogPreFillCategorySlug = "")
+        _state.value = _state.value.copy(showAddDialog = false, addDialogPreFillName = "", addDialogPreFillBrand = "", addDialogPreFillNotes = "", addDialogPreFillCategorySlug = "", addDialogBarcodeNotFound = false)
     }
 
     fun setListType(type: String) {
@@ -183,6 +184,7 @@ class ShoppingListViewModel @Inject constructor(
                     addDialogPreFillBrand = brand,
                     addDialogPreFillNotes = "",
                     addDialogPreFillCategorySlug = categorySlug,
+                    addDialogBarcodeNotFound = candidate == null,
                     barcodeLookupLoading = false,
                 )
             } catch (_: Throwable) {
@@ -579,6 +581,7 @@ fun ShoppingListScreen(
             preFillBrand = ui.addDialogPreFillBrand,
             preFillNotes = ui.addDialogPreFillNotes,
             preFillCategorySlug = ui.addDialogPreFillCategorySlug,
+            barcodeNotFound = ui.addDialogBarcodeNotFound,
             collections = allCollections,
             initialCollectionId = allCollections.find { it.name.equals("Wish List", ignoreCase = true) }?.id
                 ?: allCollections.firstOrNull()?.id,
@@ -748,6 +751,7 @@ private fun AddShoppingItemDialog(
     preFillBrand: String = "",
     preFillNotes: String = "",
     preFillCategorySlug: String = "",
+    barcodeNotFound: Boolean = false,
     collections: List<CollectionDto> = emptyList(),
     initialCollectionId: String? = null,
     availableCategories: List<CategoryDto> = emptyList(),
@@ -782,10 +786,64 @@ private fun AddShoppingItemDialog(
         title = { Text(dialogTitle) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (barcodeNotFound) {
+                    Text(
+                        stringResource(R.string.barcode_not_found_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                }
+                OutlinedTextField(
+                    value = brand,
+                    onValueChange = { brand = it },
+                    label = { Text(stringResource(R.string.brand_optional)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text(stringResource(R.string.grocery_item_name_required)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (showCategory) {
+                    var categoryMenuExpanded by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = categoryMenuExpanded,
+                        onExpandedChange = { categoryMenuExpanded = it },
+                    ) {
+                        OutlinedTextField(
+                            value = if (categorySlug.isBlank()) stringResource(R.string.no_category)
+                                    else categoryPresets.find { it.slug == categorySlug }
+                                        ?.let { stringResource(it.labelRes) } ?: categorySlug,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text(stringResource(R.string.category)) },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryMenuExpanded) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                        )
+                        ExposedDropdownMenu(
+                            expanded = categoryMenuExpanded,
+                            onDismissRequest = { categoryMenuExpanded = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.no_category)) },
+                                onClick = { categorySlug = ""; categoryMenuExpanded = false },
+                            )
+                            categoryPresets.forEach { cat ->
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(cat.labelRes)) },
+                                    onClick = { categorySlug = cat.slug; categoryMenuExpanded = false },
+                                )
+                            }
+                        }
+                    }
+                }
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text(stringResource(R.string.notes_optional)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -795,20 +853,6 @@ private fun AddShoppingItemDialog(
                     label = { Text(stringResource(R.string.quantity)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = brand,
-                    onValueChange = { brand = it },
-                    label = { Text(stringResource(R.string.brand_optional)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = notes,
-                    onValueChange = { notes = it },
-                    label = { Text(stringResource(R.string.notes_optional)) },
-                    singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 if (showCollectionPicker) {
@@ -874,39 +918,6 @@ private fun AddShoppingItemDialog(
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
-                if (showCategory) {
-                    var categoryMenuExpanded by remember { mutableStateOf(false) }
-                    ExposedDropdownMenuBox(
-                        expanded = categoryMenuExpanded,
-                        onExpandedChange = { categoryMenuExpanded = it },
-                    ) {
-                        OutlinedTextField(
-                            value = if (categorySlug.isBlank()) stringResource(R.string.no_category)
-                                    else categoryPresets.find { it.slug == categorySlug }
-                                        ?.let { stringResource(it.labelRes) } ?: categorySlug,
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text(stringResource(R.string.category)) },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryMenuExpanded) },
-                            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                        )
-                        ExposedDropdownMenu(
-                            expanded = categoryMenuExpanded,
-                            onDismissRequest = { categoryMenuExpanded = false },
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.no_category)) },
-                                onClick = { categorySlug = ""; categoryMenuExpanded = false },
-                            )
-                            categoryPresets.forEach { cat ->
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(cat.labelRes)) },
-                                    onClick = { categorySlug = cat.slug; categoryMenuExpanded = false },
-                                )
-                            }
-                        }
-                    }
-                }
             }
         },
         confirmButton = {
@@ -966,21 +977,6 @@ private fun EditShoppingItemDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text(stringResource(R.string.grocery_item_name_required)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = quantityText,
-                    onValueChange = { quantityText = it.filter { c -> c.isDigit() } },
-                    label = { Text(stringResource(R.string.quantity)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
                     value = brand,
                     onValueChange = { brand = it },
                     label = { Text(stringResource(R.string.brand_optional)) },
@@ -988,9 +984,9 @@ private fun EditShoppingItemDialog(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
-                    value = notes,
-                    onValueChange = { notes = it },
-                    label = { Text(stringResource(R.string.notes_optional)) },
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.grocery_item_name_required)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -1027,6 +1023,21 @@ private fun EditShoppingItemDialog(
                         }
                     }
                 }
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text(stringResource(R.string.notes_optional)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = quantityText,
+                    onValueChange = { quantityText = it.filter { c -> c.isDigit() } },
+                    label = { Text(stringResource(R.string.quantity)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         },
         confirmButton = {

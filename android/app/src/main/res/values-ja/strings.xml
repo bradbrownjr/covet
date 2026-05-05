@@ -123,6 +123,7 @@
     <string name="cd_add_grocery_item">買い物アイテムを追加</string>
     <string name="add_item_for_list">%1$sアイテムを追加</string>
     <string name="barcode_looking_up">商品を検索中…</string>
+    <string name="barcode_not_found_hint">商品が見つかりませんでした。以下に詳細を入力してください。</string>
     <string name="wish_list_create_collection_prompt">コレクションがありません。種類を選んで作成してください：</string>
     <string name="cd_select_store">店舗を選択</string>
     <string name="all_stocked">全て揃っています！ 🎉</string>
@@ -188,8 +189,7 @@
     <string name="cat_beverages">飲料</string>
     <string name="cat_breakfast_cereal">朝食・シリアル</string>
     <string name="cat_condiments_spices">調味料・スパイス</string>
-    <string name="cat_cleaning_household">掃除・日用品</string>
-    <string name="cat_health_beauty">健康・美容</string>
+    <string name="cat_cleaning_household">掃除・日用品</string>    <string name="cat_coffee_tea_drink_mixes">コーヒー・紅茶・ドリンクミックス</string>    <string name="cat_health_beauty">健康・美容</string>
     <string name="cat_pet_supplies">ペット用品</string>
     <string name="cat_alcohol">アルコール</string>
 

@@ -125,6 +125,7 @@
     <string name="cd_add_grocery_item">Einkaufsartikel hinzufügen</string>
     <string name="add_item_for_list">%1$s-Artikel hinzufügen</string>
     <string name="barcode_looking_up">Produkt wird gesucht…</string>
+    <string name="barcode_not_found_hint">Produkt nicht gefunden — bitte Daten unten eintragen.</string>
     <string name="wish_list_create_collection_prompt">Noch keine Sammlung – Typ auswählen, um eine zu erstellen:</string>
     <string name="cd_select_store">Geschäft auswählen</string>
     <string name="all_stocked">Alles vorrätig! 🎉</string>
@@ -191,6 +192,7 @@
     <string name="cat_breakfast_cereal">Frühstück &amp; Müsli</string>
     <string name="cat_condiments_spices">Gewürze &amp; Saucen</string>
     <string name="cat_cleaning_household">Reinigung &amp; Haushalt</string>
+    <string name="cat_coffee_tea_drink_mixes">Kaffee, Tee &amp; Getränkepulver</string>
     <string name="cat_health_beauty">Gesundheit &amp; Schönheit</string>
     <string name="cat_pet_supplies">Tierbedarf</string>
     <string name="cat_alcohol">Alkohol</string>

@@ -123,6 +123,7 @@
     <!-- Grocery list -->
     <string name="add_grocery_item">添加物品</string>    <string name="add_item_for_list">添加%1$s商品</string>
     <string name="barcode_looking_up">正在查找产品…</string>
+    <string name="barcode_not_found_hint">未找到该产品，请在下方填写详细信息。</string>
     <string name="wish_list_create_collection_prompt">还没有收藏集 – 选择一个类型来创建：</string>    <string name="cd_add_grocery_item">添加购物物品</string>
     <string name="cd_select_store">选择商店</string>
     <string name="all_stocked">全部备货！🎉</string>
@@ -189,6 +190,7 @@
     <string name="cat_breakfast_cereal">早餐和麦片</string>
     <string name="cat_condiments_spices">调味品和香料</string>
     <string name="cat_cleaning_household">清洁和家居</string>
+    <string name="cat_coffee_tea_drink_mixes">咋啡、茶和冲调饮品</string>
     <string name="cat_health_beauty">健康和美容</string>
     <string name="cat_pet_supplies">宠物用品</string>
     <string name="cat_alcohol">酒类</string>

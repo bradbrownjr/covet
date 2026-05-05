@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.23] — 2026-05-06
+
+- **Android: Barcode not-found feedback** — when a barcode scan returns no product match, the add-item dialog now shows a "Product not found — fill in the details below" hint so it is clear the form is blank intentionally.
+- **Android & Web: Consistent field order in add/edit dialogs** — fields are now ordered Brand, Item Name, Category, Notes, Quantity across both the Android add and edit dialogs and the web add form and edit dialog.
+- **New grocery category: Coffee, Tea & Drink Mixes** — added as a distinct category separate from Beverages (soft drinks/juices), available in all locales.
+
 ## [0.17.22] — 2026-05-05
 
 - **Android: Fixed spinner stuck after editing an item** — after saving a name, category, brand, or notes change the item's loading indicator now clears immediately instead of staying until the next full navigation away and back.
