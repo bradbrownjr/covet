@@ -141,16 +141,16 @@ fun AboutScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.about)) },
-                navigationIcon = {
-                    if (showBackButton) {
+            if (showBackButton) {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.about)) },
+                    navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                         }
-                    }
-                },
-            )
+                    },
+                )
+            }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->

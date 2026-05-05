@@ -13,7 +13,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
@@ -67,8 +66,7 @@ fun HomeScreen(
                     NavigationBarItem(
                         selected = pagerState.currentPage == index,
                         onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
-                        icon = { Icon(section.icon, contentDescription = null) },
-                        label = { Text(stringResource(section.labelRes)) },
+                        icon = { Icon(section.icon, contentDescription = stringResource(section.labelRes)) },
                     )
                 }
             }
@@ -76,7 +74,7 @@ fun HomeScreen(
     ) { innerPadding ->
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.padding(innerPadding),
+            modifier = Modifier.padding(bottom = innerPadding.calculateBottomPadding()),
             beyondViewportPageCount = 1,
         ) { page ->
             when (page) {

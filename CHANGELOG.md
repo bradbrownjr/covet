@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.25] — 2026-05-05
+
+- **Android: Icon-only bottom navigation bar** — labels removed from the nav bar so the bar is more compact; icons remain with accessibility content descriptions.
+- **Android: Removed redundant section headers** — the title bar ("Lists", "Settings", "About") is no longer shown when a screen is embedded in the swipeable pager, eliminating the blank space gap between the nav bar and the content.
+- **Android: Matched scan and add FAB size** — the barcode scan button is now the same size and color as the Add (+) FAB.
+
 ## [0.17.24] — 2026-05-05
 
 - **Android: Swipe to navigate between sections** — Collections, Lists, Maintenance, Settings, and About are now connected in a swipeable pager with a bottom navigation bar. Swipe left/right or tap the nav bar to move between sections instantly.

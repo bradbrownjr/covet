@@ -427,49 +427,49 @@ fun ShoppingListScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(stringResource(R.string.grocery_list))
-                        if (selectedStore != null) {
-                            Text(
-                                selectedStore.name,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
+            if (showBackButton) {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text(stringResource(R.string.grocery_list))
+                            if (selectedStore != null) {
+                                Text(
+                                    selectedStore.name,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
                         }
-                    }
-                },
-                navigationIcon = {
-                    if (showBackButton) {
+                    },
+                    navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                         }
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.toggleStoreSelector() }) {
-                        Icon(
-                            Icons.Default.Store,
-                            contentDescription = stringResource(R.string.cd_select_store),
-                            tint = if (ui.selectedStoreId != null)
-                                MaterialTheme.colorScheme.primary
-                            else
-                                LocalContentColor.current,
-                        )
-                    }
-                },
-            )
+                    },
+                    actions = {
+                        IconButton(onClick = { viewModel.toggleStoreSelector() }) {
+                            Icon(
+                                Icons.Default.Store,
+                                contentDescription = stringResource(R.string.cd_select_store),
+                                tint = if (ui.selectedStoreId != null)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    LocalContentColor.current,
+                            )
+                        }
+                    },
+                )
+            }
         },
         floatingActionButton = {
             Column(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                SmallFloatingActionButton(
+                FloatingActionButton(
                     onClick = onNavigateToScanner,
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 ) {
                     Icon(Icons.Default.QrCodeScanner, contentDescription = stringResource(R.string.cd_scan_barcode))
                 }
@@ -495,11 +495,13 @@ fun ShoppingListScreen(
             }
         }
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            // List type tabs
-            ScrollableTabRow(
-                selectedTabIndex = pagerState.currentPage,
-                edgePadding = 0.dp,
-            ) {
+            // List type tabs — store sort icon appended when embedded (no top app bar)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ScrollableTabRow(
+                    selectedTabIndex = pagerState.currentPage,
+                    edgePadding = 0.dp,
+                    modifier = Modifier.weight(1f),
+                ) {
                 val tabLabels = mapOf(
                     "groceries"  to stringResource(R.string.list_type_groceries),
                     "hardware"   to stringResource(R.string.list_type_hardware),
@@ -513,6 +515,19 @@ fun ShoppingListScreen(
                         text = { Text(tabLabels[type] ?: type) },
                     )
                 }
+            }
+            if (!showBackButton) {
+                IconButton(onClick = { viewModel.toggleStoreSelector() }) {
+                    Icon(
+                        Icons.Default.Store,
+                        contentDescription = stringResource(R.string.cd_select_store),
+                        tint = if (ui.selectedStoreId != null)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            LocalContentColor.current,
+                    )
+                }
+            }
             }
         HorizontalPager(
             state = pagerState,
