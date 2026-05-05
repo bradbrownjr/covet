@@ -4,6 +4,10 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.26] — 2026-05-05
+
+- **Android: Restore section titles** — page titles (Collections, Lists, Settings, About) are shown again; only the redundant text labels below the nav bar icons were removed.
+
 ## [0.17.25] — 2026-05-05
 
 - **Android: Icon-only bottom navigation bar** — labels removed from the nav bar so the bar is more compact; icons remain with accessibility content descriptions.

@@ -195,16 +195,16 @@ fun SettingsScreen(
     val s by vm.state.collectAsState()
     Scaffold(
         topBar = {
-            if (showBackButton) {
-                TopAppBar(
-                    title = { Text(stringResource(R.string.settings)) },
-                    navigationIcon = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.settings)) },
+                navigationIcon = {
+                    if (showBackButton) {
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                         }
-                    },
-                )
-            }
+                    }
+                },
+            )
         },
     ) { padding ->
         LazyColumn(

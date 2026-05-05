@@ -427,39 +427,39 @@ fun ShoppingListScreen(
 
     Scaffold(
         topBar = {
-            if (showBackButton) {
-                TopAppBar(
-                    title = {
-                        Column {
-                            Text(stringResource(R.string.grocery_list))
-                            if (selectedStore != null) {
-                                Text(
-                                    selectedStore.name,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                )
-                            }
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(stringResource(R.string.grocery_list))
+                        if (selectedStore != null) {
+                            Text(
+                                selectedStore.name,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
                         }
-                    },
-                    navigationIcon = {
+                    }
+                },
+                navigationIcon = {
+                    if (showBackButton) {
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                         }
-                    },
-                    actions = {
-                        IconButton(onClick = { viewModel.toggleStoreSelector() }) {
-                            Icon(
-                                Icons.Default.Store,
-                                contentDescription = stringResource(R.string.cd_select_store),
-                                tint = if (ui.selectedStoreId != null)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    LocalContentColor.current,
-                            )
-                        }
-                    },
-                )
-            }
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { viewModel.toggleStoreSelector() }) {
+                        Icon(
+                            Icons.Default.Store,
+                            contentDescription = stringResource(R.string.cd_select_store),
+                            tint = if (ui.selectedStoreId != null)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                LocalContentColor.current,
+                        )
+                    }
+                },
+            )
         },
         floatingActionButton = {
             Column(
@@ -495,38 +495,23 @@ fun ShoppingListScreen(
             }
         }
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            // List type tabs — store sort icon appended when embedded (no top app bar)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                ScrollableTabRow(
-                    selectedTabIndex = pagerState.currentPage,
-                    edgePadding = 0.dp,
-                    modifier = Modifier.weight(1f),
-                ) {
-                val tabLabels = mapOf(
-                    "groceries"  to stringResource(R.string.list_type_groceries),
-                    "hardware"   to stringResource(R.string.list_type_hardware),
-                    "home_goods" to stringResource(R.string.list_type_home_goods),
-                    "wish_list"  to stringResource(R.string.list_type_wish_list),
+            // List type tabs
+            ScrollableTabRow(
+                selectedTabIndex = pagerState.currentPage,
+                edgePadding = 0.dp,
+            ) {
+            val tabLabels = mapOf(
+                "groceries"  to stringResource(R.string.list_type_groceries),
+                "hardware"   to stringResource(R.string.list_type_hardware),
+                "home_goods" to stringResource(R.string.list_type_home_goods),
+                "wish_list"  to stringResource(R.string.list_type_wish_list),
+            )
+            LIST_TYPES.forEachIndexed { index, type ->
+                Tab(
+                    selected = pagerState.currentPage == index,
+                    onClick = { viewModel.setListType(type) },
+                    text = { Text(tabLabels[type] ?: type) },
                 )
-                LIST_TYPES.forEachIndexed { index, type ->
-                    Tab(
-                        selected = pagerState.currentPage == index,
-                        onClick = { viewModel.setListType(type) },
-                        text = { Text(tabLabels[type] ?: type) },
-                    )
-                }
-            }
-            if (!showBackButton) {
-                IconButton(onClick = { viewModel.toggleStoreSelector() }) {
-                    Icon(
-                        Icons.Default.Store,
-                        contentDescription = stringResource(R.string.cd_select_store),
-                        tint = if (ui.selectedStoreId != null)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            LocalContentColor.current,
-                    )
-                }
             }
             }
         HorizontalPager(

@@ -120,6 +120,11 @@ fun CollectionListScreen(
     val s by vm.state.collectAsState()
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.collections)) },
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = vm::openWizard) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_new_collection))
