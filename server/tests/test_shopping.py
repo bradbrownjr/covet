@@ -153,3 +153,30 @@ def test_shopping_purchase_creates_item_when_no_link(client) -> None:
     assert new_item["notes"] == "low fat"
     assert new_item["depleted"] is False
     assert (new_item.get("attrs") or {}).get("brand") == "Hannaford"
+
+
+def test_shopping_purchase_creates_item_without_category(client) -> None:
+    """Purchasing an ad-hoc entry with no category_slug still creates an Item.
+
+    Previously the item was silently dropped when neither the entry nor the
+    collection had a resolvable category.  The purchased item should appear in
+    the collection with category_id=None.
+    """
+    _signup_and_login(client, "alice")
+    cid = client.post("/api/collections", json={"name": "Pantry"}).json()["id"]
+
+    r = client.post(
+        "/api/lists",
+        json={"collection_id": cid, "name": "Butter", "quantity": 1},
+    )
+    assert r.status_code == 201, r.text
+    gid = r.json()["id"]
+
+    items_before = client.get("/api/items", params={"collection_id": cid}).json()
+    assert client.post(f"/api/lists/{gid}/purchase", json={}).status_code == 200
+
+    items_after = client.get("/api/items", params={"collection_id": cid}).json()
+    new_items = [it for it in items_after if it["title"] not in {x["title"] for x in items_before}]
+    assert len(new_items) == 1
+    assert new_items[0]["title"] == "Butter"
+    assert new_items[0]["category_id"] is None

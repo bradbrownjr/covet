@@ -27,10 +27,10 @@ class Item(ULIDPrimaryKey, TimestampMixin, Base):
     collection_id: Mapped[str] = mapped_column(
         String(26), ForeignKey("collections.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    category_id: Mapped[str] = mapped_column(
+    category_id: Mapped[str | None] = mapped_column(
         String(26),
         ForeignKey("categories.id", ondelete="RESTRICT"),
-        nullable=False,
+        nullable=True,
         index=True,
     )
     title: Mapped[str] = mapped_column(String(512), nullable=False, index=True)

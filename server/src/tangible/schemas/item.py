@@ -94,7 +94,7 @@ class ItemRead(ItemBase):
 
     id: str
     collection_id: str
-    category_id: str
+    category_id: str | None
     sort_order: int = 0
     category_slug: str | None = None
     location_path: list[str] | None = None

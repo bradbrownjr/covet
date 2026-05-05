@@ -122,7 +122,23 @@ fun HomeScreen(
             beyondViewportPageCount = 1,
         ) { page ->
             when (page) {
-                0 -> CollectionsTabsScreen(onOpenCollection = onOpenCollection)
+                0 -> CollectionsTabsScreen(
+                    onOpenCollection = onOpenCollection,
+                    onSwipeLeft = {
+                        scope.launch {
+                            pagerState.animateScrollToPage(
+                                (pagerState.currentPage + 1).coerceAtMost(HOME_SECTIONS.size - 1)
+                            )
+                        }
+                    },
+                    onSwipeRight = {
+                        scope.launch {
+                            pagerState.animateScrollToPage(
+                                (pagerState.currentPage - 1).coerceAtLeast(0)
+                            )
+                        }
+                    },
+                )
                 1 -> ShoppingListScreen(
                     onBack = { scope.launch { pagerState.animateScrollToPage(0) } },
                     showBackButton = false,

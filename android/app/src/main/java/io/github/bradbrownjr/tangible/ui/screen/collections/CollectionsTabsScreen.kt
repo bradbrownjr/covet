@@ -1,6 +1,7 @@
 package io.github.bradbrownjr.tangible.ui.screen.collections
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,6 +15,8 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -162,16 +165,36 @@ class CollectionsTabsViewModel @Inject constructor(
 @Composable
 fun CollectionsTabsScreen(
     onOpenCollection: (String) -> Unit,
+    onSwipeLeft: () -> Unit = {},
+    onSwipeRight: () -> Unit = {},
     vm: CollectionsTabsViewModel = hiltViewModel(),
 ) {
     val s by vm.state.collectAsState()
     val scope = rememberCoroutineScope()
+    val dragThresholdPx = with(LocalDensity.current) { 80.dp.toPx() }
 
     // Empty / loading / error path: no tabs to render. Fall back to the same
     // FAB + wizard as the legacy list screen so users can still create.
     if (s.collections.isEmpty()) {
         Scaffold(
-            topBar = { TopAppBar(title = { Text(stringResource(R.string.collections)) }) },
+            topBar = {
+                var emptyAccum by remember { mutableFloatStateOf(0f) }
+                Box(
+                    Modifier.pointerInput(Unit) {
+                        detectHorizontalDragGestures(
+                            onDragEnd = { emptyAccum = 0f },
+                            onDragCancel = { emptyAccum = 0f },
+                            onHorizontalDrag = { _, amount ->
+                                emptyAccum += amount
+                                if (emptyAccum < -dragThresholdPx) { emptyAccum = 0f; onSwipeLeft() }
+                                else if (emptyAccum > dragThresholdPx) { emptyAccum = 0f; onSwipeRight() }
+                            },
+                        )
+                    }
+                ) {
+                    TopAppBar(title = { Text(stringResource(R.string.collections)) })
+                }
+            },
             floatingActionButton = {
                 FloatingActionButton(onClick = vm::openWizard) {
                     Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_new_collection))
@@ -200,7 +223,6 @@ fun CollectionsTabsScreen(
     }
 
     val pagerState = rememberPagerState(pageCount = { s.collections.size })
-    val currentCollection = s.collections.getOrNull(pagerState.currentPage)
 
     // Lazily load items for the current tab.
     LaunchedEffect(pagerState.currentPage, s.collections) {
@@ -209,9 +231,24 @@ fun CollectionsTabsScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(currentCollection?.name ?: stringResource(R.string.collections)) },
-            )
+            var tabsAccum by remember { mutableFloatStateOf(0f) }
+            Box(
+                Modifier.pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = { tabsAccum = 0f },
+                        onDragCancel = { tabsAccum = 0f },
+                        onHorizontalDrag = { _, amount ->
+                            tabsAccum += amount
+                            if (tabsAccum < -dragThresholdPx) { tabsAccum = 0f; onSwipeLeft() }
+                            else if (tabsAccum > dragThresholdPx) { tabsAccum = 0f; onSwipeRight() }
+                        },
+                    )
+                }
+            ) {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.collections)) },
+                )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(onClick = vm::openWizard) {

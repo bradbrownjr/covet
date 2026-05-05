@@ -376,8 +376,7 @@ def purchase_shopping_item(
         # Ad-hoc shopping entry with no linked pantry/inventory item: create the
         # Item in the entry's collection so the purchase actually lands somewhere.
         # Resolve a category: prefer the entry's own slug, else the collection's
-        # default. If neither resolves, skip auto-create silently (the entry is
-        # still marked purchased) so legacy data without categories isn't blocked.
+        # default. Category is optional now (nullable) so creation always happens.
         cat: Category | None = None
         if g.category_slug:
             try:
@@ -392,30 +391,29 @@ def purchase_shopping_item(
                     cat = resolve_slug(db, default_slug)
                 except LookupError:
                     cat = None
-        if cat is not None:
-            new_item = Item(
-                collection_id=g.collection_id,
-                category_id=cat.id,
-                title=g.name,
-                quantity=g.quantity,
-                notes=g.notes,
-                attrs={"brand": g.brand} if g.brand else {},
-            )
-            db.add(new_item)
-            db.flush()
-            lot = ItemLot(
-                item_id=new_item.id,
-                collection_id=g.collection_id,
-                quantity=g.quantity,
-                purchased_at=purchased_at,
-                use_by_date=use_by_date,
-            )
-            db.add(lot)
-            db.flush()
-            new_item.depleted = False
-            new_item.quantity = g.quantity
-            created_item_id = new_item.id
-            restocked_lot_id = lot.id
+        new_item = Item(
+            collection_id=g.collection_id,
+            category_id=cat.id if cat is not None else None,
+            title=g.name,
+            quantity=g.quantity,
+            notes=g.notes,
+            attrs={"brand": g.brand} if g.brand else {},
+        )
+        db.add(new_item)
+        db.flush()
+        lot = ItemLot(
+            item_id=new_item.id,
+            collection_id=g.collection_id,
+            quantity=g.quantity,
+            purchased_at=purchased_at,
+            use_by_date=use_by_date,
+        )
+        db.add(lot)
+        db.flush()
+        new_item.depleted = False
+        new_item.quantity = g.quantity
+        created_item_id = new_item.id
+        restocked_lot_id = lot.id
 
     audit.log(
         db,

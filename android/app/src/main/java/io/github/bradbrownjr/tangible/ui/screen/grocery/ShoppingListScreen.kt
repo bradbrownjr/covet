@@ -294,11 +294,15 @@ class ShoppingListViewModel @Inject constructor(
 
     /** Commits a single checked item to the pantry (calls the server). */
     fun moveToPantry(entryId: String) {
-        if (entryId !in _state.value.checkedItems.map { it.id }) return
+        val entry = _state.value.checkedItems.find { it.id == entryId } ?: return
         _state.value = _state.value.copy(updating = _state.value.updating + entryId)
         viewModelScope.launch {
             try {
-                if (!entryId.startsWith("item:")) shoppingRepo.purchaseItem(entryId)
+                if (entryId.startsWith("item:")) {
+                    shoppingRepo.restockDepletedItem(entryId.removePrefix("item:"), entry.quantity)
+                } else {
+                    shoppingRepo.purchaseItem(entryId)
+                }
                 _state.value = _state.value.copy(
                     checkedItems = _state.value.checkedItems.filter { it.id != entryId },
                     updating = _state.value.updating - entryId,
@@ -317,7 +321,11 @@ class ShoppingListViewModel @Inject constructor(
         viewModelScope.launch {
             toMove.forEach { entry ->
                 try {
-                    if (!entry.id.startsWith("item:")) shoppingRepo.purchaseItem(entry.id)
+                    if (entry.id.startsWith("item:")) {
+                        shoppingRepo.restockDepletedItem(entry.id.removePrefix("item:"), entry.quantity)
+                    } else {
+                        shoppingRepo.purchaseItem(entry.id)
+                    }
                     _state.value = _state.value.copy(
                         checkedItems = _state.value.checkedItems.filter { it.id != entry.id },
                         updating = _state.value.updating - entry.id,

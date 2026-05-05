@@ -428,6 +428,24 @@ class ShoppingRepository @Inject constructor(
 
     suspend fun purchaseItem(id: String) = api.purchaseShoppingItem(id)
 
+    /**
+     * Restock an existing depleted Item from a shopping feed entry. Feed
+     * entries representing depleted Items have IDs prefixed with "item:" and
+     * have no backing ShoppingItem row, so they can't be POST'd to /purchase.
+     * Instead, call the inventory restock endpoint to add a lot and clear
+     * the depleted flag on the underlying Item.
+     */
+    suspend fun restockDepletedItem(itemId: String, quantity: Int) {
+        api.restockItem(
+            itemId,
+            RestockRequest(
+                quantity = quantity,
+                purchased_at = java.time.OffsetDateTime.now().toString(),
+                mark_in_stock = true,
+            ),
+        )
+    }
+
     // Stores
     suspend fun listStores(): List<ShoppingStoreDto> = api.listShoppingStores()
 
