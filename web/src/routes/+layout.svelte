@@ -94,8 +94,8 @@
             await goto(cfg?.setup_required ? '/register' : '/login');
         } else if ($me && onAuth) {
             await goto('/');
-        } else if ($me?.enrollment_required && path !== '/settings') {
-            await goto('/settings?enroll=1');
+        } else if ($me?.enrollment_required && !path.startsWith('/settings')) {
+            await goto('/settings/security?enroll=1');
         }
 
         // Browser push notifications: fire once per session for browser_enabled kinds.
@@ -229,7 +229,7 @@
                 {/if}
             </div>
             <a href="/maintenance" onclick={closeMenu}>{$_('nav.maintenance')}</a>
-            <a href="/settings" onclick={closeMenu}>{$_('nav.settings')}</a>
+            <a href="/settings/appearance" onclick={closeMenu}>{$_('nav.settings')}</a>
             <a href="/profile" class="user" onclick={closeMenu} title={$_('nav.edit_profile')}>{userLabel($me)}</a>
             <button class="secondary" onclick={doLogout}>{$_('nav.log_out')}</button>
         {/if}

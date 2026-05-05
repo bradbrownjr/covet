@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.32] — 2026-05-05
+
+- **Fixed: marking a shopping item purchased now creates the pantry item** — previously, checking off an ad-hoc shopping entry (one not tied to an existing item) only marked the entry purchased; nothing was added to the destination collection, so groceries effectively disappeared. Now an item is created in the entry's collection with the name, quantity, notes, and brand from the shopping list, using the entry's category (or the collection's default category) for placement.
+- **Android: Add Item in a category-defaulted collection now pre-selects that category** — collections created with a default category (for example, a Pantry pre-set to Groceries) now correctly pre-select the root category in the Add Item dialog, instead of forcing you to pick one every time.
+- **Android: Collections are now swipeable tabs** — the Collections section shows one tab per collection, like the Lists section. Swipe between tabs to flip through your collections without leaving the home screen; tap any item (or "Add item" in an empty collection) to open the full collection view for advanced editing. The "+" button still creates a new collection.
+
 ## [0.17.31] — 2026-05-05
 
 - **Android: swipe the nav bar to change sections** — dragging left or right on the bottom navigation icons now slides between sections (Collections, Lists, Maintenance, Settings, About), in addition to tapping a specific icon.
