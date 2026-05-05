@@ -11,6 +11,7 @@
         color?: string;
         class?: string;
         'aria-label'?: string;
+        'aria-hidden'?: boolean | 'true' | 'false';
     }
 
     let {
@@ -20,6 +21,7 @@
         color = 'currentColor',
         class: cls = '',
         'aria-label': ariaLabel,
+        'aria-hidden': ariaHidden,
     }: Props = $props();
 
     function toPascal(s: string): string {
@@ -44,6 +46,6 @@
         {color}
         class={cls || undefined}
         aria-label={ariaLabel}
-        aria-hidden={ariaLabel ? undefined : true}
+        aria-hidden={ariaHidden ?? (ariaLabel ? undefined : true)}
     />
 {/if}
