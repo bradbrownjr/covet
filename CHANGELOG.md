@@ -4,6 +4,11 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.28] — 2026-05-05
+
+- **Fixed: brand not saved when adding shopping list items** — the create endpoint silently dropped the `brand` field on insert, so brands captured from barcode scans (or typed manually) disappeared as soon as the item was added. The brand is now persisted and returned on the create response, edit dialog, and feed.
+- **Android: shopping list create response includes brand** — the read DTO now carries the `brand` field so the client sees it in the immediate response without waiting for the next feed refresh.
+
 ## [0.17.27] — 2026-05-05
 
 - **Android: Remove blank space below nav bar icons** — the gap between the bottom navigation icons and the system navigation bar is eliminated by zeroing the NavigationBar's internal window insets.

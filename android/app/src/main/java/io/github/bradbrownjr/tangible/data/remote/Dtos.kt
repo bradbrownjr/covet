@@ -400,6 +400,7 @@ data class ShoppingItemReadDto(
     val collection_id: String,
     val name: String,
     val quantity: Int = 1,
+    val brand: String? = null,
     val notes: String? = null,
     val category_slug: String? = null,
     val list_type: String = "groceries",

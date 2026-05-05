@@ -38,14 +38,24 @@ def test_shopping_ad_hoc_create_update_delete(client) -> None:
     _signup_and_login(client, "alice")
     cid, _ = _create_pantry_item(client)
 
-    r = client.post("/api/lists", json={"collection_id": cid, "name": "Bananas", "quantity": 6})
+    r = client.post(
+        "/api/lists",
+        json={"collection_id": cid, "name": "Bananas", "quantity": 6, "brand": "Chiquita"},
+    )
     assert r.status_code == 201, r.text
     gid = r.json()["id"]
+    assert r.json()["brand"] == "Chiquita"
+
+    # Brand survives a round-trip through the feed.
+    feed = client.get("/api/lists").json()
+    entry = next(e for e in feed if e["id"] == gid)
+    assert entry["brand"] == "Chiquita"
 
     r = client.patch(f"/api/lists/{gid}", json={"quantity": 8, "notes": "ripe"})
     assert r.status_code == 200
     assert r.json()["quantity"] == 8
     assert r.json()["notes"] == "ripe"
+    assert r.json()["brand"] == "Chiquita"
 
     r = client.delete(f"/api/lists/{gid}")
     assert r.status_code == 204

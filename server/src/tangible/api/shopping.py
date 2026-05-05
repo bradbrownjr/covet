@@ -237,6 +237,7 @@ def create_shopping_item(
         name=payload.name,
         quantity=payload.quantity,
         unit=payload.unit,
+        brand=payload.brand,
         notes=payload.notes,
         category_slug=payload.category_slug,
         list_type=payload.list_type,
