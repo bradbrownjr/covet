@@ -54,6 +54,7 @@ class ShoppingItem(ULIDPrimaryKey, TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     unit: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    brand: Mapped[str | None] = mapped_column(String(255), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     category_slug: Mapped[str | None] = mapped_column(String(120), nullable=True)
     list_type: Mapped[str] = mapped_column(

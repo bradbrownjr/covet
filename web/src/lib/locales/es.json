@@ -413,6 +413,7 @@
     "collection_label": "Seleccionar colección",
     "item_name_placeholder": "Añadir artículo (ej. Plátanos)",
     "unit_placeholder": "unidad",
+    "brand_placeholder": "marca",
     "notes_placeholder": "notas",
     "add_button": "Añadir",
     "adding_button": "Añadiendo…",

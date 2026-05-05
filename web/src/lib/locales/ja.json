@@ -413,6 +413,7 @@
     "collection_label": "コレクションを選択",
     "item_name_placeholder": "アイテムを追加（例：バナナ）",
     "unit_placeholder": "単位",
+    "brand_placeholder": "ブランド",
     "notes_placeholder": "メモ",
     "add_button": "追加",
     "adding_button": "追加中…",

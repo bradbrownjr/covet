@@ -38,6 +38,7 @@ class ScrapeResult:
     url: str
     title: str | None = None
     description: str | None = None
+    brand: str | None = None
     image_url: str | None = None
     item_type: str | None = None
     category: str | None = None
@@ -410,7 +411,10 @@ class OpenFoodFactsBarcodeAdapter:
         title = product.get("product_name") or product.get("product_name_en")
         if not title:
             return []
-        brand = product.get("brands", "")
+        # Normalize ALL-CAPS names from manufacturers/database contributors.
+        if title == title.upper():
+            title = title.title()
+        brand = product.get("brands", "").split(",")[0].strip() or None
         image = product.get("image_front_url") or product.get("image_url")
         attrs: dict[str, Any] = {"barcode": code}
         if brand:
@@ -422,7 +426,8 @@ class OpenFoodFactsBarcodeAdapter:
             provider=self.name,
             url=f"https://world.openfoodfacts.org/product/{code}",
             title=title,
-            description=brand or None,
+            brand=brand,
+            description=None,
             image_url=image,
             category=category,
             attrs=attrs,

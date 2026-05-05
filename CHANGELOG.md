@@ -4,6 +4,15 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.21] — 2026-05-05
+
+- **Android: Category picker in add and edit dialogs** — groceries, hardware, and home-goods items now show a category dropdown when adding or editing. Previously only hardware/home-goods had it in the add dialog, and the edit dialog had no category field at all.
+- **Android: Brand field** — add and edit dialogs both include a Brand field. Barcode scans pre-fill it from product data (OpenFoodFacts `brands`), so scanning a product keeps the brand separate from any personal notes.
+- **Web: Brand field** — add and edit forms on the shopping list now include a Brand field that is saved with the item.
+- **Server: Brand stored on shopping list items** — new `brand` column on `grocery_items`; exposed on the feed and all CRUD endpoints.
+- **Server: Title-case product names from barcode scans** — OpenFoodFacts frequently returns ALL-CAPS product names. The adapter now title-cases them on ingest so items like "CRISPY FRIED ONIONS" become "Crispy Fried Onions".
+- **Server: Brand extracted separately from notes** — barcode lookups now return a dedicated `brand` field instead of stuffing brand text into the description/notes.
+
 ## [0.17.20] — 2026-05-05
 
 - **Web: Fixed category field missing in edit dialog** — Svelte 5 schedules DOM updates as microtasks, so `editEntry` was not set by the time `showModal()` was called. Switched the category/wish-list conditional from `editEntry.list_type` to `listType` (always-available route param) to guarantee the field is rendered before the dialog opens.

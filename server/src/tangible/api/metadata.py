@@ -29,6 +29,7 @@ class ScrapeResponse(BaseModel):
     url: str
     title: str | None = None
     description: str | None = None
+    brand: str | None = None
     image_url: str | None = None
     category: str | None = None
     attrs: dict = {}
@@ -98,6 +99,7 @@ def barcode_lookup_endpoint(
                 url=r.url,
                 title=r.title,
                 description=r.description,
+                brand=r.brand,
                 image_url=r.image_url,
                 category=r.category,
                 attrs=r.attrs,

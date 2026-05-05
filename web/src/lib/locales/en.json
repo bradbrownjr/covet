@@ -413,6 +413,7 @@
     "collection_label": "Select collection",
     "item_name_placeholder": "Add item (e.g. Bananas)",
     "unit_placeholder": "unit",
+    "brand_placeholder": "brand",
     "notes_placeholder": "notes",
     "add_button": "Add",
     "adding_button": "Adding…",

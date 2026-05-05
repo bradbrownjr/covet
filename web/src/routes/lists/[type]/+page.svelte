@@ -24,6 +24,7 @@
         subtitle: string | null;
         quantity: number;
         unit: string | null;
+        brand: string | null;
         notes: string | null;
         category_slug: string | null;
         list_type: string;
@@ -70,6 +71,7 @@
 
     let newCollectionId = $state('');
     let newName = $state('');
+    let newBrand = $state('');
     let newCategorySlug = $state('');
     let customCategory = $state('');
     let newQuantity = $state(1);
@@ -85,6 +87,7 @@
     let editEntry = $state<FeedEntry | null>(null);
     let editDialog = $state<HTMLDialogElement | null>(null);
     let editName = $state('');
+    let editBrand = $state('');
     let editCategorySlug = $state('');
     let editCustomCategory = $state('');
     let editQuantity = $state(1);
@@ -97,6 +100,7 @@
     function startEdit(entry: FeedEntry) {
         editEntry = entry;
         editName = entry.name;
+        editBrand = entry.brand ?? '';
         editQuantity = entry.quantity;
         editUnit = entry.unit ?? '';
         editNotes = entry.notes ?? '';
@@ -131,6 +135,7 @@
                 name: editName.trim(),
                 quantity: Math.max(1, editQuantity || 1),
                 unit: editUnit.trim() || null,
+                brand: editBrand.trim() || null,
                 notes: editNotes.trim() || null,
                 category_slug: resolvedSlug,
             };
@@ -205,6 +210,7 @@
                 name: newName.trim(),
                 quantity: Math.max(1, newQuantity || 1),
                 unit: newUnit.trim() || null,
+                brand: newBrand.trim() || null,
                 notes: newNotes.trim() || null,
                 category_slug: resolvedSlug,
                 list_type: listType,
@@ -215,6 +221,7 @@
             }
             await api.post('/lists', body);
             newName = '';
+            newBrand = '';
             newQuantity = 1;
             newUnit = '';
             newNotes = '';
@@ -306,6 +313,7 @@
             <input type="number" min="1" bind:value={newQuantity} class="qty" />
             <input type="text" bind:value={newUnit} placeholder={$_('grocery.unit_placeholder')} class="unit" />
         {/if}
+        <input type="text" bind:value={newBrand} placeholder={$_('grocery.brand_placeholder')} class="brand" />
         <input type="text" bind:value={newNotes} placeholder={$_('grocery.notes_placeholder')} class="notes" />
         {#if listType === 'wish_list'}
             <input type="url" bind:value={newWishUrl} placeholder={$_('lists.wish_url_placeholder')} class="wish-url" />
@@ -439,6 +447,10 @@
                 </div>
             </div>
         {/if}
+        <div class="dialog-field">
+            <label>{$_('grocery.brand_placeholder')}</label>
+            <input type="text" bind:value={editBrand} />
+        </div>
         <div class="dialog-field">
             <label>{$_('grocery.notes_placeholder')}</label>
             <input type="text" bind:value={editNotes} />

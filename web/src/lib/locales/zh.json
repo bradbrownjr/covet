@@ -413,6 +413,7 @@
     "collection_label": "选择收藏",
     "item_name_placeholder": "添加物品（例如：香蕉）",
     "unit_placeholder": "单位",
+    "brand_placeholder": "品牌",
     "notes_placeholder": "备注",
     "add_button": "添加",
     "adding_button": "添加中…",

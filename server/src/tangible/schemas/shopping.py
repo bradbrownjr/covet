@@ -26,6 +26,7 @@ class ShoppingItemRead(BaseModel):
     name: str
     quantity: int
     unit: str | None = None
+    brand: str | None = None
     notes: str | None = None
     category_slug: str | None = None
     list_type: str = "groceries"
@@ -54,6 +55,7 @@ class ShoppingFeedEntry(BaseModel):
     subtitle: str | None = None
     quantity: int = 1
     unit: str | None = None
+    brand: str | None = None
     notes: str | None = None
     category_slug: str | None = None
     list_type: str = "groceries"
@@ -69,6 +71,7 @@ class ShoppingItemCreate(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     quantity: int = Field(default=1, ge=1)
     unit: str | None = Field(default=None, max_length=32)
+    brand: str | None = Field(default=None, max_length=255)
     notes: str | None = None
     category_slug: str | None = Field(default=None, max_length=120)
     list_type: str = Field(default="groceries", max_length=32)
@@ -81,6 +84,7 @@ class ShoppingItemUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=255)
     quantity: int | None = Field(default=None, ge=1)
     unit: str | None = Field(default=None, max_length=32)
+    brand: str | None = Field(default=None, max_length=255)
     notes: str | None = None
     category_slug: str | None = Field(default=None, max_length=120)
     wish_url: str | None = Field(default=None, max_length=2048)

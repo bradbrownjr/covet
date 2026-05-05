@@ -115,6 +115,7 @@ data class BarcodeCandidateDto(
     val url: String,
     val title: String? = null,
     val description: String? = null,
+    val brand: String? = null,
     val image_url: String? = null,
     val category: String? = null,
     val attrs: Map<String, @JvmSuppressWildcards Any?> = emptyMap(),
@@ -371,6 +372,7 @@ data class ShoppingFeedEntryDto(
     val subtitle: String? = null,
     val quantity: Int = 1,
     val unit: String? = null,
+    val brand: String? = null,
     val notes: String? = null,
     val category_slug: String? = null,
     val list_type: String = "groceries",
@@ -385,6 +387,7 @@ data class ShoppingItemCreateRequest(
     val name: String,
     val quantity: Int = 1,
     val unit: String? = null,
+    val brand: String? = null,
     val notes: String? = null,
     val category_slug: String? = null,
     val list_type: String = "groceries",
@@ -407,7 +410,9 @@ data class ShoppingItemReadDto(
 data class ShoppingItemPatchRequest(
     val name: String? = null,
     val quantity: Int? = null,
+    val brand: String? = null,
     val notes: String? = null,
+    val category_slug: String? = null,
 )
 
 // ---------------------------------------------------------------------------

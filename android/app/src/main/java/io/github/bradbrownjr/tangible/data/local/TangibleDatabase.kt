@@ -178,6 +178,7 @@ data class ShoppingFeedItemEntity(
     val subtitle: String?,
     val quantity: Int,
     val unit: String?,
+    val brand: String?,
     val notes: String?,
     @ColumnInfo(name = "category_slug") val categorySlug: String?,
     @ColumnInfo(name = "collection_id") val collectionId: String?,
@@ -214,7 +215,7 @@ interface ShoppingFeedItemDao {
         LocationEntity::class,
         ShoppingFeedItemEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)

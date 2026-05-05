@@ -85,6 +85,7 @@ def _ad_hoc_to_feed(g: ShoppingItem) -> ShoppingFeedEntry:
         subtitle=None,
         quantity=g.quantity,
         unit=g.unit,
+        brand=g.brand,
         notes=g.notes,
         category_slug=g.category_slug,
         list_type=g.list_type,
