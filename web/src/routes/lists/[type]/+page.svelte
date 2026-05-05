@@ -6,6 +6,7 @@
     import ShoppingStoreManager from '$lib/ShoppingStoreManager.svelte';
     import { categoriesForType, GROCERY_CATEGORIES } from '$lib/shoppingCategories';
     import { _ } from 'svelte-i18n';
+    import Icon from '$lib/Icon.svelte';
 
     const VALID_TYPES = ['groceries', 'hardware', 'home_goods', 'wish_list'] as const;
     type ListType = typeof VALID_TYPES[number];
@@ -36,6 +37,13 @@
     }
 
     let listType = $derived((page.params.type ?? 'groceries') as ListType);
+
+    const LIST_ICON: Record<string, string> = {
+        groceries:  'shopping-cart',
+        hardware:   'wrench',
+        home_goods: 'house',
+        wish_list:  'star',
+    };
 
     let categories = $derived(categoriesForType(listType));
 
@@ -279,10 +287,14 @@
 </script>
 
 <div class="page-heading">
-    <h1>{typeTitle(listType)}</h1>
+    <h1 class="type-head">
+        <Icon name={LIST_ICON[listType] ?? 'list'} size={22} />
+        {typeTitle(listType)}
+    </h1>
     {#if listType === 'groceries'}
         <button type="button" class="store-mgr-btn" title={$_('grocery.manage_stores_title')} onclick={() => { showStoreManager = true; }}>
-            🏪 {$_('grocery.manage_stores_title')}
+            <Icon name="store" size={16} />
+            {$_('grocery.manage_stores_title')}
         </button>
     {/if}
 </div>
@@ -484,6 +496,7 @@
 <style>
     .page-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem; }
     .page-heading h1 { margin: 0; }
+    .type-head { display: flex; align-items: center; gap: 0.4rem; }
     .store-mgr-btn {
         background: none; border: 1px solid var(--border, #d1d5db); border-radius: 6px;
         padding: 0.35rem 0.75rem; font-size: 0.85rem; cursor: pointer; color: var(--text, #111);

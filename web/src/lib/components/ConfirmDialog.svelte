@@ -11,6 +11,7 @@
        />
 -->
 <script lang="ts">
+    import type { Snippet } from 'svelte';
     import Modal from './Modal.svelte';
     import Button from './Button.svelte';
 
@@ -18,6 +19,7 @@
         open?: boolean;
         title?: string;
         message?: string;
+        children?: Snippet;
         confirmLabel?: string;
         cancelLabel?: string;
         variant?: 'primary' | 'danger';
@@ -30,6 +32,7 @@
         open = false,
         title = 'Are you sure?',
         message,
+        children,
         confirmLabel = 'Confirm',
         cancelLabel = 'Cancel',
         variant = 'danger',
@@ -44,7 +47,9 @@
 </script>
 
 <Modal {open} {title} width="26rem" onclose={oncancel}>
-    {#if message}
+    {#if children}
+        {@render children()}
+    {:else if message}
         <p style="margin:0;color:var(--text-muted)">{message}</p>
     {/if}
 

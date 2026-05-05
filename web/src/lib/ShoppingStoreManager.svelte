@@ -3,6 +3,7 @@
     import { _ } from 'svelte-i18n';
     import { GROCERY_CATEGORIES } from '$lib/shoppingCategories';
     import type { ShoppingCategory } from '$lib/shoppingCategories';
+    import Icon from '$lib/Icon.svelte';
 
     const PRESET_SLUGS = new Set(GROCERY_CATEGORIES.map((c) => c.slug));
 
@@ -201,7 +202,7 @@
     <div class="panel">
         <div class="panel-header">
             <h2>{$_('grocery_store.title')}</h2>
-            <button class="close-btn" type="button" onclick={onClose} aria-label={$_('common.close')}>✕</button>
+            <button class="close-btn" type="button" onclick={onClose} aria-label={$_('common.close')}><Icon name="x" size={18} /></button>
         </div>
 
         {#if error}
@@ -272,12 +273,14 @@
                                                 <button
                                                     type="button"
                                                     title="Move up"
+                                                    aria-label="Move aisle up"
                                                     disabled={idx === 0}
                                                     onclick={() => moveAisle(aisle.id, -1)}
                                                 >↑</button>
                                                 <button
                                                     type="button"
                                                     title="Move down"
+                                                    aria-label="Move aisle down"
                                                     disabled={idx === sortedAisles.length - 1}
                                                     onclick={() => moveAisle(aisle.id, 1)}
                                                 >↓</button>
@@ -474,4 +477,9 @@
     .empty-hint { color: var(--muted, #94a3b8); font-size: 0.875rem; }
     .error { color: var(--danger, #ef4444); font-size: 0.875rem; }
     .muted { color: var(--muted, #94a3b8); }
+    @media (max-width: 640px) {
+        .layout { flex-direction: column; }
+        .store-sidebar { width: 100%; min-width: 0; border-right: none; border-bottom: 1px solid var(--border, #334); max-height: 160px; }
+        .aisle-editor { flex: 1; }
+    }
 </style>

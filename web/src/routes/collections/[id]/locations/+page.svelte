@@ -3,6 +3,16 @@
     import { page } from '$app/state';
     import { _ } from 'svelte-i18n';
     import { api, type Collection, type LocationKind, type LocationNode } from '$lib/api';
+    import { ConfirmDialog } from '$lib/components';
+    import Icon from '$lib/Icon.svelte';
+
+    const KIND_ICON: Record<LocationKind, string> = {
+        home:      'home',
+        floor:     'building',
+        room:      'door-open',
+        zone:      'map-pin',
+        container: 'package',
+    };
 
     let collection = $state<Collection | null>(null);
     let tree = $state<LocationNode[]>([]);
@@ -22,17 +32,14 @@
 
     let confirmDeleteId = $state<string | null>(null);
     let confirmDeleteLabel = $state('');
+    let confirmDeleting = $state(false);
 
     const cid = $derived(page.params.id ?? '');
     const canEdit = $derived(
         collection?.my_role === 'editor' || collection?.my_role === 'owner'
     );
 
-    interface FlatOption {
-        id: string;
-        label: string;
-        depth: number;
-    }
+    interface FlatOption { id: string; label: string; depth: number; }
     const flatOptions = $derived.by(() => {
         const out: FlatOption[] = [];
         const walk = (nodes: LocationNode[], depth: number) => {
@@ -85,9 +92,7 @@
         editNotes = node.notes ?? '';
     }
 
-    function cancelEdit() {
-        editingId = null;
-    }
+    function cancelEdit() { editingId = null; }
 
     async function saveEdit() {
         if (!editingId) return;
@@ -112,6 +117,7 @@
 
     async function deleteConfirmed() {
         if (!confirmDeleteId) return;
+        confirmDeleting = true;
         try {
             await api.delete(`/locations/${confirmDeleteId}`);
             confirmDeleteId = null;
@@ -119,6 +125,8 @@
             await load();
         } catch (err) {
             error = (err as Error).message;
+        } finally {
+            confirmDeleting = false;
         }
     }
 
@@ -174,9 +182,9 @@
     {:else if tree.length === 0}
         <p class="muted">{$_('locations.no_locations')}</p>
     {:else}
-        <ul class="loc-tree">
+        <ul class="loc-tree" role="tree">
             {#snippet branch(node: LocationNode, depth: number)}
-                <li style="padding-left: {depth * 1.5}rem">
+                <li style="padding-left: {depth * 1.25}rem" role="treeitem" aria-expanded={node.children.length > 0 || undefined}>
                     {#if editingId === node.id}
                         <div class="form-row">
                             <input bind:value={editName} required />
@@ -200,23 +208,26 @@
                             <button type="button" class="secondary" onclick={cancelEdit}>{$_('common.cancel')}</button>
                         </div>
                     {:else}
-                        <span class="loc-name"><strong>{node.name}</strong></span>
-                        <span class="muted">[{node.kind}]</span>
-                        {#if node.item_count > 0}
-                            <span class="muted">· {node.item_count === 1 ? $_('locations.item_count', {values: {count: node.item_count}}) : $_('locations.items_count', {values: {count: node.item_count}})}</span>
-                        {/if}
-                        {#if node.notes}
-                            <span class="muted">· {node.notes}</span>
-                        {/if}
-                        {#if canEdit}
-                            <span class="loc-actions">
-                                <button type="button" class="secondary" onclick={() => startEdit(node)}>{$_('locations.edit_button')}</button>
-                                <button type="button" class="danger" onclick={() => requestDelete(node)}>{$_('locations.delete_button')}</button>
-                            </span>
-                        {/if}
+                        <div class="loc-row">
+                            <Icon name={KIND_ICON[node.kind] ?? 'map-pin'} size={14} class="loc-kind-icon" />
+                            <span class="loc-name">{node.name}</span>
+                            <span class="loc-meta muted">{node.kind}</span>
+                            {#if node.item_count > 0}
+                                <span class="muted">· {node.item_count === 1 ? $_('locations.item_count', {values: {count: node.item_count}}) : $_('locations.items_count', {values: {count: node.item_count}})}</span>
+                            {/if}
+                            {#if node.notes}
+                                <span class="muted">· {node.notes}</span>
+                            {/if}
+                            {#if canEdit}
+                                <span class="loc-actions">
+                                    <button type="button" class="secondary" onclick={() => startEdit(node)}>{$_('locations.edit_button')}</button>
+                                    <button type="button" class="danger" onclick={() => requestDelete(node)}>{$_('locations.delete_button')}</button>
+                                </span>
+                            {/if}
+                        </div>
                     {/if}
                     {#if node.children.length}
-                        <ul>
+                        <ul role="group">
                             {#each node.children as child (child.id)}
                                 {@render branch(child, depth + 1)}
                             {/each}
@@ -229,39 +240,50 @@
             {/each}
         </ul>
     {/if}
-
-    {#if confirmDeleteId}
-        <div class="modal" role="dialog" aria-modal="true">
-            <div class="card">
-                <p>
-                    {$_('locations.delete_text', {values: {name: confirmDeleteLabel}})}
-                </p>
-                <div class="form-row">
-                    <button type="button" class="danger" onclick={deleteConfirmed}>{$_('locations.delete_button')}</button>
-                    <button type="button" class="secondary" onclick={() => (confirmDeleteId = null)}>{$_('common.cancel')}</button>
-                </div>
-            </div>
-        </div>
-    {/if}
 {/if}
 
+<ConfirmDialog
+    open={!!confirmDeleteId}
+    confirmLabel={$_('locations.delete_button')}
+    variant="danger"
+    loading={confirmDeleting}
+    onconfirm={deleteConfirmed}
+    oncancel={() => { confirmDeleteId = null; confirmDeleteLabel = ''; }}
+>
+    {$_('locations.delete_text', {values: {name: confirmDeleteLabel}})}
+</ConfirmDialog>
+
 <style>
-    .loc-tree {
-        list-style: none;
-        padding-left: 0;
+    .subnav {
+        display: flex;
+        gap: 0.5rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
     }
-    .loc-tree ul {
+    .tab { padding: 0.4rem 0.8rem; border-radius: var(--radius-sm); text-decoration: none; color: inherit; }
+    .tab:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
+    .tab-active { background: var(--accent); color: var(--accent-contrast); }
+    .loc-tree, .loc-tree ul {
         list-style: none;
         padding-left: 0;
     }
     .loc-tree li {
-        padding: 0.35rem 0;
+        padding: 0.25rem 0;
     }
-    .loc-name {
-        margin-right: 0.5rem;
+    .loc-row {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        min-height: var(--tap-min);
     }
+    :global(.loc-kind-icon) { color: var(--text-muted); flex-shrink: 0; }
+    .loc-name { font-weight: 600; }
+    .loc-meta { font-size: 0.8rem; }
     .loc-actions {
-        margin-left: 0.75rem;
+        margin-left: auto;
         display: inline-flex;
         gap: 0.25rem;
     }
@@ -270,13 +292,5 @@
         gap: 0.5rem;
         align-items: center;
         flex-wrap: wrap;
-    }
-    .modal {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.4);
-        display: grid;
-        place-items: center;
-        z-index: 50;
     }
 </style>

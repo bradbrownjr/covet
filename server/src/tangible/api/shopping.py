@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session as DBSession
 from tangible.auth.deps import AuthContext, collection_role, require_user
 from tangible.db import get_session
 from tangible.models import (
+    Category,
     Collection,
     Item,
     ItemLot,
@@ -47,6 +48,7 @@ from tangible.schemas import (
     ShoppingStoreUpdate,
 )
 from tangible.services import audit
+from tangible.services.categories import resolve_slug
 
 router = APIRouter(prefix="/lists", tags=["shopping"])
 
@@ -348,6 +350,7 @@ def purchase_shopping_item(
     g.purchased_by_user_id = auth.user.id
 
     restocked_lot_id: str | None = None
+    created_item_id: str | None = None
     if g.linked_item_id is not None:
         item = db.get(Item, g.linked_item_id)
         if item is not None and item.collection_id == g.collection_id:
@@ -369,6 +372,50 @@ def purchase_shopping_item(
             item.quantity = int(active or 0)
             item.depleted = False
             restocked_lot_id = lot.id
+    else:
+        # Ad-hoc shopping entry with no linked pantry/inventory item: create the
+        # Item in the entry's collection so the purchase actually lands somewhere.
+        # Resolve a category: prefer the entry's own slug, else the collection's
+        # default. If neither resolves, skip auto-create silently (the entry is
+        # still marked purchased) so legacy data without categories isn't blocked.
+        cat: Category | None = None
+        if g.category_slug:
+            try:
+                cat = resolve_slug(db, g.category_slug)
+            except LookupError:
+                cat = None
+        if cat is None:
+            collection = db.get(Collection, g.collection_id)
+            default_slug = collection.default_category_slug if collection is not None else None
+            if default_slug:
+                try:
+                    cat = resolve_slug(db, default_slug)
+                except LookupError:
+                    cat = None
+        if cat is not None:
+            new_item = Item(
+                collection_id=g.collection_id,
+                category_id=cat.id,
+                title=g.name,
+                quantity=g.quantity,
+                notes=g.notes,
+                attrs={"brand": g.brand} if g.brand else {},
+            )
+            db.add(new_item)
+            db.flush()
+            lot = ItemLot(
+                item_id=new_item.id,
+                collection_id=g.collection_id,
+                quantity=g.quantity,
+                purchased_at=purchased_at,
+                use_by_date=use_by_date,
+            )
+            db.add(lot)
+            db.flush()
+            new_item.depleted = False
+            new_item.quantity = g.quantity
+            created_item_id = new_item.id
+            restocked_lot_id = lot.id
 
     audit.log(
         db,
@@ -380,6 +427,7 @@ def purchase_shopping_item(
         payload={
             "linked_item_id": g.linked_item_id,
             "restocked_lot_id": restocked_lot_id,
+            "created_item_id": created_item_id,
             "quantity": g.quantity,
         },
     )

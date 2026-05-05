@@ -173,16 +173,23 @@ class CollectionDetailViewModel @Inject constructor(
                 val contacts = items.listContacts()
                 val locs = try { locations.listTree(collectionId) } catch (_: Throwable) { emptyList() }
                 val roots = cats.filter { it.parent_id == null }
-                // Only pre-select a category when the collection has an explicit default.
-                // Collections without a default get no pre-selection so the user must choose.
-                val defaultRoot = c.default_category_slug?.let { slug ->
-                    val leaf = cats.firstOrNull { it.slug == slug }
-                    cats.firstOrNull { it.id == leaf?.parent_id }
+                // Pre-select a category from the collection's default slug.
+                // The slug may name either a leaf (e.g. "groceries.dairy", in
+                // which case we resolve and select the root + that leaf) or a
+                // root (e.g. "groceries", in which case we select the root and
+                // leave the leaf un-chosen so the user picks a sub-category if
+                // they want one). Without this branch a root-default like
+                // "groceries" produced no pre-selection at all and the Add
+                // dialog forced the user to pick a category every time.
+                val defaultMatch = c.default_category_slug?.let { slug ->
+                    cats.firstOrNull { it.slug == slug }
+                }
+                val (defaultRoot, defaultLeaf) = when {
+                    defaultMatch == null -> null to null
+                    defaultMatch.parent_id == null -> defaultMatch to null
+                    else -> cats.firstOrNull { it.id == defaultMatch.parent_id } to defaultMatch
                 }
                 val leaves = if (defaultRoot != null) cats.filter { it.parent_id == defaultRoot.id } else emptyList()
-                val defaultLeaf = c.default_category_slug?.let { slug ->
-                    leaves.firstOrNull { it.slug == slug }
-                }
                 _state.value = _state.value.copy(
                     collection = c,
                     items = list,

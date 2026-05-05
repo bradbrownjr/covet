@@ -30,7 +30,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.bradbrownjr.tangible.R
 import io.github.bradbrownjr.tangible.ui.screen.about.AboutScreen
-import io.github.bradbrownjr.tangible.ui.screen.collections.CollectionListScreen
+import io.github.bradbrownjr.tangible.ui.screen.collections.CollectionsTabsScreen
 import io.github.bradbrownjr.tangible.ui.screen.grocery.ShoppingListScreen
 import io.github.bradbrownjr.tangible.ui.screen.maintenance.MaintenanceScreen
 import io.github.bradbrownjr.tangible.ui.screen.settings.SettingsScreen
@@ -122,7 +122,7 @@ fun HomeScreen(
             beyondViewportPageCount = 1,
         ) { page ->
             when (page) {
-                0 -> CollectionListScreen(onOpen = onOpenCollection)
+                0 -> CollectionsTabsScreen(onOpenCollection = onOpenCollection)
                 1 -> ShoppingListScreen(
                     onBack = { scope.launch { pagerState.animateScrollToPage(0) } },
                     showBackButton = false,

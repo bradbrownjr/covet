@@ -473,7 +473,13 @@
     "working_button": "処理中…",
     "heading": "インポート / バックアップ",
     "error_pick_file": "ファイルを選択してください",
-    "error_no_list": "リストを貼り付けるか .txt ファイルを添付してください"
+    "error_no_list": "リストを貼り付けるか .txt ファイルを添付してください",
+    "mode_clz_desc": "CLZ バックアップXMLファイル",
+    "mode_csv_desc": "汎用スプレッドシートエクスポート",
+    "mode_list_desc": "アイテム名の単純なリスト",
+    "mode_restore_desc": "完全なJSONバックアップの復元",
+    "success_message": "インポートが正常に完了しました。",
+    "show_details": "生の出力を表示"
   },
   "maintenance": {
     "title": "メンテナンスとアラート",
@@ -500,7 +506,8 @@
     "upcoming_label": "予定",
     "days_overdue": "{days}日超過",
     "due_today": "本日期限",
-    "in_days": "{days}日後"
+    "in_days": "{days}日後",
+    "all_clear": "すべて完了！"
   },
   "settings": {
     "title": "設定",

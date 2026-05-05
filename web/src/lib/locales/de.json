@@ -473,7 +473,13 @@
     "working_button": "Arbeite…",
     "heading": "Import / Sicherung",
     "error_pick_file": "Datei auswählen",
-    "error_no_list": "Liste einfügen oder .txt-Datei anhängen"
+    "error_no_list": "Liste einfügen oder .txt-Datei anhängen",
+    "mode_clz_desc": "CLZ Backup-XML-Datei",
+    "mode_csv_desc": "Generischer Tabellenexport",
+    "mode_list_desc": "Einfache Liste von Elementnamen",
+    "mode_restore_desc": "Vollständige JSON-Sicherung wiederherstellen",
+    "success_message": "Import erfolgreich abgeschlossen.",
+    "show_details": "Rohausgabe anzeigen"
   },
   "maintenance": {
     "title": "Wartung & Warnungen",
@@ -500,7 +506,8 @@
     "upcoming_label": "Bevorstehend",
     "days_overdue": "{days}T überfällig",
     "due_today": "heute fällig",
-    "in_days": "in {days}T"
+    "in_days": "in {days}T",
+    "all_clear": "Alles erledigt!"
   },
   "settings": {
     "title": "Einstellungen",

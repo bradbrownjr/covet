@@ -9,6 +9,17 @@
         type Item,
         type ManualBundle
     } from '$lib/api';
+    import { ConfirmDialog, Modal } from '$lib/components';
+    import Icon from '$lib/Icon.svelte';
+
+    const ASSET_KIND_ICON: Record<BundleAssetKind, string> = {
+        manual:   'book-open',
+        diagram:  'image',
+        firmware: 'file-cog',
+        service:  'wrench',
+        parts:    'nut',
+        other:    'file',
+    };
 
     let collection = $state<Collection | null>(null);
     let bundles = $state<ManualBundle[]>([]);
@@ -25,6 +36,11 @@
 
     let confirmDeleteId = $state<string | null>(null);
     let confirmDeleteLabel = $state('');
+    let confirmDeleting = $state(false);
+
+    let confirmAssetBundleId = $state<string | null>(null);
+    let confirmAssetId = $state<string | null>(null);
+    let confirmAssetDeleting = $state(false);
 
     let uploadBundleId = $state<string | null>(null);
     let uploadFile = $state<File | null>(null);
@@ -104,12 +120,36 @@
 
     async function deleteConfirmed() {
         if (!confirmDeleteId) return;
+        confirmDeleting = true;
         try {
             await api.delete(`/bundles/${confirmDeleteId}`);
             confirmDeleteId = null;
+            confirmDeleteLabel = '';
             await load();
         } catch (err) {
             error = (err as Error).message;
+        } finally {
+            confirmDeleting = false;
+        }
+    }
+
+    function requestAssetDelete(bid: string, aid: string) {
+        confirmAssetBundleId = bid;
+        confirmAssetId = aid;
+    }
+
+    async function deleteAssetConfirmed() {
+        if (!confirmAssetBundleId || !confirmAssetId) return;
+        confirmAssetDeleting = true;
+        try {
+            await api.delete(`/bundles/${confirmAssetBundleId}/assets/${confirmAssetId}`);
+            confirmAssetBundleId = null;
+            confirmAssetId = null;
+            await load();
+        } catch (err) {
+            error = (err as Error).message;
+        } finally {
+            confirmAssetDeleting = false;
         }
     }
 
@@ -141,16 +181,6 @@
     async function setPrimary(bid: string, aid: string) {
         try {
             await api.patch(`/bundles/${bid}`, { primary_asset_id: aid });
-            await load();
-        } catch (err) {
-            error = (err as Error).message;
-        }
-    }
-
-    async function deleteAsset(bid: string, aid: string) {
-        if (!confirm($_('bundles.delete_asset_confirm'))) return;
-        try {
-            await api.delete(`/bundles/${bid}/assets/${aid}`);
             await load();
         } catch (err) {
             error = (err as Error).message;
@@ -223,7 +253,7 @@
     {/if}
 
     {#if loading}
-        <p>Loading…</p>
+        <p class="muted">Loading…</p>
     {:else if bundles.length === 0}
         <p class="muted">{$_('bundles.no_bundles')}</p>
     {:else}
@@ -259,6 +289,7 @@
                             <ul class="asset-list">
                                 {#each b.assets as a (a.id)}
                                     <li>
+                                        <Icon name={ASSET_KIND_ICON[a.kind] ?? 'file'} size={14} class="asset-kind-icon" />
                                         <a href="/api/bundles/{b.id}/assets/{a.id}/download" target="_blank" rel="noopener">
                                             {a.label || a.filename}
                                         </a>
@@ -269,7 +300,7 @@
                                             <button type="button" class="link" onclick={() => setPrimary(b.id, a.id)}>{$_('bundles.make_primary_button')}</button>
                                         {/if}
                                         {#if canEdit}
-                                            <button type="button" class="link danger" onclick={() => deleteAsset(b.id, a.id)}>{$_('bundles.delete_asset_button')}</button>
+                                            <button type="button" class="link danger" onclick={() => requestAssetDelete(b.id, a.id)}>{$_('bundles.delete_asset_button')}</button>
                                         {/if}
                                     </li>
                                 {/each}
@@ -313,75 +344,69 @@
             </article>
         {/each}
     {/if}
-
-    {#if uploadBundleId}
-        <div class="modal" role="dialog" aria-modal="true">
-            <div class="card">
-                <h3>{$_('bundles.upload_heading')}</h3>
-                <div class="form-row">
-                    <input
-                        type="file"
-                        onchange={(e) => (uploadFile = (e.currentTarget as HTMLInputElement).files?.[0] ?? null)}
-                    />
-                </div>
-                <div class="form-row">
-                    <select bind:value={uploadKind}>
-                        <option value="manual">{$_('bundles.kind_manual')}</option>
-                        <option value="diagram">{$_('bundles.kind_diagram')}</option>
-                        <option value="firmware">{$_('bundles.kind_firmware')}</option>
-                        <option value="service">{$_('bundles.kind_service')}</option>
-                        <option value="parts">{$_('bundles.kind_parts')}</option>
-                        <option value="other">{$_('bundles.kind_other')}</option>
-                    </select>
-                    <input bind:value={uploadLabel} placeholder={$_('bundles.upload_label_placeholder')} />
-                </div>
-                <div class="form-row">
-                    <button type="button" onclick={doUpload} disabled={!uploadFile || uploadBusy}>
-                        {uploadBusy ? $_('bundles.uploading_button') : $_('bundles.upload_button')}
-                    </button>
-                    <button type="button" class="secondary" onclick={() => (uploadBundleId = null)} disabled={uploadBusy}>{$_('common.cancel')}</button>
-                </div>
-            </div>
-        </div>
-    {/if}
-
-    {#if confirmDeleteId}
-        <div class="modal" role="dialog" aria-modal="true">
-            <div class="card">
-                <p>
-                    {$_('bundles.delete_bundle_text', {values: {name: confirmDeleteLabel}})}
-                </p>
-                <div class="form-row">
-                    <button type="button" class="danger" onclick={deleteConfirmed}>{$_('bundles.delete_button')}</button>
-                    <button type="button" class="secondary" onclick={() => (confirmDeleteId = null)}>{$_('common.cancel')}</button>
-                </div>
-            </div>
-        </div>
-    {/if}
 {/if}
 
+<!-- Upload asset modal -->
+<Modal open={!!uploadBundleId} title={$_('bundles.upload_heading')} onclose={() => (uploadBundleId = null)}>
+    {#snippet footer()}
+        <button type="button" onclick={doUpload} disabled={!uploadFile || uploadBusy}>
+            {uploadBusy ? $_('bundles.uploading_button') : $_('bundles.upload_button')}
+        </button>
+        <button type="button" class="secondary" onclick={() => (uploadBundleId = null)} disabled={uploadBusy}>{$_('common.cancel')}</button>
+    {/snippet}
+    <div class="form-row">
+        <input
+            type="file"
+            onchange={(e) => (uploadFile = (e.currentTarget as HTMLInputElement).files?.[0] ?? null)}
+        />
+    </div>
+    <div class="form-row">
+        <select bind:value={uploadKind}>
+            <option value="manual">{$_('bundles.kind_manual')}</option>
+            <option value="diagram">{$_('bundles.kind_diagram')}</option>
+            <option value="firmware">{$_('bundles.kind_firmware')}</option>
+            <option value="service">{$_('bundles.kind_service')}</option>
+            <option value="parts">{$_('bundles.kind_parts')}</option>
+            <option value="other">{$_('bundles.kind_other')}</option>
+        </select>
+        <input bind:value={uploadLabel} placeholder={$_('bundles.upload_label_placeholder')} />
+    </div>
+</Modal>
+
+<!-- Delete asset confirm -->
+<ConfirmDialog
+    open={!!confirmAssetId}
+    confirmLabel={$_('bundles.delete_asset_button')}
+    variant="danger"
+    loading={confirmAssetDeleting}
+    onconfirm={deleteAssetConfirmed}
+    oncancel={() => { confirmAssetBundleId = null; confirmAssetId = null; }}
+>
+    {$_('bundles.delete_asset_confirm')}
+</ConfirmDialog>
+
+<!-- Delete bundle confirm -->
+<ConfirmDialog
+    open={!!confirmDeleteId}
+    confirmLabel={$_('bundles.delete_button')}
+    variant="danger"
+    loading={confirmDeleting}
+    onconfirm={deleteConfirmed}
+    oncancel={() => { confirmDeleteId = null; confirmDeleteLabel = ''; }}
+>
+    {$_('bundles.delete_bundle_text', {values: {name: confirmDeleteLabel}})}
+</ConfirmDialog>
+
 <style>
-    .bundle {
-        margin: 1rem 0;
-    }
-    .bundle-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 1rem;
-    }
-    .bundle-actions {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-    }
-    .bundle-section {
-        margin-top: 1rem;
-    }
-    .asset-list, .link-list {
-        list-style: none;
-        padding-left: 0;
-    }
+    .subnav { display: flex; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .tab { padding: 0.4rem 0.8rem; border-radius: var(--radius-sm); text-decoration: none; color: inherit; }
+    .tab:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
+    .tab-active { background: var(--accent); color: var(--accent-contrast); }
+    .bundle { margin: 1rem 0; }
+    .bundle-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+    .bundle-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .bundle-section { margin-top: 1rem; }
+    .asset-list, .link-list { list-style: none; padding-left: 0; }
     .asset-list li, .link-list li {
         padding: 0.25rem 0;
         display: flex;
@@ -389,36 +414,7 @@
         gap: 0.5rem;
         flex-wrap: wrap;
     }
-    .badge {
-        background: var(--color-accent, #4a7);
-        color: white;
-        padding: 0.1rem 0.5rem;
-        border-radius: 4px;
-        font-size: 0.75rem;
-    }
-    .form-row {
-        display: flex;
-        gap: 0.5rem;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-    .link {
-        background: none;
-        border: none;
-        color: var(--color-accent, #4a7);
-        cursor: pointer;
-        padding: 0;
-        font-size: inherit;
-    }
-    .link.danger {
-        color: var(--color-danger, #c33);
-    }
-    .modal {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.4);
-        display: grid;
-        place-items: center;
-        z-index: 50;
-    }
+    :global(.asset-kind-icon) { color: var(--text-muted); flex-shrink: 0; }
+    .badge { background: var(--accent); color: var(--accent-contrast); padding: 0.1rem 0.5rem; border-radius: var(--radius-full); font-size: 0.75rem; }
+    .form-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
 </style>

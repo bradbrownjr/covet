@@ -473,7 +473,13 @@
     "working_button": "In corso…",
     "heading": "Importa / Backup",
     "error_pick_file": "Seleziona un file",
-    "error_no_list": "Incolla un elenco o allega un file .txt"
+    "error_no_list": "Incolla un elenco o allega un file .txt",
+    "mode_clz_desc": "File XML di backup CLZ",
+    "mode_csv_desc": "Esportazione foglio di calcolo generico",
+    "mode_list_desc": "Elenco semplice di nomi elementi",
+    "mode_restore_desc": "Ripristino completo da JSON",
+    "success_message": "Importazione completata con successo.",
+    "show_details": "Mostra output grezzo"
   },
   "maintenance": {
     "title": "Manutenzione e avvisi",
@@ -500,7 +506,8 @@
     "upcoming_label": "In arrivo",
     "days_overdue": "{days}g di ritardo",
     "due_today": "scade oggi",
-    "in_days": "tra {days}g"
+    "in_days": "tra {days}g",
+    "all_clear": "Tutto in ordine!"
   },
   "settings": {
     "title": "Impostazioni",

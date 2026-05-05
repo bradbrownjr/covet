@@ -473,7 +473,13 @@
     "working_button": "Trabajando…",
     "heading": "Importar / Copia de seguridad",
     "error_pick_file": "Seleccione un archivo",
-    "error_no_list": "Pegue una lista o adjunte un archivo .txt"
+    "error_no_list": "Pegue una lista o adjunte un archivo .txt",
+    "mode_clz_desc": "Archivo XML de respaldo CLZ",
+    "mode_csv_desc": "Exportación de hoja de cálculo genérica",
+    "mode_list_desc": "Lista simple de nombres de elementos",
+    "mode_restore_desc": "Restauración completa desde JSON",
+    "success_message": "Importación completada correctamente.",
+    "show_details": "Mostrar salida bruta"
   },
   "maintenance": {
     "title": "Mantenimiento y alertas",
@@ -500,7 +506,8 @@
     "upcoming_label": "Próximo",
     "days_overdue": "{days}d de retraso",
     "due_today": "vence hoy",
-    "in_days": "en {days}d"
+    "in_days": "en {days}d",
+    "all_clear": "¡Todo al día!"
   },
   "settings": {
     "title": "Configuración",

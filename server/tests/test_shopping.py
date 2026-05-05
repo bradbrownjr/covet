@@ -113,3 +113,43 @@ def test_shopping_audit_trail(client) -> None:
     log = client.get("/api/audit", params={"collection_id": cid}).json()
     actions = {entry["action"] for entry in log}
     assert {"shopping.create", "shopping.update", "shopping.purchase"}.issubset(actions)
+
+
+def test_shopping_purchase_creates_item_when_no_link(client) -> None:
+    """Purchasing an ad-hoc shopping entry creates a pantry item.
+
+    Previously the purchase route only restocked when ``linked_item_id`` was
+    set, so brand-new ad-hoc items disappeared without a trace. Now an Item +
+    ItemLot are created in the entry's collection, carrying name, quantity,
+    notes, and brand.
+    """
+    _signup_and_login(client, "alice")
+    cid, _ = _create_pantry_item(client)
+
+    items_before = client.get("/api/items", params={"collection_id": cid}).json()
+    titles_before = {it["title"] for it in items_before}
+
+    r = client.post(
+        "/api/lists",
+        json={
+            "collection_id": cid,
+            "name": "Sour Cream",
+            "quantity": 2,
+            "brand": "Hannaford",
+            "notes": "low fat",
+            "category_slug": "other.generic",
+        },
+    )
+    assert r.status_code == 201, r.text
+    gid = r.json()["id"]
+    assert client.post(f"/api/lists/{gid}/purchase", json={}).status_code == 200
+
+    items_after = client.get("/api/items", params={"collection_id": cid}).json()
+    new_items = [it for it in items_after if it["title"] not in titles_before]
+    assert len(new_items) == 1
+    new_item = new_items[0]
+    assert new_item["title"] == "Sour Cream"
+    assert new_item["quantity"] == 2
+    assert new_item["notes"] == "low fat"
+    assert new_item["depleted"] is False
+    assert (new_item.get("attrs") or {}).get("brand") == "Hannaford"

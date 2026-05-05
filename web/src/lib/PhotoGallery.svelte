@@ -1,5 +1,6 @@
 <script lang="ts">
     import { api } from '$lib/api';
+    import Icon from '$lib/Icon.svelte';
 
     interface Photo {
         id: string;
@@ -167,12 +168,12 @@
         tabindex="-1"
     >
         <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <div class="lightbox" onclick={(e) => e.stopPropagation()}>
+        <div class="lightbox" role="presentation" onclick={(e) => e.stopPropagation()}>
             {#if photos.length > 1}
-                <button class="lb-nav lb-prev" onclick={prevLightbox} aria-label="Previous">&#8249;</button>
-                <button class="lb-nav lb-next" onclick={nextLightbox} aria-label="Next">&#8250;</button>
+                <button class="lb-nav lb-prev" onclick={prevLightbox} aria-label="Previous"><Icon name="chevron-left" size={24} /></button>
+                <button class="lb-nav lb-next" onclick={nextLightbox} aria-label="Next"><Icon name="chevron-right" size={24} /></button>
             {/if}
-            <button class="lb-close" onclick={() => (lightboxIdx = null)} aria-label="Close">&#x2715;</button>
+            <button class="lb-close" onclick={() => (lightboxIdx = null)} aria-label="Close"><Icon name="x" size={20} /></button>
             <img
                 src={photoUrl(photos[lightboxIdx].id)}
                 alt={photos[lightboxIdx].caption ?? ''}
@@ -321,6 +322,10 @@
     }
     .lb-prev { left: -3.5rem; }
     .lb-next { right: -3.5rem; }
+    @media (max-width: 640px) {
+        .lb-prev { left: 0; }
+        .lb-next { right: 0; }
+    }
     .lb-close {
         position: absolute;
         top: -2.5rem;

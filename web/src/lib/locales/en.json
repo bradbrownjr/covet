@@ -473,7 +473,13 @@
     "submit_button": "Import",
     "working_button": "Working…",
     "error_pick_file": "Pick a file",
-    "error_no_list": "Paste a list or attach a .txt file"
+    "error_no_list": "Paste a list or attach a .txt file",
+    "mode_clz_desc": "CLZ backup XML file",
+    "mode_csv_desc": "Generic spreadsheet export",
+    "mode_list_desc": "Plain list of item names",
+    "mode_restore_desc": "Full JSON backup restore",
+    "success_message": "Import completed successfully.",
+    "show_details": "Show raw output"
   },
   "maintenance": {
     "title": "Maintenance & alerts",
@@ -500,7 +506,8 @@
     "upcoming_label": "Upcoming",
     "days_overdue": "{days}d overdue",
     "due_today": "due today",
-    "in_days": "in {days}d"
+    "in_days": "in {days}d",
+    "all_clear": "All caught up!"
   },
   "settings": {
     "title": "Settings",

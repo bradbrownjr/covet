@@ -473,7 +473,13 @@
     "working_button": "En cours…",
     "heading": "Import / Sauvegarde",
     "error_pick_file": "Sélectionnez un fichier",
-    "error_no_list": "Collez une liste ou joignez un fichier .txt"
+    "error_no_list": "Collez une liste ou joignez un fichier .txt",
+    "mode_clz_desc": "Fichier XML de sauvegarde CLZ",
+    "mode_csv_desc": "Export tableur générique",
+    "mode_list_desc": "Liste simple de noms d'éléments",
+    "mode_restore_desc": "Restauration complète depuis JSON",
+    "success_message": "Importation terminée avec succès.",
+    "show_details": "Afficher la sortie brute"
   },
   "maintenance": {
     "title": "Maintenance & alertes",
@@ -500,7 +506,8 @@
     "upcoming_label": "À venir",
     "days_overdue": "{days}j de retard",
     "due_today": "dû aujourd'hui",
-    "in_days": "dans {days}j"
+    "in_days": "dans {days}j",
+    "all_clear": "Tout est à jour !"
   },
   "settings": {
     "title": "Paramètres",

@@ -4,6 +4,8 @@
     import { _ } from 'svelte-i18n';
     import { api, ApiError, type Category, type Collection } from '$lib/api';
     import { childrenOf, loadCategories, rootCategories } from '$lib/categories';
+    import { Alert } from '$lib/components';
+    import Icon from '$lib/Icon.svelte';
 
     let collections = $state<Collection[]>([]);
     let collectionId = $state('');
@@ -186,12 +188,32 @@
 <div class="card">
     <div class="field">
         <label>{$_('import_page.mode_label')}</label>
-        <select bind:value={mode}>
-            <option value="clz">{$_('import_page.mode_clz')}</option>
-            <option value="csv">{$_('import_page.mode_csv')}</option>
-            <option value="list">{$_('import_page.mode_list')}</option>
-            <option value="restore">{$_('import_page.mode_restore')}</option>
-        </select>
+        <div class="mode-cards" role="radiogroup" aria-label={$_('import_page.mode_label')}>
+            <label class="mode-card" class:active={mode === 'clz'}>
+                <input type="radio" bind:group={mode} value="clz" class="sr-only" />
+                <Icon name="file-archive" size={20} />
+                <span class="mode-name">{$_('import_page.mode_clz')}</span>
+                <span class="mode-desc muted">{$_('import_page.mode_clz_desc')}</span>
+            </label>
+            <label class="mode-card" class:active={mode === 'csv'}>
+                <input type="radio" bind:group={mode} value="csv" class="sr-only" />
+                <Icon name="file-spreadsheet" size={20} />
+                <span class="mode-name">{$_('import_page.mode_csv')}</span>
+                <span class="mode-desc muted">{$_('import_page.mode_csv_desc')}</span>
+            </label>
+            <label class="mode-card" class:active={mode === 'list'}>
+                <input type="radio" bind:group={mode} value="list" class="sr-only" />
+                <Icon name="list" size={20} />
+                <span class="mode-name">{$_('import_page.mode_list')}</span>
+                <span class="mode-desc muted">{$_('import_page.mode_list_desc')}</span>
+            </label>
+            <label class="mode-card" class:active={mode === 'restore'}>
+                <input type="radio" bind:group={mode} value="restore" class="sr-only" />
+                <Icon name="database-backup" size={20} />
+                <span class="mode-name">{$_('import_page.mode_restore')}</span>
+                <span class="mode-desc muted">{$_('import_page.mode_restore_desc')}</span>
+            </label>
+        </div>
     </div>
 
     <form onsubmit={submit}>
@@ -300,7 +322,35 @@
         {/if}
 
         <button type="submit" disabled={busy}>{busy ? $_('import_page.working_button') : $_('import_page.submit_button')}</button>
-        {#if error}<p class="error">{error}</p>{/if}
-        {#if result}<pre class="success">{result}</pre>{/if}
+        {#if error}<Alert variant="danger" dismissible onclose={() => (error = '')}>{error}</Alert>{/if}
+        {#if result}
+            <Alert variant="success">
+                {$_('import_page.success_message')}
+                <details style="margin-top:0.5rem">
+                    <summary style="cursor:pointer;font-size:0.8rem">{$_('import_page.show_details')}</summary>
+                    <pre style="font-size:0.75rem;overflow:auto;max-height:12rem">{result}</pre>
+                </details>
+            </Alert>
+        {/if}
     </form>
 </div>
+
+<style>
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .mode-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.5rem; }
+    .mode-card {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+        padding: 0.75rem;
+        border: 2px solid var(--border);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        transition: border-color 0.15s, background 0.15s;
+    }
+    .mode-card:hover { border-color: var(--accent); }
+    .mode-card.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+    .mode-name { font-weight: 600; font-size: 0.9rem; }
+    .mode-desc { font-size: 0.75rem; }
+</style>

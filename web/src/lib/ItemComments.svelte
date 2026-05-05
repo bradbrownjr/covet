@@ -1,6 +1,8 @@
 <script lang="ts">
     import { api, type ItemComment } from '$lib/api';
     import { _ } from 'svelte-i18n';
+    import { ConfirmDialog } from '$lib/components';
+    import Icon from '$lib/Icon.svelte';
 
     let { itemId, currentUserId, canManage = false }: {
         itemId: string;
@@ -21,6 +23,9 @@
     let editBody = $state('');
     let replyingTo = $state<string | null>(null);
     let replyBody = $state('');
+    let deleteTargetId = $state<string | null>(null);
+    let deleteParentId = $state<string | null>(null);
+    let deleteDeleting = $state(false);
 
     async function load() {
         comments = await api.get<ItemComment[]>(`/items/${itemId}/comments`);
@@ -103,7 +108,15 @@
     }
 
     async function deleteComment(commentId: string, parentId: string | null) {
-        if (!confirm($_('comments.delete_confirm'))) return;
+        deleteTargetId = commentId;
+        deleteParentId = parentId;
+    }
+
+    async function doDeleteComment() {
+        if (!deleteTargetId) return;
+        deleteDeleting = true;
+        const commentId = deleteTargetId;
+        const parentId = deleteParentId;
         try {
             await api.delete(`/comments/${commentId}`);
             if (parentId) {
@@ -114,8 +127,12 @@
             } else {
                 comments = comments.filter((c) => c.id !== commentId);
             }
+            deleteTargetId = null;
+            deleteParentId = null;
         } catch (e) {
             error = (e as Error).message;
+        } finally {
+            deleteDeleting = false;
         }
     }
 
@@ -173,7 +190,7 @@
                             {:else}
                                 <div class="comment-header">
                                     <span class="comment-author">{c.author.display_name ?? c.author.username}</span>
-                                    <span class="comment-time muted">{timeAgo(c.created_at)}</span>
+                                    <span class="comment-time muted"><time datetime={c.created_at}>{timeAgo(c.created_at)}</time></span>
                                     {#if c.created_at !== c.updated_at}
                                         <span class="comment-edited muted">{$_('comments.edited_note')}</span>
                                     {/if}
@@ -190,6 +207,7 @@
                                 <div class="comment-footer">
                                     {#if currentUserId}
                                         <button type="button" class="link-btn" onclick={() => { replyingTo = replyingTo === c.id ? null : c.id; replyBody = ''; }}>
+                                            <Icon name="corner-down-right" size={12} />
                                             {$_('comments.reply_button')}
                                         </button>
                                     {/if}
@@ -224,7 +242,7 @@
                                             {:else}
                                                 <div class="comment-header">
                                                     <span class="comment-author">{r.author.display_name ?? r.author.username}</span>
-                                                    <span class="comment-time muted">{timeAgo(r.created_at)}</span>
+                                                    <span class="comment-time muted"><time datetime={r.created_at}>{timeAgo(r.created_at)}</time></span>
                                                     {#if r.created_at !== r.updated_at}
                                                         <span class="comment-edited muted">{$_('comments.edited_note')}</span>
                                                     {/if}
@@ -250,6 +268,17 @@
         </div>
     {/if}
 </div>
+
+<ConfirmDialog
+    open={!!deleteTargetId}
+    confirmLabel={$_('comments.delete_button')}
+    variant="danger"
+    loading={deleteDeleting}
+    onconfirm={doDeleteComment}
+    oncancel={() => { deleteTargetId = null; deleteParentId = null; }}
+>
+    {$_('comments.delete_confirm')}
+</ConfirmDialog>
 
 <style>
     .comments-section {

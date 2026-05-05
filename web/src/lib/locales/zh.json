@@ -473,7 +473,13 @@
     "working_button": "处理中…",
     "heading": "导入 / 备份",
     "error_pick_file": "请选择文件",
-    "error_no_list": "请粘贴列表或附加 .txt 文件"
+    "error_no_list": "请粘贴列表或附加 .txt 文件",
+    "mode_clz_desc": "CLZ备份XML文件",
+    "mode_csv_desc": "通用电子表格导出",
+    "mode_list_desc": "简单的条目名称列表",
+    "mode_restore_desc": "完整JSON备份恢复",
+    "success_message": "导入成功完成。",
+    "show_details": "显示原始输出"
   },
   "maintenance": {
     "title": "维护与提醒",
@@ -500,7 +506,8 @@
     "upcoming_label": "即将到来",
     "days_overdue": "逾期{days}天",
     "due_today": "今天到期",
-    "in_days": "{days}天后"
+    "in_days": "{days}天后",
+    "all_clear": "全部完成！"
   },
   "settings": {
     "title": "设置",

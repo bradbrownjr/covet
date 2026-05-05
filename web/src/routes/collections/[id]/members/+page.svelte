@@ -12,6 +12,7 @@
         type Role,
         type ShareLink
     } from '$lib/api';
+    import { ConfirmDialog } from '$lib/components';
 
     let collection = $state<Collection | null>(null);
     let members = $state<Membership[]>([]);
@@ -393,44 +394,35 @@
     <p class="error">{$_('collection.not_found')}</p>
 {/if}
 
-{#if confirmDialog === 'remove-member'}
-    <div class="modal-backdrop" role="presentation" onclick={() => (confirmDialog = null)}>
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="remove-member-title" onclick={(e) => e.stopPropagation()}>
-            <h3 id="remove-member-title">{$_('members.remove_member_title')}</h3>
-            <p class="muted">{$_('members.remove_member_text', {values: {username: pendingMember?.username ?? ''}})}</p>
-            <div class="modal-actions">
-                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>{$_('common.cancel')}</button>
-                <button type="button" class="danger" onclick={removeMemberConfirmed}>{$_('members.remove_button')}</button>
-            </div>
-        </div>
-    </div>
-{/if}
+<ConfirmDialog
+    open={confirmDialog === 'remove-member'}
+    confirmLabel={$_('members.remove_button')}
+    variant="danger"
+    onconfirm={removeMemberConfirmed}
+    oncancel={() => (confirmDialog = null)}
+>
+    {$_('members.remove_member_text', {values: {username: pendingMember?.username ?? ''}})}
+</ConfirmDialog>
 
-{#if confirmDialog === 'revoke-share'}
-    <div class="modal-backdrop" role="presentation" onclick={() => (confirmDialog = null)}>
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="revoke-share-title" onclick={(e) => e.stopPropagation()}>
-            <h3 id="revoke-share-title">{$_('members.revoke_share_title')}</h3>
-            <p class="muted">{$_('members.revoke_share_text')}</p>
-            <div class="modal-actions">
-                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>{$_('common.cancel')}</button>
-                <button type="button" class="danger" onclick={revokeShareLinkConfirmed}>{$_('members.revoke_share_button')}</button>
-            </div>
-        </div>
-    </div>
-{/if}
+<ConfirmDialog
+    open={confirmDialog === 'revoke-share'}
+    confirmLabel={$_('members.revoke_share_button')}
+    variant="danger"
+    onconfirm={revokeShareLinkConfirmed}
+    oncancel={() => (confirmDialog = null)}
+>
+    {$_('members.revoke_share_text')}
+</ConfirmDialog>
 
-{#if confirmDialog === 'revoke-invite'}
-    <div class="modal-backdrop" role="presentation" onclick={() => (confirmDialog = null)}>
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="revoke-invite-title" onclick={(e) => e.stopPropagation()}>
-            <h3 id="revoke-invite-title">{$_('members.revoke_invite_title')}</h3>
-            <p class="muted">{$_('members.revoke_invite_text')}</p>
-            <div class="modal-actions">
-                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>{$_('common.cancel')}</button>
-                <button type="button" class="danger" onclick={revokeInvitationConfirmed}>{$_('members.revoke_invite_button')}</button>
-            </div>
-        </div>
-    </div>
-{/if}
+<ConfirmDialog
+    open={confirmDialog === 'revoke-invite'}
+    confirmLabel={$_('members.revoke_invite_button')}
+    variant="danger"
+    onconfirm={revokeInvitationConfirmed}
+    oncancel={() => (confirmDialog = null)}
+>
+    {$_('members.revoke_invite_text')}
+</ConfirmDialog>
 
 <style>
     .subnav {
@@ -462,27 +454,5 @@
         color: var(--accent-fg, white);
         border-color: var(--accent);
     }
-        .modal-backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.45);
-            display: grid;
-            place-items: center;
-            padding: 1rem;
-            z-index: 40;
-        }
-        .modal {
-            width: min(34rem, 100%);
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1rem;
-            display: grid;
-            gap: 0.75rem;
-        }
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.5rem;
-        }
+
 </style>

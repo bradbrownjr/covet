@@ -9,6 +9,7 @@
         type TemplateField,
         type TemplateFieldType
     } from '$lib/api';
+    import { ConfirmDialog } from '$lib/components';
 
     const FIELD_TYPES: TemplateFieldType[] = [
         'text',
@@ -595,18 +596,15 @@
     <p class="error">Collection not found.</p>
 {/if}
 
-{#if deleteTemplateId}
-    <div class="modal-backdrop" role="presentation" onclick={() => (deleteTemplateId = null)}>
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delete-template-title" onclick={(e) => e.stopPropagation()}>
-            <h3 id="delete-template-title">Delete template?</h3>
-            <p class="muted">Delete template "{deleteTemplateName}"? Items using it keep existing attrs.</p>
-            <div class="modal-actions">
-                <button type="button" class="secondary" onclick={() => (deleteTemplateId = null)}>Cancel</button>
-                <button type="button" class="danger" onclick={removeTemplateConfirmed}>Delete</button>
-            </div>
-        </div>
-    </div>
-{/if}
+<ConfirmDialog
+    open={!!deleteTemplateId}
+    confirmLabel="Delete"
+    variant="danger"
+    onconfirm={removeTemplateConfirmed}
+    oncancel={() => { deleteTemplateId = null; deleteTemplateName = ''; }}
+>
+    Delete template "{deleteTemplateName}"? Items using it keep their existing attributes.
+</ConfirmDialog>
 
 <style>
     .subnav {
@@ -638,29 +636,7 @@
         color: var(--accent-fg, white);
         border-color: var(--accent);
     }
-    .modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.45);
-        display: grid;
-        place-items: center;
-        padding: 1rem;
-        z-index: 40;
-    }
-    .modal {
-        width: min(34rem, 100%);
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 1rem;
-        display: grid;
-        gap: 0.75rem;
-    }
-    .modal-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 0.5rem;
-    }
+
     .stack {
         display: grid;
         gap: 0.75rem;
