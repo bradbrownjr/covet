@@ -178,17 +178,7 @@
 {:else if error}
     <p class="error">{error}</p>
 {:else}
-    <nav class="subnav" aria-label="Collection sections">
-        <a class="tab" href="/collections/{cid}">Items</a>
-        <a class="tab" href="/collections/{cid}/templates">Templates</a>
-        <a class="tab" href="/collections/{cid}/locations">Locations</a>
-        <a class="tab" href="/collections/{cid}/bundles">Bundles</a>
-        <a class="tab tab-active" href="/collections/{cid}/chores" aria-current="page">Chores</a>
-        <a class="tab" href="/collections/{cid}/members">Members</a>
-    </nav>
-
     <div class="page-header">
-        <h1>{collection?.name} — Chores</h1>
         <p class="muted">{$_('chores.page_description')}</p>
     </div>
 
@@ -312,10 +302,6 @@
 </ConfirmDialog>
 
 <style>
-    .subnav { display: flex; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; flex-wrap: wrap; }
-    .tab { padding: 0.4rem 0.8rem; border-radius: var(--radius-sm); text-decoration: none; color: inherit; }
-    .tab:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
-    .tab-active { background: var(--accent); color: var(--accent-contrast); }
     .page-header { margin-bottom: 1.5rem; }
     .create-form { padding: 1rem; margin-bottom: 1.5rem; }
     .field-row { display: flex; gap: 1rem; flex-wrap: wrap; }

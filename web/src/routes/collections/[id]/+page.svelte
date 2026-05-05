@@ -7,6 +7,7 @@
     import { childrenOf, loadCategories, rootCategories } from '$lib/categories';
     import ItemComments from '$lib/ItemComments.svelte';
     import PhotoGallery from '$lib/PhotoGallery.svelte';
+    import { ConfirmDialog, Modal } from '$lib/components';
     import { me } from '$lib/session';
 
     let collection = $state<Collection | null>(null);
@@ -867,23 +868,6 @@
 </script>
 
 {#if collection}
-    <h1>{collection.name}</h1>
-    {#if collection.description}<p class="muted">{collection.description}</p>{/if}
-
-    <nav class="subnav" aria-label="Collection sections">
-        <a class="tab tab-active" href="/collections/{cid}" aria-current="page">{$_('collection.tab_items')}</a>
-        <a class="tab" href="/collections/{cid}/templates">{$_('collection.tab_templates')}</a>
-        <a class="tab" href="/collections/{cid}/locations">{$_('collection.tab_locations')}</a>
-        <a class="tab" href="/collections/{cid}/bundles">{$_('collection.tab_bundles')}</a>
-        <a class="tab" href="/collections/{cid}/chores">{$_('collection.tab_chores')}</a>
-        <a class="tab" href="/collections/{cid}/members">{$_('collection.tab_members')}</a>
-        <a class="tab" href="/import?collection={cid}">{$_('collection.tab_import')}</a>
-        <a class="tab" href="/api/collections/{cid}/reports/insurance-export" download title="Download insurance-ready ZIP (CSV + photos)">{$_('collection.tab_export')}</a>
-        {#if collection.my_role === 'owner'}
-            <button type="button" class="tab tab-danger" onclick={requestDeleteCollection}>{$_('collection.delete_collection')}</button>
-        {/if}
-    </nav>
-
     {#if canEdit}
     <form onsubmit={addItem} class="card add-form">
         <input
@@ -1337,113 +1321,96 @@
             </tbody>
         </table>
     {/if}
+
+    {#if collection.my_role === 'owner'}
+        <div class="danger-zone">
+            <button type="button" class="danger" onclick={requestDeleteCollection}>{$_('collection.delete_collection')}</button>
+        </div>
+    {/if}
 {:else if !loading}
     <p class="error">{$_('collection.not_found')}</p>
 {/if}
 
-{#if confirmDialog === 'delete-item'}
-    <div class="modal-backdrop" role="presentation" onclick={() => (confirmDialog = null)}>
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delete-item-title" onclick={(e) => e.stopPropagation()}>
-            <h3 id="delete-item-title">{$_('collection.delete_item_title')}</h3>
-            <p class="muted">{$_('collection.delete_item_text', { values: { title: pendingDeleteItemTitle || 'This item' } })}</p>
-            <div class="modal-actions">
-                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>{$_('common.cancel')}</button>
-                <button type="button" class="danger" onclick={removeItemConfirmed}>{$_('common.delete')}</button>
-            </div>
-        </div>
-    </div>
-{/if}
+<ConfirmDialog
+    open={confirmDialog === 'delete-item'}
+    title={$_('collection.delete_item_title')}
+    variant="danger"
+    confirmLabel={$_('common.delete')}
+    message={$_('collection.delete_item_text', { values: { title: pendingDeleteItemTitle || 'This item' } })}
+    onconfirm={removeItemConfirmed}
+    oncancel={() => (confirmDialog = null)}
+/>
 
-{#if confirmDialog === 'delete-collection'}
-    <div class="modal-backdrop" role="presentation" onclick={() => (confirmDialog = null)}>
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delete-collection-title" onclick={(e) => e.stopPropagation()}>
-            <h3 id="delete-collection-title">{$_('collection.delete_collection_title')}</h3>
-            <p class="muted">
-                {$_('collection.delete_collection_text', { values: { name: collection?.name ?? '' } })}
-            </p>
-            <div class="modal-actions">
-                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>{$_('common.cancel')}</button>
-                <button type="button" class="danger" onclick={deleteCollectionConfirmed}>{$_('collection.delete_collection_confirm')}</button>
-            </div>
-        </div>
-    </div>
-{/if}
+<ConfirmDialog
+    open={confirmDialog === 'delete-collection'}
+    title={$_('collection.delete_collection_title')}
+    variant="danger"
+    confirmLabel={$_('collection.delete_collection_confirm')}
+    message={$_('collection.delete_collection_text', { values: { name: collection?.name ?? '' } })}
+    onconfirm={deleteCollectionConfirmed}
+    oncancel={() => (confirmDialog = null)}
+/>
 
-{#if confirmDialog === 'flag-item'}
-    <div class="modal-backdrop" role="presentation" onclick={() => (confirmDialog = null)}>
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="flag-item-title" onclick={(e) => e.stopPropagation()}>
-            <h3 id="flag-item-title">{$_('collection.flag_title')}</h3>
-            <p class="muted">{$_('collection.flag_text', { values: { title: pendingFlagItemTitle || 'This item' } })}</p>
-            <label>
-                {$_('collection.flag_note_label')}
-                <input bind:value={flagNoteInput} maxlength="256" placeholder={$_('collection.flag_note_placeholder')} />
-            </label>
-            <div class="modal-actions">
-                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>{$_('common.cancel')}</button>
-                <button type="button" onclick={flagItemConfirmed}>{$_('collection.flag_confirm')}</button>
-            </div>
-        </div>
-    </div>
-{/if}
+<Modal open={confirmDialog === 'flag-item'} title={$_('collection.flag_title')} onclose={() => (confirmDialog = null)}>
+    <p style="margin:0 0 0.75rem;color:var(--text-muted)">{$_('collection.flag_text', { values: { title: pendingFlagItemTitle || 'This item' } })}</p>
+    <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.875rem">
+        {$_('collection.flag_note_label')}
+        <input bind:value={flagNoteInput} maxlength="256" placeholder={$_('collection.flag_note_placeholder')} />
+    </label>
+    {#snippet footer()}
+        <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>{$_('common.cancel')}</button>
+        <button type="button" onclick={flagItemConfirmed}>{$_('collection.flag_confirm')}</button>
+    {/snippet}
+</Modal>
 
-{#if confirmDialog === 'mark-owned'}
-    <div class="modal-backdrop" role="presentation" onclick={() => (confirmDialog = null)}>
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mark-owned-title" onclick={(e) => e.stopPropagation()}>
-            <h3 id="mark-owned-title">{$_('collection.mark_owned_title')}</h3>
-            <p class="muted">{$_('collection.mark_owned_text', { values: { title: pendingOwnedItemTitle || 'this item' } })}</p>
-            <label>
-                {$_('collection.mark_owned_date_label')}
-                <input type="datetime-local" bind:value={ownedAtInput} />
-            </label>
-            <label>
-                {$_('collection.mark_owned_price_label')}
-                <input type="number" min="0" step="0.01" bind:value={ownedPriceInput} placeholder={$_('collection.mark_owned_price_placeholder')} />
-            </label>
-            <div class="modal-actions">
-                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>{$_('common.cancel')}</button>
-                <button type="button" onclick={markOwnedConfirmed}>{$_('collection.mark_owned_confirm')}</button>
-            </div>
-        </div>
-    </div>
-{/if}
+<Modal open={confirmDialog === 'mark-owned'} title={$_('collection.mark_owned_title')} onclose={() => (confirmDialog = null)}>
+    <p style="margin:0 0 0.75rem;color:var(--text-muted)">{$_('collection.mark_owned_text', { values: { title: pendingOwnedItemTitle || 'this item' } })}</p>
+    <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.875rem">
+        {$_('collection.mark_owned_date_label')}
+        <input type="datetime-local" bind:value={ownedAtInput} />
+    </label>
+    <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.875rem">
+        {$_('collection.mark_owned_price_label')}
+        <input type="number" min="0" step="0.01" bind:value={ownedPriceInput} placeholder={$_('collection.mark_owned_price_placeholder')} />
+    </label>
+    {#snippet footer()}
+        <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>{$_('common.cancel')}</button>
+        <button type="button" onclick={markOwnedConfirmed}>{$_('collection.mark_owned_confirm')}</button>
+    {/snippet}
+</Modal>
 
-{#if confirmDialog === 'archive-item'}
-    <div class="modal-backdrop" role="presentation" onclick={() => (confirmDialog = null)}>
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="archive-item-title" onclick={(e) => e.stopPropagation()}>
-            <h3 id="archive-item-title">{$_('collection.archive_title')}</h3>
-            <p class="muted">{$_('collection.archive_text', { values: { title: pendingArchiveItemTitle || 'this item' } })}</p>
-            <label>
-                {$_('collection.archive_disposition_label')}
-                <select bind:value={archiveDispositionType}>
-                    <option value="archived">{$_('collection.archive_archived')}</option>
-                    <option value="sold">{$_('collection.archive_sold')}</option>
-                    <option value="disposed">{$_('collection.archive_disposed')}</option>
-                    <option value="donated">{$_('collection.archive_donated')}</option>
-                </select>
-            </label>
-            <label>
-                {$_('collection.archive_date_label')}
-                <input type="datetime-local" bind:value={archiveDispositionAt} />
-            </label>
-            <label>
-                {$_('collection.archive_amount_label')}
-                <input type="number" min="0" step="0.01" bind:value={archiveDispositionAmount} placeholder={$_('collection.archive_amount_placeholder')} />
-            </label>
-            <label>
-                {$_('collection.archive_buyer_label')}
-                <input bind:value={archiveDispositionBuyer} maxlength="256" placeholder={$_('collection.archive_buyer_placeholder')} />
-            </label>
-            <label>
-                {$_('collection.archive_note_label')}
-                <input bind:value={archiveDispositionNote} maxlength="512" placeholder={$_('collection.archive_note_placeholder')} />
-            </label>
-            <div class="modal-actions">
-                <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>{$_('common.cancel')}</button>
-                <button type="button" onclick={archiveItemConfirmed}>{$_('collection.archive_confirm')}</button>
-            </div>
-        </div>
-    </div>
-{/if}
+<Modal open={confirmDialog === 'archive-item'} title={$_('collection.archive_title')} onclose={() => (confirmDialog = null)}>
+    <p style="margin:0 0 0.75rem;color:var(--text-muted)">{$_('collection.archive_text', { values: { title: pendingArchiveItemTitle || 'this item' } })}</p>
+    <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.875rem">
+        {$_('collection.archive_disposition_label')}
+        <select bind:value={archiveDispositionType}>
+            <option value="archived">{$_('collection.archive_archived')}</option>
+            <option value="sold">{$_('collection.archive_sold')}</option>
+            <option value="disposed">{$_('collection.archive_disposed')}</option>
+            <option value="donated">{$_('collection.archive_donated')}</option>
+        </select>
+    </label>
+    <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.875rem">
+        {$_('collection.archive_date_label')}
+        <input type="datetime-local" bind:value={archiveDispositionAt} />
+    </label>
+    <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.875rem">
+        {$_('collection.archive_amount_label')}
+        <input type="number" min="0" step="0.01" bind:value={archiveDispositionAmount} placeholder={$_('collection.archive_amount_placeholder')} />
+    </label>
+    <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.875rem">
+        {$_('collection.archive_buyer_label')}
+        <input bind:value={archiveDispositionBuyer} maxlength="256" placeholder={$_('collection.archive_buyer_placeholder')} />
+    </label>
+    <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.875rem">
+        {$_('collection.archive_note_label')}
+        <input bind:value={archiveDispositionNote} maxlength="512" placeholder={$_('collection.archive_note_placeholder')} />
+    </label>
+    {#snippet footer()}
+        <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>{$_('common.cancel')}</button>
+        <button type="button" onclick={archiveItemConfirmed}>{$_('collection.archive_confirm')}</button>
+    {/snippet}
+</Modal>
 
 <!-- Type-ahead datalists for inline edit -->
 <datalist id="condition-suggestions">
@@ -1460,66 +1427,10 @@
 </datalist>
 
 <style>
-    .subnav {
-        display: flex;
-        gap: 0.25rem;
-        flex-wrap: wrap;
-        margin: 1rem 0;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid var(--border);
-    }
-    .tab {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.4rem 0.8rem;
-        font: inherit;
-        font-weight: 500;
-        color: var(--fg);
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        text-decoration: none;
-        cursor: pointer;
-    }
-    .tab:hover {
-        border-color: var(--accent);
-    }
-    .tab-active {
-        background: var(--accent);
-        color: var(--accent-fg, white);
-        border-color: var(--accent);
-    }
-    .tab-danger {
-        color: var(--danger);
-        border-color: var(--danger);
-        margin-left: auto;
-    }
-    .tab-danger:hover {
-        background: var(--danger);
-        color: white;
-    }
-    .modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.45);
-        display: grid;
-        place-items: center;
-        padding: 1rem;
-        z-index: 40;
-    }
-    .modal {
-        width: min(34rem, 100%);
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 1rem;
-        display: grid;
-        gap: 0.75rem;
-    }
-    .modal-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 0.5rem;
+    .danger-zone {
+        margin-top: 3rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
     }
     .edit-input {
         width: 100%;

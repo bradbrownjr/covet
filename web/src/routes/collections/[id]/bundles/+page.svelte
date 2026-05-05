@@ -218,18 +218,6 @@
 </script>
 
 {#if collection}
-    <h1>{collection.name}</h1>
-    {#if collection.description}<p class="muted">{collection.description}</p>{/if}
-
-    <nav class="subnav" aria-label="Collection sections">
-        <a class="tab" href="/collections/{cid}">Items</a>
-        <a class="tab" href="/collections/{cid}/templates">Templates</a>
-        <a class="tab" href="/collections/{cid}/locations">Locations</a>
-        <a class="tab tab-active" href="/collections/{cid}/bundles" aria-current="page">Bundles</a>
-        <a class="tab" href="/collections/{cid}/chores">Chores</a>
-        <a class="tab" href="/collections/{cid}/members">Members</a>
-    </nav>
-
     {#if error}<p class="error">{error}</p>{/if}
 
     {#if canEdit}
@@ -398,10 +386,6 @@
 </ConfirmDialog>
 
 <style>
-    .subnav { display: flex; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; flex-wrap: wrap; }
-    .tab { padding: 0.4rem 0.8rem; border-radius: var(--radius-sm); text-decoration: none; color: inherit; }
-    .tab:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
-    .tab-active { background: var(--accent); color: var(--accent-contrast); }
     .bundle { margin: 1rem 0; }
     .bundle-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
     .bundle-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
