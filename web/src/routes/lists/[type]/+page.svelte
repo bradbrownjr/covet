@@ -414,7 +414,7 @@
             <label>{$_('lists.item_name_placeholder')}</label>
             <input type="text" bind:value={editName} required />
         </div>
-        {#if editEntry && editEntry.list_type !== 'wish_list'}
+        {#if listType !== 'wish_list'}
             <div class="dialog-field">
                 <label>{$_('grocery.col_category')}</label>
                 <select bind:value={editCategorySlug}>
@@ -443,7 +443,7 @@
             <label>{$_('grocery.notes_placeholder')}</label>
             <input type="text" bind:value={editNotes} />
         </div>
-        {#if editEntry && editEntry.list_type === 'wish_list'}
+        {#if listType === 'wish_list'}
             <div class="dialog-field">
                 <label>{$_('lists.wish_url_placeholder')}</label>
                 <input type="url" bind:value={editWishUrl} />

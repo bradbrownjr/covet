@@ -9,7 +9,7 @@
  * error display).
  */
 
-import { showError } from './toast';
+import { showError, showToast } from './toast';
 
 export class ApiError extends Error {
     status: number;
@@ -21,7 +21,19 @@ export class ApiError extends Error {
     }
 }
 
-async function request<T>(method: string, path: string, body?: unknown, silent = false): Promise<T> {
+// When a 502/503/504 is received, retry with backoff up to this many times
+// before surfacing the error to the user. This smooths over rolling restarts.
+const GATEWAY_STATUSES = new Set([502, 503, 504]);
+const GATEWAY_MAX_RETRIES = 3;
+const GATEWAY_RETRY_DELAY_MS = 2500;
+
+async function requestWithRetry<T>(
+    method: string,
+    path: string,
+    body: unknown,
+    silent: boolean,
+    attempt: number,
+): Promise<T> {
     const init: RequestInit = {
         method,
         credentials: 'include',
@@ -42,6 +54,18 @@ async function request<T>(method: string, path: string, body?: unknown, silent =
         }
     }
     if (!res.ok) {
+        // Gateway errors during a server restart — retry silently with a
+        // "server restarting" warning, then surface as error only if all
+        // retries are exhausted.
+        if (GATEWAY_STATUSES.has(res.status)) {
+            if (attempt < GATEWAY_MAX_RETRIES) {
+                if (attempt === 0 && !silent) {
+                    showToast('Server is restarting — retrying…', 'warning', GATEWAY_RETRY_DELAY_MS * GATEWAY_MAX_RETRIES);
+                }
+                await new Promise((r) => setTimeout(r, GATEWAY_RETRY_DELAY_MS));
+                return requestWithRetry<T>(method, path, body, silent, attempt + 1);
+            }
+        }
         const message =
             (parsed && typeof parsed === 'object' && 'detail' in parsed
                 ? String((parsed as { detail: unknown }).detail)
@@ -55,6 +79,10 @@ async function request<T>(method: string, path: string, body?: unknown, silent =
         throw err;
     }
     return parsed as T;
+}
+
+async function request<T>(method: string, path: string, body?: unknown, silent = false): Promise<T> {
+    return requestWithRetry<T>(method, path, body, silent, 0);
 }
 
 export const api = {

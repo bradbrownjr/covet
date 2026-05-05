@@ -6,6 +6,8 @@ import io.github.bradbrownjr.tangible.data.remote.CategoryDto
 import io.github.bradbrownjr.tangible.data.remote.CollectionDto
 import io.github.bradbrownjr.tangible.data.remote.ItemDto
 import io.github.bradbrownjr.tangible.data.remote.LocationDto
+import io.github.bradbrownjr.tangible.data.remote.ShoppingFeedEntryDto
+import io.github.bradbrownjr.tangible.data.remote.ShoppingSourceDto
 
 /**
  * Conversion between Retrofit DTOs and Room entities.
@@ -168,3 +170,40 @@ fun List<LocationEntity>.toTreeDtos(): List<LocationDto> {
     return (byParent[null] ?: emptyList()).map(::build)
 }
 
+fun ShoppingFeedEntryDto.toEntity(now: Long = System.currentTimeMillis()): ShoppingFeedItemEntity =
+    ShoppingFeedItemEntity(
+        id = id,
+        listType = list_type,
+        name = name,
+        subtitle = subtitle,
+        quantity = quantity,
+        unit = unit,
+        notes = notes,
+        categorySlug = category_slug,
+        collectionId = collection_id,
+        sourceKind = source.kind,
+        sourceItemId = source.item_id,
+        linkedItemId = linked_item_id,
+        wishUrl = null,
+        wishPriority = null,
+        purchasedAt = purchased_at,
+        createdAt = created_at,
+        cachedAt = now,
+    )
+
+fun ShoppingFeedItemEntity.toDto(): ShoppingFeedEntryDto =
+    ShoppingFeedEntryDto(
+        id = id,
+        source = ShoppingSourceDto(kind = sourceKind, item_id = sourceItemId),
+        collection_id = collectionId ?: "",
+        name = name,
+        subtitle = subtitle,
+        quantity = quantity,
+        unit = unit,
+        notes = notes,
+        category_slug = categorySlug,
+        list_type = listType,
+        linked_item_id = linkedItemId,
+        purchased_at = purchasedAt,
+        created_at = createdAt,
+    )

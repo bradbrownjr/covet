@@ -7,6 +7,7 @@ import io.github.bradbrownjr.tangible.data.local.CategoryDao
 import io.github.bradbrownjr.tangible.data.local.CollectionDao
 import io.github.bradbrownjr.tangible.data.local.ItemDao
 import io.github.bradbrownjr.tangible.data.local.LocationDao
+import io.github.bradbrownjr.tangible.data.local.ShoppingFeedItemDao
 import io.github.bradbrownjr.tangible.data.local.flattenToEntities
 import io.github.bradbrownjr.tangible.data.local.toDto
 import io.github.bradbrownjr.tangible.data.local.toEntity
@@ -381,8 +382,25 @@ class BundleRepository @Inject constructor(
 @Singleton
 class ShoppingRepository @Inject constructor(
     private val api: TangibleApi,
+    private val dao: ShoppingFeedItemDao,
 ) {
-    suspend fun feed(listType: String? = null): List<ShoppingFeedEntryDto> = api.getShoppingFeed(listType)
+    /**
+     * Fetch the shopping feed for [listType]. On success, writes results to
+     * the Room cache. On network failure, returns cached rows if available
+     * so the UI stays functional during a server restart.
+     */
+    suspend fun feed(listType: String? = null): List<ShoppingFeedEntryDto> {
+        val type = listType ?: "groceries"
+        return try {
+            val remote = api.getShoppingFeed(listType)
+            dao.upsertAll(remote.map { it.toEntity() })
+            dao.deleteMissingForType(type, remote.map { it.id })
+            remote
+        } catch (t: Throwable) {
+            val cached = dao.getForType(type).map { it.toDto() }
+            if (cached.isNotEmpty()) cached else throw t
+        }
+    }
 
     suspend fun addItem(
         collectionId: String,

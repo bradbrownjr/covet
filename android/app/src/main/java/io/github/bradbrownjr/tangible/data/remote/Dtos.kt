@@ -373,6 +373,7 @@ data class ShoppingFeedEntryDto(
     val unit: String? = null,
     val notes: String? = null,
     val category_slug: String? = null,
+    val list_type: String = "groceries",
     val linked_item_id: String? = null,
     val purchased_at: String? = null,
     val created_at: String,

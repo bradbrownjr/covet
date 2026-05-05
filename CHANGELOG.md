@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.17.20] — 2026-05-05
+
+- **Web: Fixed category field missing in edit dialog** — Svelte 5 schedules DOM updates as microtasks, so `editEntry` was not set by the time `showModal()` was called. Switched the category/wish-list conditional from `editEntry.list_type` to `listType` (always-available route param) to guarantee the field is rendered before the dialog opens.
+- **Web: Graceful 502/503/504 handling** — the API client now retries gateway errors up to 3 times with 2.5 s intervals and shows a "Server is restarting" warning toast on the first attempt, so rolling Docker updates no longer surface a raw error to users.
+- **Android: Shopping list offline cache** — the groceries/hardware/home-goods/wish-list feed is now backed by a Room table (`shopping_feed_cache`). After a successful load the results are written to the cache; on network failure the cached rows are returned so the list stays usable during a server restart. Room DB version bumped 5 → 6 (fallbackToDestructiveMigration in place).
+
 ## [0.17.19] — 2026-05-04
 
 - **Web: Edit shopping list items** — ad-hoc list entries now have an Edit button that opens a dialog to update name, category, quantity, unit, and notes without removing and re-adding the item.

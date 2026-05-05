@@ -170,14 +170,51 @@ class Converters {
     @TypeConverter fun toBoolean(v: Int): Boolean = v != 0
 }
 
+@Entity(tableName = "shopping_feed_cache")
+data class ShoppingFeedItemEntity(
+    @PrimaryKey val id: String,
+    @ColumnInfo(name = "list_type", index = true) val listType: String,
+    val name: String,
+    val subtitle: String?,
+    val quantity: Int,
+    val unit: String?,
+    val notes: String?,
+    @ColumnInfo(name = "category_slug") val categorySlug: String?,
+    @ColumnInfo(name = "collection_id") val collectionId: String?,
+    @ColumnInfo(name = "source_kind") val sourceKind: String,
+    @ColumnInfo(name = "source_item_id") val sourceItemId: String?,
+    @ColumnInfo(name = "linked_item_id") val linkedItemId: String?,
+    @ColumnInfo(name = "wish_url") val wishUrl: String?,
+    @ColumnInfo(name = "wish_priority") val wishPriority: Int?,
+    @ColumnInfo(name = "purchased_at") val purchasedAt: String?,
+    @ColumnInfo(name = "created_at") val createdAt: String,
+    @ColumnInfo(name = "cached_at") val cachedAt: Long,
+)
+
+@Dao
+interface ShoppingFeedItemDao {
+    @Query("SELECT * FROM shopping_feed_cache WHERE list_type = :listType ORDER BY created_at DESC")
+    suspend fun getForType(listType: String): List<ShoppingFeedItemEntity>
+
+    @Upsert
+    suspend fun upsertAll(rows: List<ShoppingFeedItemEntity>)
+
+    @Query("DELETE FROM shopping_feed_cache WHERE list_type = :listType AND id NOT IN (:keep)")
+    suspend fun deleteMissingForType(listType: String, keep: List<String>)
+
+    @Query("DELETE FROM shopping_feed_cache")
+    suspend fun clear()
+}
+
 @Database(
     entities = [
         CollectionEntity::class,
         CategoryEntity::class,
         ItemEntity::class,
         LocationEntity::class,
+        ShoppingFeedItemEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -186,6 +223,7 @@ abstract class TangibleDatabase : RoomDatabase() {
     abstract fun categories(): CategoryDao
     abstract fun items(): ItemDao
     abstract fun locations(): LocationDao
+    abstract fun shoppingFeedItems(): ShoppingFeedItemDao
 }
 
 /** Convenience for upsert callers that supply OnConflictStrategy explicitly. */
