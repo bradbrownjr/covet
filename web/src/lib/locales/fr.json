@@ -529,6 +529,7 @@
     "theme_light": "Clair",
     "theme_dark": "Sombre",
     "theme_system": "Système",
+    "palette_label": "Thème de couleur",
     "notifications_heading": "Notifications",
     "notifications_description": "Choisissez comment vous êtes notifié par type d'alerte.",
     "notif_col_type": "Type d'alerte",

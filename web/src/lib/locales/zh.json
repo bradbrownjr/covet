@@ -529,6 +529,7 @@
     "theme_light": "浅色",
     "theme_dark": "深色",
     "theme_system": "系统",
+    "palette_label": "配色主题",
     "notifications_heading": "通知",
     "notifications_description": "按提醒类型选择通知方式。",
     "notif_col_type": "提醒类型",
