@@ -4,6 +4,13 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.18.8] — 2026-05-06
+
+### Added
+
+- **Android: Grid view toggle on the Collections tabs.** Each tab can now switch between a list and a 2-column grid; selection is per-session. Grid cards show category, title, quantity, and the same edit / add-to-list / delete row icons as the list view.
+- **Android: Photo-as-barcode picker on the Collections tabs.** A new image icon next to the camera-scan button lets you pick a photo from your gallery; ML Kit decodes the barcode, looks it up via the server's barcode adapter, and pre-fills the new-item title.
+
 ## [0.18.7] — 2026-05-06
 
 ### Added

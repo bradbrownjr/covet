@@ -1,14 +1,24 @@
 package io.github.bradbrownjr.tangible.ui.screen.collections
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -16,17 +26,25 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions
+import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.common.InputImage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.bradbrownjr.tangible.R
+import io.github.bradbrownjr.tangible.data.remote.BarcodeLookupRequest
 import io.github.bradbrownjr.tangible.data.remote.CategoryDto
 import io.github.bradbrownjr.tangible.data.remote.CollectionDto
 import io.github.bradbrownjr.tangible.data.remote.ItemDto
+import io.github.bradbrownjr.tangible.data.remote.TangibleApi
 import io.github.bradbrownjr.tangible.data.repo.CategoryRepository
 import io.github.bradbrownjr.tangible.data.repo.CollectionRepository
 import io.github.bradbrownjr.tangible.data.repo.ItemRepository
@@ -42,12 +60,15 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ShoppingCart
 import io.github.bradbrownjr.tangible.data.repo.ShoppingRepository
 
+enum class ViewMode { LIST, GRID }
+
 /**
  * Lightweight "Collections as swipeable tabs" home view.
  *
  * Each collection is a tab; the page beneath shows that collection's items as
- * a simple list. Per-tab toolbar exposes edit/delete collection, scan barcode,
- * and add item. Tapping any item opens [io.github.bradbrownjr.tangible.ui.screen.item.ItemDetailScreen].
+ * a simple list or grid. Per-tab toolbar exposes edit/delete collection,
+ * grid/list toggle, scan barcode (camera + image picker), and add item.
+ * Tapping any item opens [io.github.bradbrownjr.tangible.ui.screen.item.ItemDetailScreen].
  */
 
 data class CollectionsTabsUi(
@@ -72,6 +93,7 @@ data class CollectionsTabsUi(
     val pendingDeleteCollection: CollectionDto? = null,
     val createItemForCollection: CollectionDto? = null,
     val newItemTitle: String = "",
+    val viewMode: ViewMode = ViewMode.LIST,
 )
 
 @HiltViewModel
@@ -80,6 +102,7 @@ class CollectionsTabsViewModel @Inject constructor(
     private val itemsRepo: ItemRepository,
     private val categoryRepo: CategoryRepository,
     private val shoppingRepo: ShoppingRepository,
+    private val api: TangibleApi,
 ) : ViewModel() {
     private val _state = MutableStateFlow(CollectionsTabsUi())
     val state: StateFlow<CollectionsTabsUi> = _state.asStateFlow()
@@ -329,6 +352,26 @@ class CollectionsTabsViewModel @Inject constructor(
             }
         }
     }
+
+    // ---- View mode ----
+    fun toggleViewMode() {
+        val next = if (_state.value.viewMode == ViewMode.LIST) ViewMode.GRID else ViewMode.LIST
+        _state.value = _state.value.copy(viewMode = next)
+    }
+
+    // ---- Image-decoded barcode ----
+    /** Looks up [code] and opens the create-item dialog for [coll], pre-filling the title. */
+    fun onBarcodeForCollection(coll: CollectionDto, code: String) {
+        viewModelScope.launch {
+            val title = try {
+                api.barcodeLookup(BarcodeLookupRequest(code)).candidates.firstOrNull()?.title
+            } catch (_: Throwable) { null }
+            _state.value = _state.value.copy(
+                createItemForCollection = coll,
+                newItemTitle = title.orEmpty(),
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -405,6 +448,40 @@ fun CollectionsTabsScreen(
     val currentColl = s.collections.getOrNull(pagerState.currentPage)
     val currentPageLoading = currentColl?.let { s.loadingByCollection[it.id] == true } ?: false
 
+    // ML Kit barcode decoder for the photo-as-barcode picker. Closed in onDispose.
+    val context = LocalContext.current
+    val imageScanner = remember {
+        BarcodeScanning.getClient(
+            BarcodeScannerOptions.Builder()
+                .setBarcodeFormats(
+                    Barcode.FORMAT_EAN_13,
+                    Barcode.FORMAT_EAN_8,
+                    Barcode.FORMAT_UPC_A,
+                    Barcode.FORMAT_UPC_E,
+                    Barcode.FORMAT_CODE_128,
+                    Barcode.FORMAT_QR_CODE,
+                )
+                .build(),
+        )
+    }
+    DisposableEffect(Unit) { onDispose { imageScanner.close() } }
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        val coll = currentColl ?: return@rememberLauncherForActivityResult
+        if (uri == null) return@rememberLauncherForActivityResult
+        try {
+            val image = InputImage.fromFilePath(context, uri)
+            imageScanner.process(image)
+                .addOnSuccessListener { results ->
+                    val code = results.firstOrNull { !it.rawValue.isNullOrBlank() }?.rawValue
+                    if (!code.isNullOrBlank()) vm.onBarcodeForCollection(coll, code)
+                    else vm.showCreateItem(coll)
+                }
+                .addOnFailureListener { vm.showCreateItem(coll) }
+        } catch (_: Throwable) {
+            vm.showCreateItem(coll)
+        }
+    }
+
     // Lazily load items for the current tab.
     LaunchedEffect(pagerState.currentPage, s.collections) {
         s.collections.getOrNull(pagerState.currentPage)?.let { vm.loadItems(it.id) }
@@ -447,11 +524,29 @@ fun CollectionsTabsScreen(
                                 }
                             }
                         }
+                        IconButton(onClick = vm::toggleViewMode) {
+                            Icon(
+                                if (s.viewMode == ViewMode.LIST) Icons.Default.GridView
+                                else Icons.AutoMirrored.Filled.ViewList,
+                                contentDescription = stringResource(
+                                    if (s.viewMode == ViewMode.LIST) R.string.cd_grid_view
+                                    else R.string.cd_list_view,
+                                ),
+                            )
+                        }
                         IconButton(onClick = onNavigateToScanner) {
                             Icon(
                                 Icons.Default.QrCodeScanner,
                                 contentDescription = stringResource(R.string.cd_scan_barcode),
                             )
+                        }
+                        if (currentColl != null) {
+                            IconButton(onClick = { imagePicker.launch("image/*") }) {
+                                Icon(
+                                    Icons.Default.Image,
+                                    contentDescription = stringResource(R.string.cd_scan_barcode_image),
+                                )
+                            }
                         }
                         currentColl?.let { coll ->
                             IconButton(onClick = { vm.showCreateItem(coll) }) {
@@ -531,45 +626,50 @@ fun CollectionsTabsScreen(
                                 if (searchQuery.isBlank()) items
                                 else items.filter { it.title.contains(searchQuery, ignoreCase = true) }
                             }
-                            LazyColumn(Modifier.fillMaxSize()) {
-                                item(key = "search") {
-                                    OutlinedTextField(
-                                        value = searchQuery,
-                                        onValueChange = { vm.setSearch(coll.id, it) },
-                                        placeholder = { Text(stringResource(R.string.search_items)) },
-                                        singleLine = true,
-                                        trailingIcon = {
-                                            if (searchQuery.isNotEmpty()) {
-                                                IconButton(onClick = { vm.setSearch(coll.id, "") }) {
-                                                    Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.cd_clear_search))
-                                                }
-                                            }
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                                    )
-                                }
-                                if (displayItems.isEmpty()) {
-                                    item(key = "no_results") {
-                                        Box(
-                                            Modifier.fillMaxWidth().padding(32.dp),
-                                            contentAlignment = Alignment.Center,
-                                        ) {
-                                            Text(stringResource(R.string.no_search_results))
+                            if (s.viewMode == ViewMode.LIST) {
+                                LazyColumn(Modifier.fillMaxSize()) {
+                                    item(key = "search") {
+                                        SearchBar(searchQuery) { vm.setSearch(coll.id, it) }
+                                    }
+                                    if (displayItems.isEmpty()) {
+                                        item(key = "no_results") { NoSearchResults() }
+                                    } else {
+                                        items(displayItems, key = { it.id }) { item ->
+                                            ItemRow(
+                                                item = item,
+                                                onClick = { onOpenItem(item.id) },
+                                                onLongClick = { onItemEdit(item.id) },
+                                                onEdit = { onItemEdit(item.id) },
+                                                onAddToList = { vm.confirmAddToList(item) },
+                                                onDelete = { vm.confirmDelete(item) },
+                                            )
+                                            HorizontalDivider()
                                         }
                                     }
-                                } else {
-                                    items(displayItems, key = { it.id }) { item ->
-                                        ItemRow(
-                                            item = item,
-                                            onClick = { onOpenItem(item.id) },
-                                            onLongClick = { onItemEdit(item.id) },
-                                            onEdit = { onItemEdit(item.id) },
-                                            onAddToList = { vm.confirmAddToList(item) },
-                                            onDelete = { vm.confirmDelete(item) },
-                                        )
-                                        HorizontalDivider()
+                                }
+                            } else {
+                                LazyVerticalGrid(
+                                    columns = GridCells.Fixed(2),
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentPadding = PaddingValues(8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    item(span = { GridItemSpan(maxLineSpan) }) {
+                                        SearchBar(searchQuery) { vm.setSearch(coll.id, it) }
+                                    }
+                                    if (displayItems.isEmpty()) {
+                                        item(span = { GridItemSpan(maxLineSpan) }) { NoSearchResults() }
+                                    } else {
+                                        gridItems(displayItems, key = { it.id }) { item ->
+                                            ItemCard(
+                                                item = item,
+                                                onClick = { onOpenItem(item.id) },
+                                                onEdit = { onItemEdit(item.id) },
+                                                onAddToList = { vm.confirmAddToList(item) },
+                                                onDelete = { vm.confirmDelete(item) },
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -584,6 +684,36 @@ fun CollectionsTabsScreen(
         EditCollectionDialog(s, vm)
         ConfirmDeleteCollectionDialog(s, vm)
         CreateItemDialog(s, vm)
+    }
+}
+
+@Composable
+private fun SearchBar(query: String, onChange: (String) -> Unit) {
+    OutlinedTextField(
+        value = query,
+        onValueChange = onChange,
+        placeholder = { Text(stringResource(R.string.search_items)) },
+        singleLine = true,
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onChange("") }) {
+                    Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.cd_clear_search))
+                }
+            }
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+    )
+}
+
+@Composable
+private fun NoSearchResults() {
+    Box(
+        Modifier.fillMaxWidth().padding(32.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(stringResource(R.string.no_search_results))
     }
 }
 
@@ -818,4 +948,55 @@ private fun CreateItemDialog(s: CollectionsTabsUi, vm: CollectionsTabsViewModel)
         },
         dismissButton = { TextButton(onClick = vm::dismissCreateItem) { Text(stringResource(R.string.cancel)) } },
     )
+}
+
+@Composable
+private fun ItemCard(
+    item: ItemDto,
+    onClick: () -> Unit,
+    onEdit: () -> Unit,
+    onAddToList: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Column(Modifier.padding(8.dp)) {
+            item.category_slug?.let { slug ->
+                Text(
+                    slug.substringAfterLast('.'),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+            Text(
+                item.title,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (item.quantity > 1) {
+                Text(
+                    "\u00d7${item.quantity}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                IconButton(onClick = onEdit) {
+                    Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit), tint = MaterialTheme.colorScheme.primary)
+                }
+                IconButton(onClick = onAddToList) {
+                    Icon(Icons.Default.ShoppingCart, contentDescription = stringResource(R.string.cd_add_to_list), tint = MaterialTheme.colorScheme.secondary)
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.cd_delete), tint = MaterialTheme.colorScheme.error)
+                }
+            }
+        }
+    }
 }
