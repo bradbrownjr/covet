@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -27,7 +26,10 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -395,6 +397,18 @@ fun ShoppingListScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
+    // Auto-refresh whenever the screen returns to the foreground so items added
+    // from other surfaces (e.g. Collections → Add to shopping list) appear without
+    // requiring a manual pull-to-refresh.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) viewModel.refresh()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     // Show errors as snackbars and clear the state so they don't re-fire.
     LaunchedEffect(ui.error) {
         ui.error?.let { msg ->
@@ -545,9 +559,8 @@ fun ShoppingListScreen(
                     }
                     else -> {
                         LazyColumn(
-                            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            contentPadding = PaddingValues(vertical = 16.dp),
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(vertical = 8.dp),
                         ) {
                             if (aisleGroups != null) {
                                 aisleGroups.forEach { group ->
@@ -555,7 +568,7 @@ fun ShoppingListScreen(
                                         AisleHeader(group.name)
                                     }
                                     items(group.items, key = { it.id }) { entry ->
-                                        ShoppingEntryCard(
+                                        ShoppingEntryRow(
                                             entry = entry,
                                             collectionName = ui.collections[entry.collection_id]?.name ?: entry.collection_id,
                                             isUpdating = entry.id in ui.updating,
@@ -564,11 +577,12 @@ fun ShoppingListScreen(
                                             onNavigateToCollection = { onNavigateToCollection(entry.collection_id) },
                                             onEdit = { viewModel.startEdit(entry) },
                                         )
+                                        HorizontalDivider()
                                     }
                                 }
                             } else {
                                 items(ui.items, key = { it.id }) { entry ->
-                                    ShoppingEntryCard(
+                                    ShoppingEntryRow(
                                         entry = entry,
                                         collectionName = ui.collections[entry.collection_id]?.name ?: entry.collection_id,
                                         isUpdating = entry.id in ui.updating,
@@ -577,6 +591,7 @@ fun ShoppingListScreen(
                                         onNavigateToCollection = { onNavigateToCollection(entry.collection_id) },
                                         onEdit = { viewModel.startEdit(entry) },
                                     )
+                                    HorizontalDivider()
                                 }
                             }
                             // The legacy "Checked" section is gone: tapping the check now syncs
@@ -665,7 +680,7 @@ private fun AisleHeader(name: String) {
 }
 
 @Composable
-private fun ShoppingEntryCard(
+private fun ShoppingEntryRow(
     entry: ShoppingFeedEntryDto,
     collectionName: String,
     isUpdating: Boolean,
@@ -675,54 +690,26 @@ private fun ShoppingEntryCard(
     onEdit: () -> Unit,
 ) {
     val isAdHoc = !entry.id.startsWith("item:")
-    Card(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp),
-        shape = RoundedCornerShape(8.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(
-                modifier = Modifier.weight(1f).padding(end = 8.dp)
-                    .clickable { if (isAdHoc) onEdit() else onNavigateToCollection() },
-            ) {
-                Text(
-                    text = if (entry.quantity > 1) "${entry.name} \u00d7${entry.quantity}" else entry.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    maxLines = 1,
-                )
-                // Prefer brand (collection is implied by the list type). Fall back to collection
-                // name only for depleted-item entries so the user still sees where it lives.
-                val secondaryLabel = entry.brand?.takeIf { it.isNotBlank() }
-                    ?: collectionName.takeIf { !isAdHoc }
-                if (!secondaryLabel.isNullOrBlank()) {
-                    Text(
-                        text = secondaryLabel,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = if (!isAdHoc) Modifier.clickable { onNavigateToCollection() } else Modifier,
-                    )
+    val brand = entry.brand?.takeIf { it.isNotBlank() }
+    val category = entry.category_slug?.takeIf { !it.isNullOrBlank() }?.split(".")?.last()
+    val secondaryParts = buildList {
+        brand?.let { add(it) }
+        category?.let { add(it) }
+        if (!isAdHoc) add(collectionName)
+    }
+    val supporting: (@Composable () -> Unit)? = if (secondaryParts.isNotEmpty()) {
+        { Text(secondaryParts.joinToString(" \u00b7 "), maxLines = 1) }
+    } else null
+    val rowClick: () -> Unit = if (isAdHoc) onEdit else onNavigateToCollection
+    ListItem(
+        headlineContent = { Text(entry.name) },
+        supportingContent = supporting,
+        trailingContent = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (entry.quantity > 1) {
+                    Text("\u00d7${entry.quantity}", style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.width(4.dp))
                 }
-                if (!entry.category_slug.isNullOrBlank()) {
-                    Text(
-                        text = entry.category_slug!!.split(".").last(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                if (!entry.notes.isNullOrBlank()) {
-                    Text(
-                        text = entry.notes!!,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                    )
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                // Depleted-item entries show a navigation arrow so the user knows tapping opens the collection.
                 if (!isAdHoc) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowForward,
@@ -737,28 +724,28 @@ private fun ShoppingEntryCard(
                             Icons.Default.Delete,
                             contentDescription = stringResource(R.string.remove),
                             tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(18.dp),
                         )
                     }
                 }
-                Button(
-                    onClick = onCheck,
-                    enabled = !isUpdating,
-                    modifier = Modifier.heightIn(min = 40.dp),
-                ) {
+                IconButton(onClick = onCheck, enabled = !isUpdating) {
                     if (isUpdating) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
+                            modifier = Modifier.size(18.dp),
                             strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     } else {
-                        Icon(Icons.Default.Check, contentDescription = stringResource(R.string.got_it), Modifier.size(18.dp))
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = stringResource(R.string.got_it),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
                     }
                 }
             }
-        }
-    }
+        },
+        modifier = Modifier.clickable(onClick = rowClick),
+    )
 }
 
 @Composable

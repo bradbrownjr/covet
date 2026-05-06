@@ -4,6 +4,17 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.18.6] — 2026-05-06
+
+### Fixed
+
+- **Android: “Move” on a collection item now actually deletes it from the collection** instead of marking it depleted. The result is a normal independent shopping list entry, not a back-link feed entry with a navigation arrow.
+- **Android: Shopping list auto-refreshes when the screen returns to the foreground** — items added from Collections via Copy or Move appear immediately, no manual pull-to-refresh required.
+
+### Changed
+
+- **Android: Shopping list rows redesigned to match the Collections list style** — dense `ListItem` rows with a single divider between items, brand and category shown as a secondary line, action icons (delete + check) inline on the right. Visual language is now consistent across Collections tabs and every shopping list type.
+
 ## [0.18.5] — 2026-05-06
 
 ### Fixed

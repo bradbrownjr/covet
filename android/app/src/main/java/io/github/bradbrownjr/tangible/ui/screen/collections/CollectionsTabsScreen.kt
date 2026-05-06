@@ -235,7 +235,7 @@ class CollectionsTabsViewModel @Inject constructor(
                     notes = item.notes,
                     categorySlug = item.category_slug,
                 )
-                itemsRepo.update(item.id, depleted = true)
+                itemsRepo.delete(item.id)
                 loadItems(item.collection_id, force = true)
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(error = t.message)
