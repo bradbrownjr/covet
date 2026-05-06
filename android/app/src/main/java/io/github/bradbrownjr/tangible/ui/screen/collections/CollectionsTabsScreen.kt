@@ -9,6 +9,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
@@ -45,9 +46,8 @@ import io.github.bradbrownjr.tangible.data.repo.ShoppingRepository
  * Lightweight "Collections as swipeable tabs" home view.
  *
  * Each collection is a tab; the page beneath shows that collection's items as
- * a simple list. Tapping any item (or "Add item" in the empty state) opens
- * the existing [io.github.bradbrownjr.tangible.ui.screen.collection.CollectionDetailScreen]
- * where every advanced action lives. The FAB opens the new-collection wizard.
+ * a simple list. Per-tab toolbar exposes edit/delete collection, scan barcode,
+ * and add item. Tapping any item opens [io.github.bradbrownjr.tangible.ui.screen.item.ItemDetailScreen].
  */
 
 data class CollectionsTabsUi(
@@ -65,6 +65,13 @@ data class CollectionsTabsUi(
     val newDescription: String = "",
     val pendingDeleteItem: ItemDto? = null,
     val pendingShoppingItem: ItemDto? = null,
+    // Per-tab actions
+    val editingCollection: CollectionDto? = null,
+    val editName: String = "",
+    val editDescription: String = "",
+    val pendingDeleteCollection: CollectionDto? = null,
+    val createItemForCollection: CollectionDto? = null,
+    val newItemTitle: String = "",
 )
 
 @HiltViewModel
@@ -242,14 +249,94 @@ class CollectionsTabsViewModel @Inject constructor(
             }
         }
     }
+
+    // ---- Edit collection ----
+    fun startEditCollection(coll: CollectionDto) {
+        _state.value = _state.value.copy(
+            editingCollection = coll,
+            editName = coll.name,
+            editDescription = coll.description.orEmpty(),
+        )
+    }
+    fun setEditName(v: String) { _state.value = _state.value.copy(editName = v) }
+    fun setEditDescription(v: String) { _state.value = _state.value.copy(editDescription = v) }
+    fun cancelEditCollection() { _state.value = _state.value.copy(editingCollection = null) }
+    fun saveEditCollection() {
+        val coll = _state.value.editingCollection ?: return
+        val name = _state.value.editName.trim()
+        if (name.isEmpty()) return
+        val desc = _state.value.editDescription.trim().takeIf { it.isNotEmpty() }
+        viewModelScope.launch {
+            try {
+                collectionsRepo.update(
+                    coll.id,
+                    io.github.bradbrownjr.tangible.data.remote.CollectionPatch(
+                        name = name,
+                        description = desc,
+                    ),
+                )
+                _state.value = _state.value.copy(editingCollection = null)
+                refresh()
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(error = t.message)
+            }
+        }
+    }
+
+    // ---- Delete collection ----
+    fun confirmDeleteCollection(coll: CollectionDto) {
+        _state.value = _state.value.copy(pendingDeleteCollection = coll)
+    }
+    fun cancelDeleteCollection() {
+        _state.value = _state.value.copy(pendingDeleteCollection = null)
+    }
+    fun executeDeleteCollection() {
+        val coll = _state.value.pendingDeleteCollection ?: return
+        _state.value = _state.value.copy(pendingDeleteCollection = null)
+        viewModelScope.launch {
+            try {
+                collectionsRepo.delete(coll.id)
+                refresh()
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(error = t.message)
+            }
+        }
+    }
+
+    // ---- Create item ----
+    fun showCreateItem(coll: CollectionDto) {
+        _state.value = _state.value.copy(createItemForCollection = coll, newItemTitle = "")
+    }
+    fun dismissCreateItem() {
+        _state.value = _state.value.copy(createItemForCollection = null, newItemTitle = "")
+    }
+    fun setNewItemTitle(v: String) { _state.value = _state.value.copy(newItemTitle = v) }
+    fun createItem() {
+        val coll = _state.value.createItemForCollection ?: return
+        val title = _state.value.newItemTitle.trim()
+        if (title.isEmpty()) return
+        // Fall back to the collection's default category, then to the first preset, then to "general".
+        val slug = coll.default_category_slug
+            ?: _state.value.presets.firstOrNull()?.slug
+            ?: "general"
+        viewModelScope.launch {
+            try {
+                itemsRepo.create(coll.id, slug, title)
+                _state.value = _state.value.copy(createItemForCollection = null, newItemTitle = "")
+                loadItems(coll.id, force = true)
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(error = t.message)
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun CollectionsTabsScreen(
-    onOpenCollection: (String) -> Unit,
     onOpenItem: (String) -> Unit = {},
     onItemEdit: (String) -> Unit = {},
+    onNavigateToScanner: () -> Unit = {},
     onSwipeLeft: () -> Unit = {},
     onSwipeRight: () -> Unit = {},
     vm: CollectionsTabsViewModel = hiltViewModel(),
@@ -307,6 +394,9 @@ fun CollectionsTabsScreen(
             WizardDialogs(s, vm)
             ConfirmDeleteDialog(s, vm)
             ConfirmAddToListDialog(s, vm)
+            EditCollectionDialog(s, vm)
+            ConfirmDeleteCollectionDialog(s, vm)
+            CreateItemDialog(s, vm)
         }
         return
     }
@@ -337,9 +427,40 @@ fun CollectionsTabsScreen(
                 }
             ) {
                 TopAppBar(
-                    title = { Text(stringResource(R.string.collections)) },
+                    title = { Text(currentColl?.name ?: stringResource(R.string.collections)) },
                     actions = {
-                        IconButton(onClick = vm::openWizard) {
+                        currentColl?.let { coll ->
+                            if (coll.my_role == "owner" || coll.my_role == "editor") {
+                                IconButton(onClick = { vm.startEditCollection(coll) }) {
+                                    Icon(
+                                        Icons.Default.Edit,
+                                        contentDescription = stringResource(R.string.cd_edit_collection),
+                                    )
+                                }
+                            }
+                            if (coll.my_role == "owner") {
+                                IconButton(onClick = { vm.confirmDeleteCollection(coll) }) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = stringResource(R.string.cd_delete_collection),
+                                    )
+                                }
+                            }
+                        }
+                        IconButton(onClick = onNavigateToScanner) {
+                            Icon(
+                                Icons.Default.QrCodeScanner,
+                                contentDescription = stringResource(R.string.cd_scan_barcode),
+                            )
+                        }
+                        currentColl?.let { coll ->
+                            IconButton(onClick = { vm.showCreateItem(coll) }) {
+                                Icon(
+                                    Icons.Default.Add,
+                                    contentDescription = stringResource(R.string.cd_add_item),
+                                )
+                            }
+                        } ?: IconButton(onClick = vm::openWizard) {
                             Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_new_collection))
                         }
                     },
@@ -397,7 +518,7 @@ fun CollectionsTabsScreen(
                                         verticalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
                                         Text(stringResource(R.string.no_items))
-                                        OutlinedButton(onClick = { onOpenCollection(coll.id) }) {
+                                        OutlinedButton(onClick = { vm.showCreateItem(coll) }) {
                                             Text(stringResource(R.string.add_item))
                                         }
                                     }
@@ -460,6 +581,9 @@ fun CollectionsTabsScreen(
         WizardDialogs(s, vm)
         ConfirmDeleteDialog(s, vm)
         ConfirmAddToListDialog(s, vm)
+        EditCollectionDialog(s, vm)
+        ConfirmDeleteCollectionDialog(s, vm)
+        CreateItemDialog(s, vm)
     }
 }
 
@@ -613,5 +737,85 @@ private fun ConfirmAddToListDialog(s: CollectionsTabsUi, vm: CollectionsTabsView
             }
         },
         dismissButton = { TextButton(onClick = vm::cancelAddToList) { Text(stringResource(R.string.cancel)) } },
+    )
+}
+
+@Composable
+private fun EditCollectionDialog(s: CollectionsTabsUi, vm: CollectionsTabsViewModel) {
+    s.editingCollection ?: return
+    AlertDialog(
+        onDismissRequest = vm::cancelEditCollection,
+        title = { Text(stringResource(R.string.edit_collection)) },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = s.editName,
+                    onValueChange = vm::setEditName,
+                    label = { Text(stringResource(R.string.collection_name)) },
+                    singleLine = true,
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = s.editDescription,
+                    onValueChange = vm::setEditDescription,
+                    label = { Text(stringResource(R.string.collection_description_optional)) },
+                    singleLine = true,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = vm::saveEditCollection, enabled = s.editName.isNotBlank()) {
+                Text(stringResource(R.string.save))
+            }
+        },
+        dismissButton = { TextButton(onClick = vm::cancelEditCollection) { Text(stringResource(R.string.cancel)) } },
+    )
+}
+
+@Composable
+private fun ConfirmDeleteCollectionDialog(s: CollectionsTabsUi, vm: CollectionsTabsViewModel) {
+    val coll = s.pendingDeleteCollection ?: return
+    val itemCount = (s.itemsByCollection[coll.id] ?: emptyList()).size
+    AlertDialog(
+        onDismissRequest = vm::cancelDeleteCollection,
+        title = { Text(stringResource(R.string.cd_delete_collection)) },
+        text = {
+            Text(
+                androidx.compose.ui.res.pluralStringResource(
+                    R.plurals.delete_collection_confirm,
+                    itemCount,
+                    itemCount,
+                )
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = vm::executeDeleteCollection) {
+                Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = { TextButton(onClick = vm::cancelDeleteCollection) { Text(stringResource(R.string.cancel)) } },
+    )
+}
+
+@Composable
+private fun CreateItemDialog(s: CollectionsTabsUi, vm: CollectionsTabsViewModel) {
+    s.createItemForCollection ?: return
+    AlertDialog(
+        onDismissRequest = vm::dismissCreateItem,
+        title = { Text(stringResource(R.string.add_item)) },
+        text = {
+            OutlinedTextField(
+                value = s.newItemTitle,
+                onValueChange = vm::setNewItemTitle,
+                label = { Text(stringResource(R.string.title)) },
+                singleLine = true,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = vm::createItem, enabled = s.newItemTitle.isNotBlank()) {
+                Text(stringResource(R.string.create))
+            }
+        },
+        dismissButton = { TextButton(onClick = vm::dismissCreateItem) { Text(stringResource(R.string.cancel)) } },
     )
 }

@@ -51,10 +51,8 @@ private val HOME_SECTIONS = listOf(
 
 @Composable
 fun HomeScreen(
-    onOpenCollection: (String) -> Unit,
     onOpenItem: (String) -> Unit,
     onItemEdit: (String) -> Unit = {},
-    onNavigateToCollection: (String) -> Unit,
     onManageStores: () -> Unit,
     onNavigateToScanner: () -> Unit,
     onSignOut: () -> Unit,
@@ -125,9 +123,9 @@ fun HomeScreen(
         ) { page ->
             when (page) {
                 0 -> CollectionsTabsScreen(
-                    onOpenCollection = onOpenCollection,
                     onOpenItem = onOpenItem,
                     onItemEdit = onItemEdit,
+                    onNavigateToScanner = onNavigateToScanner,
                     onSwipeLeft = {
                         scope.launch {
                             pagerState.animateScrollToPage(
@@ -146,7 +144,6 @@ fun HomeScreen(
                 1 -> ShoppingListScreen(
                     onBack = { scope.launch { pagerState.animateScrollToPage(0) } },
                     showBackButton = false,
-                    onNavigateToCollection = onNavigateToCollection,
                     onManageStores = onManageStores,
                     onNavigateToScanner = onNavigateToScanner,
                     scannedBarcode = scannedBarcode,

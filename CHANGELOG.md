@@ -4,6 +4,20 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.18.7] — 2026-05-06
+
+### Added
+
+- **Android: Per-collection toolbar on the Collections tabs** with edit collection, delete collection, scan barcode, and add item icons. Replaces the legacy collection detail screen.
+
+### Fixed
+
+- **Android: Shopping list orphaned “moved-from” entries can now be deleted.** Tapping the trash icon on a depleted-link feed entry clears the depleted flag on the underlying item, removing it from the synthetic feed without affecting the collection. Pre-existing entries from before v0.18.6's Move fix can finally be cleared.
+
+### Removed
+
+- **Android: Legacy `CollectionDetailScreen`** and its `collection/{id}` route. All of its features (search, edit, delete, add item, scan, item-row actions, add-to-list with copy/move) now live on the Collections tabs. Tapping a depleted-link shopping entry no longer navigates anywhere; use the trash button instead.
+
 ## [0.18.6] — 2026-05-06
 
 ### Fixed

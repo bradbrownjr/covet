@@ -9,7 +9,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
@@ -47,6 +46,7 @@ import io.github.bradbrownjr.tangible.data.remote.ShoppingItemPatchRequest
 import io.github.bradbrownjr.tangible.data.remote.ShoppingStoreDto
 import io.github.bradbrownjr.tangible.data.remote.TangibleApi
 import io.github.bradbrownjr.tangible.data.repo.CollectionRepository
+import io.github.bradbrownjr.tangible.data.repo.ItemRepository
 import io.github.bradbrownjr.tangible.data.repo.ShoppingRepository
 import io.github.bradbrownjr.tangible.data.sync.NetworkMonitor
 import io.github.bradbrownjr.tangible.R
@@ -91,6 +91,7 @@ data class ShoppingListUi(
 class ShoppingListViewModel @Inject constructor(
     private val shoppingRepo: ShoppingRepository,
     private val collectionRepo: CollectionRepository,
+    private val itemsRepo: ItemRepository,
     private val api: TangibleApi,
     private val networkMonitor: NetworkMonitor,
 ) : ViewModel() {
@@ -319,11 +320,16 @@ class ShoppingListViewModel @Inject constructor(
     }
 
     fun deleteItem(entryId: String) {
-        if (entryId.startsWith("item:")) return
         _state.value = _state.value.copy(updating = _state.value.updating + entryId)
         viewModelScope.launch {
             try {
-                shoppingRepo.deleteItem(entryId)
+                if (entryId.startsWith("item:")) {
+                    // Depleted-item virtual entry: clearing the depleted flag on the
+                    // underlying Item removes it from the synthetic feed.
+                    itemsRepo.update(entryId.removePrefix("item:"), depleted = false)
+                } else {
+                    shoppingRepo.deleteItem(entryId)
+                }
                 _state.value = _state.value.copy(
                     items = _state.value.items.filter { it.id != entryId },
                     updating = _state.value.updating - entryId,
@@ -385,7 +391,6 @@ fun ShoppingListScreen(
     viewModel: ShoppingListViewModel = hiltViewModel(),
     onBack: () -> Unit,
     showBackButton: Boolean = true,
-    onNavigateToCollection: (collectionId: String) -> Unit,
     onManageStores: () -> Unit,
     onNavigateToScanner: () -> Unit = {},
     scannedBarcode: String? = null,
@@ -574,7 +579,6 @@ fun ShoppingListScreen(
                                             isUpdating = entry.id in ui.updating,
                                             onCheck = { viewModel.checkItem(entry.id) },
                                             onDelete = { viewModel.deleteItem(entry.id) },
-                                            onNavigateToCollection = { onNavigateToCollection(entry.collection_id) },
                                             onEdit = { viewModel.startEdit(entry) },
                                         )
                                         HorizontalDivider()
@@ -588,7 +592,6 @@ fun ShoppingListScreen(
                                         isUpdating = entry.id in ui.updating,
                                         onCheck = { viewModel.checkItem(entry.id) },
                                         onDelete = { viewModel.deleteItem(entry.id) },
-                                        onNavigateToCollection = { onNavigateToCollection(entry.collection_id) },
                                         onEdit = { viewModel.startEdit(entry) },
                                     )
                                     HorizontalDivider()
@@ -686,7 +689,6 @@ private fun ShoppingEntryRow(
     isUpdating: Boolean,
     onCheck: () -> Unit,
     onDelete: () -> Unit,
-    onNavigateToCollection: () -> Unit,
     onEdit: () -> Unit,
 ) {
     val isAdHoc = !entry.id.startsWith("item:")
@@ -700,7 +702,7 @@ private fun ShoppingEntryRow(
     val supporting: (@Composable () -> Unit)? = if (secondaryParts.isNotEmpty()) {
         { Text(secondaryParts.joinToString(" \u00b7 "), maxLines = 1) }
     } else null
-    val rowClick: () -> Unit = if (isAdHoc) onEdit else onNavigateToCollection
+    // Tap row -> edit (no-op for depleted-link entries; their VM startEdit guards on prefix).
     ListItem(
         headlineContent = { Text(entry.name) },
         supportingContent = supporting,
@@ -710,22 +712,12 @@ private fun ShoppingEntryRow(
                     Text("\u00d7${entry.quantity}", style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.width(4.dp))
                 }
-                if (!isAdHoc) {
+                IconButton(onClick = onDelete, enabled = !isUpdating) {
                     Icon(
-                        Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.remove),
+                        tint = MaterialTheme.colorScheme.error,
                     )
-                }
-                if (isAdHoc) {
-                    IconButton(onClick = onDelete, enabled = !isUpdating) {
-                        Icon(
-                            Icons.Default.Delete,
-                            contentDescription = stringResource(R.string.remove),
-                            tint = MaterialTheme.colorScheme.error,
-                        )
-                    }
                 }
                 IconButton(onClick = onCheck, enabled = !isUpdating) {
                     if (isUpdating) {
@@ -744,7 +736,7 @@ private fun ShoppingEntryRow(
                 }
             }
         },
-        modifier = Modifier.clickable(onClick = rowClick),
+        modifier = Modifier.clickable(onClick = onEdit),
     )
 }
 

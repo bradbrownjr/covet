@@ -15,7 +15,6 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import io.github.bradbrownjr.tangible.nfc.NfcManager
 import io.github.bradbrownjr.tangible.ui.screen.about.AboutScreen
-import io.github.bradbrownjr.tangible.ui.screen.collection.CollectionDetailScreen
 import io.github.bradbrownjr.tangible.ui.screen.grocery.ShoppingAisleEditorScreen
 import io.github.bradbrownjr.tangible.ui.screen.grocery.ShoppingListScreen
 import io.github.bradbrownjr.tangible.ui.screen.grocery.ShoppingStoreListScreen
@@ -29,8 +28,6 @@ object Routes {
     const val GROCERY_STORES = "grocery-stores"
     const val GROCERY_STORE_AISLES = "grocery-stores/{storeId}"
     fun groceryStoreAisles(storeId: String) = "grocery-stores/$storeId"
-    const val COLLECTION_DETAIL = "collection/{id}"
-    fun collectionDetail(id: String) = "collection/$id"
     const val ITEM_DETAIL = "item/{itemId}?edit={edit}"
     fun itemDetail(id: String) = "item/$id"
     fun itemDetailEdit(id: String) = "item/$id?edit=true"
@@ -74,10 +71,8 @@ fun TangibleApp() {
                     .getStateFlow<String?>("barcode", null)
                     .collectAsState()
                 HomeScreen(
-                    onOpenCollection = { nav.navigate(Routes.collectionDetail(it)) },
                     onOpenItem = { nav.navigate(Routes.itemDetail(it)) },
                     onItemEdit = { nav.navigate(Routes.itemDetailEdit(it)) },
-                    onNavigateToCollection = { nav.navigate(Routes.collectionDetail(it)) },
                     onManageStores = { nav.navigate(Routes.GROCERY_STORES) },
                     onNavigateToScanner = { nav.navigate(Routes.SCANNER) },
                     onSignOut = {
@@ -96,20 +91,6 @@ fun TangibleApp() {
             }
             composable(Routes.GROCERY_STORE_AISLES) {
                 ShoppingAisleEditorScreen(onBack = { nav.popBackStack() })
-            }
-            composable(Routes.COLLECTION_DETAIL) { backStack ->
-                val id = backStack.arguments?.getString("id").orEmpty()
-                val scannedBarcode by backStack.savedStateHandle
-                    .getStateFlow<String?>("barcode", null)
-                    .collectAsState()
-                CollectionDetailScreen(
-                    collectionId = id,
-                    scannedBarcode = scannedBarcode,
-                    onScan = { nav.navigate(Routes.SCANNER) },
-                    onItem = { itemId -> nav.navigate(Routes.itemDetail(itemId)) },
-                    onItemEdit = { itemId -> nav.navigate(Routes.itemDetailEdit(itemId)) },
-                    onBack = { nav.popBackStack() },
-                )
             }
             composable(
                 Routes.ITEM_DETAIL,
