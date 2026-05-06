@@ -610,6 +610,7 @@ fun CollectionDetailScreen(
     onScan: (() -> Unit)? = null,
     onBack: () -> Unit,
     onItem: (String) -> Unit = {},
+    onItemEdit: (String) -> Unit = {},
     scannedBarcode: String? = null,
     vm: CollectionDetailViewModel = hiltViewModel(),
 ) {
@@ -696,13 +697,11 @@ fun CollectionDetailScreen(
                             Icon(Icons.Default.Image, contentDescription = stringResource(R.string.cd_scan_barcode_image))
                         }
                     }
+                    IconButton(onClick = { vm.showCreate(true) }) {
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_item))
+                    }
                 },
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = { vm.showCreate(true) }) {
-                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_item))
-            }
         },
     ) { padding ->
         // Categories present in this collection's items, used for the filter bar.
@@ -802,6 +801,7 @@ fun CollectionDetailScreen(
                                         selected = item.id in s.selectedItemIds,
                                         onToggleSelected = { vm.toggleSelected(item.id) },
                                         onClick = { onItem(item.id) },
+                                        onEdit = { onItemEdit(item.id) },
                                         onDelete = { vm.delete(item.id) },
                                     )
                                 }
@@ -839,6 +839,9 @@ fun CollectionDetailScreen(
                                             }
                                         },
                                         trailingContent = {
+                                            IconButton(onClick = { onItemEdit(item.id) }) {
+                                                Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit))
+                                            }
                                             IconButton(onClick = { vm.delete(item.id) }) {
                                                 Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
                                             }
@@ -1055,6 +1058,7 @@ private fun ItemCard(
     selected: Boolean,
     onToggleSelected: () -> Unit,
     onClick: () -> Unit,
+    onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
     Card(
@@ -1131,6 +1135,9 @@ private fun ItemCard(
                 Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 0.dp),
                 horizontalArrangement = Arrangement.End,
             ) {
+                IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit), modifier = Modifier.size(16.dp))
+                }
                 IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
                     Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete), modifier = Modifier.size(16.dp))
                 }

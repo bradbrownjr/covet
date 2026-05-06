@@ -11,6 +11,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import io.github.bradbrownjr.tangible.nfc.NfcManager
 import io.github.bradbrownjr.tangible.ui.screen.about.AboutScreen
 import io.github.bradbrownjr.tangible.ui.screen.collection.CollectionDetailScreen
@@ -29,8 +31,9 @@ object Routes {
     fun groceryStoreAisles(storeId: String) = "grocery-stores/$storeId"
     const val COLLECTION_DETAIL = "collection/{id}"
     fun collectionDetail(id: String) = "collection/$id"
-    const val ITEM_DETAIL = "item/{itemId}"
+    const val ITEM_DETAIL = "item/{itemId}?edit={edit}"
     fun itemDetail(id: String) = "item/$id"
+    fun itemDetailEdit(id: String) = "item/$id?edit=true"
     const val SCANNER = "scanner"
 }
 
@@ -102,10 +105,17 @@ fun TangibleApp() {
                     scannedBarcode = scannedBarcode,
                     onScan = { nav.navigate(Routes.SCANNER) },
                     onItem = { itemId -> nav.navigate(Routes.itemDetail(itemId)) },
+                    onItemEdit = { itemId -> nav.navigate(Routes.itemDetailEdit(itemId)) },
                     onBack = { nav.popBackStack() },
                 )
             }
-            composable(Routes.ITEM_DETAIL) {
+            composable(
+                Routes.ITEM_DETAIL,
+                arguments = listOf(
+                    navArgument("itemId") { type = NavType.StringType },
+                    navArgument("edit") { type = NavType.BoolType; defaultValue = false },
+                ),
+            ) {
                 ItemDetailScreen(onBack = { nav.popBackStack() })
             }
             composable(Routes.SCANNER) {

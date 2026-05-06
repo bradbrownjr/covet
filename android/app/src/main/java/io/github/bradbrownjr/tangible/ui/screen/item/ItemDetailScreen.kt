@@ -91,6 +91,7 @@ class ItemDetailViewModel @Inject constructor(
     savedState: SavedStateHandle,
 ) : ViewModel() {
     private val itemId: String = savedState.get<String>("itemId").orEmpty()
+    private val startInEdit: Boolean = savedState.get<Boolean>("edit") ?: false
     private val _state = MutableStateFlow(ItemDetailUi())
     val state: StateFlow<ItemDetailUi> = _state.asStateFlow()
 
@@ -102,6 +103,7 @@ class ItemDetailViewModel @Inject constructor(
             try {
                 val item = items.get(itemId)
                 _state.value = _state.value.copy(item = item, loading = false)
+                if (startInEdit) startEditing()
                 loadPhotos()
                 loadBundles()
             } catch (t: Throwable) {

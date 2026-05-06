@@ -4,6 +4,14 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.18.2] — 2026-05-06
+
+### Fixed
+
+- **Android: Collections + button moved to toolbar** — the add-collection button is now an icon in the top bar on the Collections tab (both the empty-state and the tabbed pager views), matching the Lists tab style.
+- **Android: Pencil icon on item rows for direct edit** — tapping an item still opens the read-only detail view; a new pencil icon next to the trash icon jumps straight into edit mode without having to tap through the detail view first. Works in both list and grid view.
+- **Android: Add item button moved to toolbar** — the + button to add an item to a collection is now in the top-right toolbar rather than a floating action button.
+
 ## [0.18.1] — 2026-05-06
 
 ### Fixed
