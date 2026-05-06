@@ -20,7 +20,6 @@ import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -234,35 +233,30 @@ fun ItemDetailScreen(
     vm: ItemDetailViewModel = hiltViewModel(),
 ) {
     val s by vm.state.collectAsState()
+    val context = LocalContext.current
+    val galleryLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri ?: return@rememberLauncherForActivityResult
+        val cr = context.contentResolver
+        val mimeType = cr.getType(uri) ?: "image/jpeg"
+        val bytes = cr.openInputStream(uri)?.readBytes() ?: return@rememberLauncherForActivityResult
+        vm.uploadPhoto(bytes, mimeType)
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (s.editing) stringResource(R.string.edit_item) else s.item?.title ?: stringResource(R.string.item_default_title)) },
+                title = { Text(s.item?.title ?: stringResource(R.string.item_default_title)) },
                 navigationIcon = {
-                    IconButton(onClick = {
-                        if (s.editing) vm.cancelEditing() else onBack()
-                    }) {
+                    IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
                 actions = {
-                    if (!s.loading && s.item != null) {
-                        if (s.editing) {
-                            IconButton(
-                                onClick = vm::save,
-                                enabled = !s.saving && s.title.isNotBlank(),
-                            ) {
-                                if (s.saving) {
-                                    CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                                } else {
-                                    Icon(Icons.Default.Save, contentDescription = stringResource(R.string.save))
-                                }
-                            }
-                        } else {
-                            IconButton(onClick = vm::startEditing) {
-                                Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit))
-                            }
+                    if (!s.loading && s.item != null && !s.editing) {
+                        IconButton(onClick = vm::startEditing) {
+                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit))
                         }
                     }
                 },
@@ -282,8 +276,12 @@ fun ItemDetailScreen(
                 Spacer(Modifier.height(8.dp))
                 OutlinedButton(onClick = vm::load) { Text(stringResource(R.string.retry)) }
             }
-            s.editing -> EditForm(s, vm, Modifier.padding(padding))
-            else -> DetailView(s, vm, Modifier.padding(padding))
+            else -> DetailView(s, vm, onAddPhoto = { galleryLauncher.launch("image/*") }, Modifier.padding(padding))
+        }
+
+        // Edit dialog — shown as overlay matching list-item edit style
+        if (s.editing) {
+            EditItemDialog(s, vm)
         }
 
         // Full-screen photo viewer
@@ -315,7 +313,7 @@ fun ItemDetailScreen(
 }
 
 @Composable
-private fun DetailView(s: ItemDetailUi, vm: ItemDetailViewModel, modifier: Modifier = Modifier) {
+private fun DetailView(s: ItemDetailUi, vm: ItemDetailViewModel, onAddPhoto: () -> Unit, modifier: Modifier = Modifier) {
     val item = s.item ?: return
 
     Column(
@@ -323,7 +321,6 @@ private fun DetailView(s: ItemDetailUi, vm: ItemDetailViewModel, modifier: Modif
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
-        // Photo strip (read-only in detail view; editable in edit mode).
         PhotoStrip(
             photos = s.photos,
             loading = s.photosLoading,
@@ -331,13 +328,14 @@ private fun DetailView(s: ItemDetailUi, vm: ItemDetailViewModel, modifier: Modif
             onPhotoDelete = { photo ->
                 if (photo.id.isNotEmpty()) vm.deletePhoto(photo.id)
             },
-            onAddPhoto = {},
+            onAddPhoto = onAddPhoto,
         )
 
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            (item.attrs["brand"] as? String)?.takeIf { it.isNotBlank() }?.let { Field(stringResource(R.string.brand), it) }
             item.subtitle?.takeIf { it.isNotBlank() }?.let {
                 Text(it, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -537,157 +535,144 @@ private fun Field(label: String, value: String) {
 private fun formatPrice(amount: Double, currency: String?): String =
     if (currency != null) "$amount $currency" else amount.toString()
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EditForm(s: ItemDetailUi, vm: ItemDetailViewModel, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-    val galleryLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri ?: return@rememberLauncherForActivityResult
-        val cr = context.contentResolver
-        val mimeType = cr.getType(uri) ?: "image/jpeg"
-        val bytes = cr.openInputStream(uri)?.readBytes() ?: return@rememberLauncherForActivityResult
-        vm.uploadPhoto(bytes, mimeType)
+private fun EditItemDialog(s: ItemDetailUi, vm: ItemDetailViewModel) {
+    var locationMenuOpen by remember { mutableStateOf(false) }
+    val flat = remember(s.locations) {
+        val out = mutableListOf<Pair<Int, LocationDto>>()
+        fun walk(node: LocationDto, depth: Int) {
+            out.add(depth to node)
+            node.children.forEach { walk(it, depth + 1) }
+        }
+        s.locations.forEach { walk(it, 0) }
+        out
     }
+    val noLocation = stringResource(R.string.no_location)
+    val selectedName = flat.firstOrNull { it.second.id == s.locationId }?.second?.name ?: noLocation
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-    ) {
-        // Photo strip — editable inline so there's one screen for photos + fields.
-        PhotoStrip(
-            photos = s.photos,
-            loading = s.photosLoading,
-            onPhotoClick = vm::openFullScreen,
-            onPhotoDelete = { photo -> if (photo.id.isNotEmpty()) vm.deletePhoto(photo.id) },
-            onAddPhoto = { galleryLauncher.launch("image/*") },
-        )
-
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            s.error?.let {
-                Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-            }
-            OutlinedTextField(
-                value = s.brand,
-                onValueChange = { vm.update { copy(brand = it) } },
-                label = { Text(stringResource(R.string.brand)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = s.title,
-                onValueChange = { vm.update { copy(title = it) } },
-                label = { Text(stringResource(R.string.title_required)) },
-                isError = s.title.isBlank(),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = s.subtitle,
-                onValueChange = { vm.update { copy(subtitle = it) } },
-                label = { Text(stringResource(R.string.subtitle)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = s.notes,
-                onValueChange = { vm.update { copy(notes = it) } },
-                label = { Text(stringResource(R.string.notes)) },
-                minLines = 3,
-                maxLines = 6,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = s.condition,
-                    onValueChange = { vm.update { copy(condition = it) } },
-                    label = { Text(stringResource(R.string.condition)) },
-                    singleLine = true,
-                    modifier = Modifier.weight(1f),
-                )
-                OutlinedTextField(
-                    value = s.quantity,
-                    onValueChange = { vm.update { copy(quantity = it.filter { c -> c.isDigit() }) } },
-                    label = { Text(stringResource(R.string.qty)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.width(72.dp),
-                )
-            }
-            var locationMenuOpen by remember { mutableStateOf(false) }
-            val flat = remember(s.locations) {
-                val out = mutableListOf<Pair<Int, LocationDto>>()
-                fun walk(node: LocationDto, depth: Int) {
-                    out.add(depth to node)
-                    node.children.forEach { walk(it, depth + 1) }
+    AlertDialog(
+        onDismissRequest = vm::cancelEditing,
+        title = { Text(stringResource(R.string.edit_item)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                s.error?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
-                s.locations.forEach { walk(it, 0) }
-                out
-            }
-            val noLocation = stringResource(R.string.no_location)
-            val selectedName = flat.firstOrNull { it.second.id == s.locationId }?.second?.name ?: noLocation
-            Box(modifier = Modifier.fillMaxWidth()) {
-                OutlinedButton(
-                    onClick = { locationMenuOpen = true },
+                OutlinedTextField(
+                    value = s.brand,
+                    onValueChange = { vm.update { copy(brand = it) } },
+                    label = { Text(stringResource(R.string.brand_optional)) },
+                    singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(stringResource(R.string.location_button, selectedName))
-                }
-                DropdownMenu(
-                    expanded = locationMenuOpen,
-                    onDismissRequest = { locationMenuOpen = false },
-                ) {
-                    DropdownMenuItem(
-                        text = { Text(noLocation) },
-                        onClick = {
-                            vm.update { copy(locationId = "") }
-                            locationMenuOpen = false
-                        },
+                )
+                OutlinedTextField(
+                    value = s.title,
+                    onValueChange = { vm.update { copy(title = it) } },
+                    label = { Text(stringResource(R.string.title_required)) },
+                    isError = s.title.isBlank(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = s.subtitle,
+                    onValueChange = { vm.update { copy(subtitle = it) } },
+                    label = { Text(stringResource(R.string.subtitle)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = s.notes,
+                    onValueChange = { vm.update { copy(notes = it) } },
+                    label = { Text(stringResource(R.string.notes)) },
+                    minLines = 2,
+                    maxLines = 4,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = s.condition,
+                        onValueChange = { vm.update { copy(condition = it) } },
+                        label = { Text(stringResource(R.string.condition)) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
                     )
-                    flat.forEach { (depth, loc) ->
+                    OutlinedTextField(
+                        value = s.quantity,
+                        onValueChange = { vm.update { copy(quantity = it.filter { c -> c.isDigit() }) } },
+                        label = { Text(stringResource(R.string.qty)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.width(72.dp),
+                    )
+                }
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(
+                        onClick = { locationMenuOpen = true },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(stringResource(R.string.location_button, selectedName))
+                    }
+                    DropdownMenu(
+                        expanded = locationMenuOpen,
+                        onDismissRequest = { locationMenuOpen = false },
+                    ) {
                         DropdownMenuItem(
-                            text = { Text("${"  ".repeat(depth)}${loc.name}") },
-                            onClick = {
-                                vm.update { copy(locationId = loc.id) }
-                                locationMenuOpen = false
-                            },
+                            text = { Text(noLocation) },
+                            onClick = { vm.update { copy(locationId = "") }; locationMenuOpen = false },
                         )
+                        flat.forEach { (depth, loc) ->
+                            DropdownMenuItem(
+                                text = { Text("${"  ".repeat(depth)}${loc.name}") },
+                                onClick = { vm.update { copy(locationId = loc.id) }; locationMenuOpen = false },
+                            )
+                        }
                     }
                 }
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = s.purchasePrice,
+                        onValueChange = { vm.update { copy(purchasePrice = it) } },
+                        label = { Text(stringResource(R.string.purchase_price)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.weight(1f),
+                    )
+                    OutlinedTextField(
+                        value = s.currentValue,
+                        onValueChange = { vm.update { copy(currentValue = it) } },
+                        label = { Text(stringResource(R.string.current_value)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
                 OutlinedTextField(
-                    value = s.purchasePrice,
-                    onValueChange = { vm.update { copy(purchasePrice = it) } },
-                    label = { Text(stringResource(R.string.purchase_price)) },
+                    value = s.currency,
+                    onValueChange = { vm.update { copy(currency = it.take(3).uppercase()) } },
+                    label = { Text(stringResource(R.string.currency_hint)) },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.weight(1f),
-                )
-                OutlinedTextField(
-                    value = s.currentValue,
-                    onValueChange = { vm.update { copy(currentValue = it) } },
-                    label = { Text(stringResource(R.string.current_value)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
-            OutlinedTextField(
-                value = s.currency,
-                onValueChange = { vm.update { copy(currency = it.take(3).uppercase()) } },
-                label = { Text(stringResource(R.string.currency_hint)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            // NFC tag write — inline in edit form so there's one screen for everything.
-            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-            s.item?.let { NfcWriteSection(itemId = it.id) }
-        }
-    }
+        },
+        confirmButton = {
+            Button(
+                onClick = vm::save,
+                enabled = !s.saving && s.title.isNotBlank(),
+            ) {
+                if (s.saving) {
+                    CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                } else {
+                    Text(stringResource(R.string.save))
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = vm::cancelEditing) { Text(stringResource(R.string.cancel)) }
+        },
+    )
 }
