@@ -47,7 +47,7 @@
 
     <!-- Home / universal search -->
     <string name="home_tab" tools:ignore="MissingTranslation">Home</string>
-    <string name="home_search_placeholder" tools:ignore="MissingTranslation">Search by name, brand, barcode, serial</string>
+    <string name="home_search_placeholder" tools:ignore="MissingTranslation">Search</string>
     <string name="home_search_field_label" tools:ignore="MissingTranslation">Search in</string>
     <string name="home_search_field_all" tools:ignore="MissingTranslation">All fields</string>
     <string name="home_search_field_title" tools:ignore="MissingTranslation">Title</string>

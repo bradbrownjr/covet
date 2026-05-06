@@ -174,6 +174,10 @@
     {/if}
     <nav class:open={menuOpen}>
         {#if $me}
+            <a href="/" class="nav-link" onclick={closeMenu}>
+                <Icon name="home" size={16} />
+                <span>{$_('nav.home')}</span>
+            </a>
             <div class="nav-lists-menu" class:open={collectionsMenuOpen}>
                     <button
                         class="nav-lists-trigger"
@@ -181,7 +185,8 @@
                         aria-haspopup="true"
                         aria-expanded={collectionsMenuOpen}
                     >
-                        {$_('nav.collections')}
+                        <Icon name="folder" size={16} />
+                        <span>{$_('nav.collections')}</span>
                         <svg class="chevron" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">
                             <path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/>
                         </svg>
@@ -209,13 +214,17 @@
                     aria-haspopup="true"
                     aria-expanded={listsMenuOpen}
                 >
-                    {$_('nav.lists')}{#if shoppingCount > 0} <span class="badge">{shoppingCount}</span>{/if}
+                    <Icon name="list" size={16} />
+                    <span>{$_('nav.lists')}{#if shoppingCount > 0} <span class="badge">{shoppingCount}</span>{/if}</span>
                     <svg class="chevron" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">
                         <path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/>
                     </svg>
                 </button>
                 {#if listsMenuOpen}
                     <div class="nav-lists-dropdown" role="menu">
+                        <a href="/lists" role="menuitem" onclick={() => { listsMenuOpen = false; closeMenu(); }}>
+                            {$_('nav.all_lists')}
+                        </a>
                         <a href="/lists/groceries" role="menuitem" onclick={() => { listsMenuOpen = false; closeMenu(); }}>
                             {$_('lists.type.groceries')}{#if (shoppingByType['groceries'] ?? 0) > 0} <span class="badge">{shoppingByType['groceries']}</span>{/if}
                         </a>
@@ -231,8 +240,14 @@
                     </div>
                 {/if}
             </div>
-            <a href="/maintenance" onclick={closeMenu}>{$_('nav.maintenance')}</a>
-            <a href="/settings/appearance" onclick={closeMenu}>{$_('nav.settings')}</a>
+            <a href="/maintenance" class="nav-link" onclick={closeMenu}>
+                <Icon name="wrench" size={16} />
+                <span>{$_('nav.maintenance')}</span>
+            </a>
+            <a href="/settings/appearance" class="nav-link" onclick={closeMenu}>
+                <Icon name="settings" size={16} />
+                <span>{$_('nav.settings')}</span>
+            </a>
             <a href="/profile" class="user" onclick={closeMenu} title={$_('nav.edit_profile')}>{userLabel($me)}</a>
             <button class="secondary" onclick={doLogout}>{$_('nav.log_out')}</button>
         {/if}
@@ -327,6 +342,11 @@
     }
     nav a:hover {
         color: var(--accent);
+    }
+    .nav-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
     }
     /* Lists dropdown */
     .nav-lists-menu {

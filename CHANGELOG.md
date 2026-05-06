@@ -4,6 +4,18 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.18.13] — 2026-05-06
+
+### Changed
+
+- **Web Home: search box decluttered.** The placeholder now reads just "Search" since the dropdown beside it already says which field is being searched. The "Search in" dropdown and the "Include archived items" toggle moved underneath the search box (no more wrapping in the narrow column), and the jump-to tiles now show the same icons used on the Android bottom navigation (folder, list, wrench, upload, settings) so the two surfaces visually match.
+- **Web nav: Home, icons, and All Lists.** A Home link with a house icon is now the first menu item, every nav entry has a matching icon (Collections / Lists / Maintenance / Settings), and the Lists dropdown gains an "All Lists" entry that opens a new `/lists` landing page mirroring "All Collections".
+
+### Added
+
+- **Android Home tab: jump-to icon tiles** for Collections, Lists, Maintenance, and Settings. Tapping a tile swipes to that section so the search hub mirrors the bottom navigation and gives one-tap access from the search results.
+- **Roadmap Phase 14, Wave 8:** tabbed swipeable Collections and Lists pages on web for parity with the Android client (touchscreen-laptop friendly).
+
 ## [0.18.12] — 2026-05-06
 
 ### Added

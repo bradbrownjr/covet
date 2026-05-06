@@ -125,7 +125,10 @@ fun HomeScreen(
             beyondViewportPageCount = 1,
         ) { page ->
             when (page) {
-                0 -> HomeTabScreen(onOpenItem = onOpenItem)
+                0 -> HomeTabScreen(
+                    onOpenItem = onOpenItem,
+                    onJumpTo = { idx -> scope.launch { pagerState.animateScrollToPage(idx) } },
+                )
                 1 -> CollectionsTabsScreen(
                     onOpenItem = onOpenItem,
                     onItemEdit = onItemEdit,

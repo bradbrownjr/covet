@@ -1,7 +1,9 @@
 {
   "nav": {
+    "home": "Home",
     "collections": "Collections",
     "all_collections": "All Collections",
+    "all_lists": "All Lists",
     "maintenance": "Maintenance",
     "grocery_list": "Grocery List",
     "settings": "Settings",
@@ -15,7 +17,7 @@
   "home": {
     "title": "Home",
     "search": {
-      "placeholder": "Search by name, brand, barcode, serial…",
+      "placeholder": "Search",
       "submit": "Search",
       "field_label": "Search in",
       "include_archived": "Include archived items",

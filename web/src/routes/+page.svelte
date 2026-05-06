@@ -2,6 +2,7 @@
     import { onMount, tick } from 'svelte';
     import { goto } from '$app/navigation';
     import { _ } from 'svelte-i18n';
+    import Icon from '$lib/Icon.svelte';
     import { api, type Item, type Collection } from '$lib/api';
 
     type SearchField =
@@ -142,11 +143,6 @@
         runSearch();
     }}
 >
-    <select bind:value={field} onchange={runSearch} aria-label={$_('home.search.field_label')}>
-        {#each FIELDS as f (f.value)}
-            <option value={f.value}>{$_(f.key)}</option>
-        {/each}
-    </select>
     <input
         bind:this={searchInput}
         bind:value={q}
@@ -158,10 +154,20 @@
     <button type="submit">{$_('home.search.submit')}</button>
 </form>
 
-<label class="archived-toggle">
-    <input type="checkbox" bind:checked={includeArchived} onchange={runSearch} />
-    {$_('home.search.include_archived')}
-</label>
+<div class="search-controls">
+    <label class="field-select">
+        <span class="label">{$_('home.search.field_label')}</span>
+        <select bind:value={field} onchange={runSearch}>
+            {#each FIELDS as f (f.value)}
+                <option value={f.value}>{$_(f.key)}</option>
+            {/each}
+        </select>
+    </label>
+    <label class="archived-toggle">
+        <input type="checkbox" bind:checked={includeArchived} onchange={runSearch} />
+        <span>{$_('home.search.include_archived')}</span>
+    </label>
+</div>
 
 {#if error}<p class="error">{error}</p>{/if}
 
@@ -212,12 +218,26 @@
 
 <h2>{$_('home.shortcuts.heading')}</h2>
 <div class="tiles">
-    <a href="/collections" class="tile"><strong>{$_('nav.collections')}</strong></a>
-    <a href="/lists/groceries" class="tile"><strong>{$_('lists.type.groceries')}</strong></a>
-    <a href="/lists/wish_list" class="tile"><strong>{$_('lists.type.wish_list')}</strong></a>
-    <a href="/maintenance" class="tile"><strong>{$_('nav.maintenance')}</strong></a>
-    <a href="/import" class="tile"><strong>{$_('nav.import')}</strong></a>
-    <a href="/settings/appearance" class="tile"><strong>{$_('nav.settings')}</strong></a>
+    <a href="/collections" class="tile">
+        <Icon name="folder" size={24} />
+        <strong>{$_('nav.collections')}</strong>
+    </a>
+    <a href="/lists/groceries" class="tile">
+        <Icon name="list" size={24} />
+        <strong>{$_('nav.lists')}</strong>
+    </a>
+    <a href="/maintenance" class="tile">
+        <Icon name="wrench" size={24} />
+        <strong>{$_('nav.maintenance')}</strong>
+    </a>
+    <a href="/import" class="tile">
+        <Icon name="upload" size={24} />
+        <strong>{$_('nav.import')}</strong>
+    </a>
+    <a href="/settings/appearance" class="tile">
+        <Icon name="settings" size={24} />
+        <strong>{$_('nav.settings')}</strong>
+    </a>
 </div>
 
 {#if addOpen}
@@ -268,13 +288,29 @@
         flex: 1 1 240px;
         min-width: 200px;
     }
+    .search-controls {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+    .field-select {
+        display: inline-flex;
+        gap: 0.4rem;
+        align-items: center;
+    }
+    .field-select .label {
+        font-size: 0.875rem;
+        color: var(--muted);
+    }
     .archived-toggle {
         display: inline-flex;
         gap: 0.4rem;
         align-items: center;
         font-size: 0.875rem;
         color: var(--muted);
-        margin-bottom: 1rem;
+        white-space: nowrap;
     }
     .results {
         list-style: none;
@@ -331,8 +367,10 @@
     }
     .tile {
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
+        gap: 0.5rem;
         padding: 1.25rem 0.75rem;
         background: var(--surface);
         border: 1px solid var(--border);

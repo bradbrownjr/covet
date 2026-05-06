@@ -12,7 +12,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -181,6 +185,7 @@ class HomeTabViewModel @Inject constructor(
 @Composable
 fun HomeTabScreen(
     onOpenItem: (String) -> Unit,
+    onJumpTo: (Int) -> Unit = {},
     vm: HomeTabViewModel = hiltViewModel(),
 ) {
     val s by vm.state.collectAsState()
@@ -256,6 +261,42 @@ fun HomeTabScreen(
 
             s.error?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+
+            // Jump-to tiles mirror the bottom nav so users can map icons to sections.
+            Spacer(Modifier.height(4.dp))
+            Text(
+                stringResource(R.string.home_shortcuts_heading),
+                style = MaterialTheme.typography.labelLarge,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                JumpToTile(
+                    icon = Icons.Default.Folder,
+                    label = stringResource(R.string.collections),
+                    onClick = { onJumpTo(1) },
+                    modifier = Modifier.weight(1f),
+                )
+                JumpToTile(
+                    icon = Icons.AutoMirrored.Filled.List,
+                    label = stringResource(R.string.grocery_list),
+                    onClick = { onJumpTo(2) },
+                    modifier = Modifier.weight(1f),
+                )
+                JumpToTile(
+                    icon = Icons.Default.Build,
+                    label = stringResource(R.string.maintenance),
+                    onClick = { onJumpTo(3) },
+                    modifier = Modifier.weight(1f),
+                )
+                JumpToTile(
+                    icon = Icons.Default.Settings,
+                    label = stringResource(R.string.settings),
+                    onClick = { onJumpTo(4) },
+                    modifier = Modifier.weight(1f),
+                )
             }
 
             when {
@@ -366,6 +407,34 @@ fun HomeTabScreen(
                 }
             },
         )
+    }
+}
+
+@Composable
+private fun JumpToTile(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ElevatedCard(
+        modifier = modifier.clickable(onClick = onClick),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp, horizontal = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Icon(icon, contentDescription = null)
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 

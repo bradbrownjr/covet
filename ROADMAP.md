@@ -769,6 +769,43 @@ Final pass across the whole app:
 clean; no obvious mobile breakage at the four viewport widths; user
 guide and changelog updated.
 
+### Wave 8 — Web/Android continuity for Collections and Lists
+
+The Android shell uses tabbed swipeable views for both Collections
+(`CollectionsTabsScreen`) and Lists (`ShoppingListScreen` with the
+inner store/aisle pager); the web client today still renders one
+collection or one shopping list at a time. Bring the two shells into
+visual and gestural parity so a touchscreen laptop user feels at
+home in either client.
+
+- **`/collections`** — replace the current grid of cards with a
+  tabbed view: a top tab strip lists every collection (plus a leading
+  "All" tab that keeps the existing grid). Tabs are
+  horizontally-scrollable when they overflow. Tab content is the
+  existing `/collections/[id]` page (after Wave 6 split, render the
+  child components inline). Swipe-left / swipe-right and trackpad
+  pan navigates between tabs (use the new `Tabs.svelte` plus an
+  `embla-carousel-svelte` or a hand-rolled `pointerdown` /
+  `pointermove` swipe handler — keep the dependency footprint small).
+  Persist last-viewed tab in `localStorage`.
+- **`/lists`** — same treatment for the four shopping list types
+  (Groceries, Hardware, Home Goods, Wish List). The `/lists` landing
+  remains as a fallback grid for browsers without JS, but on hydrate
+  it converts to the tabbed view. Per-list inner content (the current
+  `/lists/[type]` page) renders inside each tab.
+- **Animation / accessibility** — respect
+  `prefers-reduced-motion: reduce` (snap instead of animate). Keyboard
+  navigation: arrow keys move the focus tab and the visible panel, as
+  defined in the WAI-ARIA tabs pattern.
+- **Routing** — keep the `/collections/{id}` and `/lists/{type}`
+  URLs as deep links: opening one of those URLs jumps to the matching
+  tab on hydrate. Deep-linking remains the canonical share URL.
+
+**Acceptance:** opening `/collections` and `/lists` on a touchscreen
+laptop feels like the Android client (single screen, tabs across the
+top, swipe-to-switch); existing deep-links still work; `npm run check`
+and `npm run build` clean.
+
 ### Out of scope for Phase 14
 
 Tracked separately so they don't bloat this phase:
