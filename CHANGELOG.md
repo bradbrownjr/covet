@@ -4,6 +4,17 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.18.16] — 2026-05-06
+
+### Fixed
+
+- **Search: false positives eliminated.** The "all characters present" fuzzy heuristic (score 25) that caused unrelated items like "Gentle Body Wash" to appear when searching "bread" has been removed. Only exact and substring matches are now returned.
+- **Search: shopping list items now included.** Searching from the Home screen now also returns unpurchased shopping-list entries (Groceries, Hardware, Home Goods, Wish List). Results from the list link directly to that list tab rather than to a collection item.
+
+### Changed
+
+- **Home search UX (web + Android):** Search box gains an ✕ clear button when text is entered. The filter row is consolidated to one line: the "Archived" checkbox anchors to the left, the field selector right-justifies. The "Jump to" shortcuts are hidden while search results are visible, placing results immediately below the filter row.
+
 ## [0.18.15] — 2026-05-06
 
 ### Changed

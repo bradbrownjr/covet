@@ -21,6 +21,7 @@
       "submit": "Search",
       "field_label": "Search in",
       "include_archived": "Include archived items",
+      "include_archived_short": "Archived",
       "field": {
         "all": "All fields",
         "title": "Title",
@@ -35,7 +36,8 @@
       "owned": "Owned",
       "wishlist": "Wishlist",
       "depleted": "Depleted",
-      "archived": "Archived"
+      "archived": "Archived",
+      "on_list": "On list"
     },
     "empty": {
       "title": "No matches for \"{q}\"",

@@ -154,6 +154,7 @@ data class ItemDto(
     val use_by_date: String? = null,
     val date_frozen: String? = null,
     val date_opened: String? = null,
+    val list_type: String? = null,
 )
 
 @JsonClass(generateAdapter = true)

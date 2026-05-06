@@ -33,6 +33,7 @@ from tangible.models import (
     ItemTemplate,
     Loan,
     Location,
+    ShoppingItem,
     Tag,
 )
 from tangible.schemas import (
@@ -540,14 +541,12 @@ def search_items(
             continue
         normalized_text = unidecode(text.lower())
 
-        # Score: exact > substring > all-chars-present.
+        # Score: exact > substring.
         score = 0.0
         if normalized_q == normalized_text:
             score = 100.0
         elif normalized_q in normalized_text:
             score = 50.0 + (len(normalized_q) / max(len(normalized_text), 1)) * 50.0
-        elif field == "all" and all(c in normalized_text for c in normalized_q):
-            score = 25.0
         else:
             continue
 
@@ -568,6 +567,51 @@ def search_items(
         rollups = _compute_rollup_values(db, collection_id)
         for item, _ in items_in_collection:
             result.append(_to_item_read(item, rollups))
+
+    # Also search shopping list items (field=all only, unpurchased).
+    if field == "all":
+        shop_items = db.scalars(
+            select(ShoppingItem)
+            .where(ShoppingItem.collection_id.in_(accessible_collections))
+            .where(ShoppingItem.purchased_at.is_(None))
+        ).all()
+        shop_matches: list[tuple[ShoppingItem, float]] = []
+        for si in shop_items:
+            text = " ".join(
+                filter(None, [si.name or "", si.brand or "", si.notes or "", si.category_slug or ""])
+            )
+            if not text:
+                continue
+            norm_text = unidecode(text.lower())
+            if normalized_q == norm_text:
+                si_score = 100.0
+            elif normalized_q in norm_text:
+                si_score = 50.0 + (len(normalized_q) / max(len(norm_text), 1)) * 50.0
+            else:
+                continue
+            shop_matches.append((si, si_score))
+        shop_matches.sort(key=lambda x: (-x[1], x[0].name or ""))
+        for si, _ in shop_matches:
+            result.append(
+                ItemRead(
+                    id=si.id,
+                    collection_id=si.collection_id,
+                    category_id=None,
+                    sort_order=0,
+                    category_slug=si.category_slug,
+                    title=si.name,
+                    subtitle=si.brand,
+                    notes=si.notes,
+                    quantity=si.quantity,
+                    wanted=si.list_type == "wish_list",
+                    identifiers={},
+                    attrs={},
+                    depleted=False,
+                    list_type=si.list_type,
+                    created_at=si.created_at,
+                    updated_at=si.updated_at,
+                )
+            )
 
     return result
 

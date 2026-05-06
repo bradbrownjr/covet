@@ -102,6 +102,8 @@ class ItemRead(ItemBase):
     flagged_note: str | None = None
     flagged_at: datetime | None = None
     rollup_current_value: Decimal | None = None
+    # Set only when result comes from a shopping list (not an inventory item).
+    list_type: str | None = None
     created_at: datetime
     updated_at: datetime
 

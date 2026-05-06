@@ -56,11 +56,12 @@
     <string name="home_search_field_notes" tools:ignore="MissingTranslation">Notes</string>
     <string name="home_search_field_barcode" tools:ignore="MissingTranslation">Barcode</string>
     <string name="home_search_field_serial" tools:ignore="MissingTranslation">Serial #</string>
-    <string name="home_include_archived" tools:ignore="MissingTranslation">Include archived items</string>
+    <string name="home_include_archived" tools:ignore="MissingTranslation">Archived</string>
     <string name="home_status_owned" tools:ignore="MissingTranslation">Owned</string>
     <string name="home_status_wishlist" tools:ignore="MissingTranslation">Wishlist</string>
     <string name="home_status_depleted" tools:ignore="MissingTranslation">Depleted</string>
     <string name="home_status_archived" tools:ignore="MissingTranslation">Archived</string>
+    <string name="home_status_on_list" tools:ignore="MissingTranslation">On list</string>
     <string name="home_empty_title" tools:ignore="MissingTranslation">No matches for \"%1$s\"</string>
     <string name="home_empty_subtitle" tools:ignore="MissingTranslation">Add it to a collection or your wishlist to remember next time.</string>
     <string name="home_empty_add" tools:ignore="MissingTranslation">Add to a collection</string>

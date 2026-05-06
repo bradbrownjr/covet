@@ -197,6 +197,7 @@ export interface Item {
     use_by_date: string | null;
     date_frozen: string | null;
     date_opened: string | null;
+    list_type: string | null;
 }
 
 export interface Tag {

@@ -2,6 +2,7 @@ package io.github.bradbrownjr.tangible.ui.screen.home
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
@@ -27,6 +29,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -213,90 +216,60 @@ fun HomeTabScreen(
                 modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text(stringResource(R.string.home_search_placeholder)) },
                 singleLine = true,
+                trailingIcon = {
+                    if (s.q.isNotEmpty()) {
+                        IconButton(onClick = { vm.onQueryChange("") }) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = stringResource(R.string.cd_clear_search),
+                            )
+                        }
+                    }
+                },
             )
+            // Filter row: [Archived checkbox] [spacer] [field dropdown]
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(
-                    stringResource(R.string.home_search_field_label),
-                    style = MaterialTheme.typography.bodySmall,
+                Checkbox(
+                    checked = s.includeArchived,
+                    onCheckedChange = { vm.setIncludeArchived(it) },
                 )
-                AssistChip(
-                    onClick = { fieldMenuOpen = true },
-                    label = { Text(stringResource(s.field.labelRes)) },
-                    trailingIcon = {
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-                    },
-                    colors = AssistChipDefaults.assistChipColors(),
-                )
-                DropdownMenu(
-                    expanded = fieldMenuOpen,
-                    onDismissRequest = { fieldMenuOpen = false },
-                ) {
-                    HomeSearchField.values().forEach { f ->
-                        DropdownMenuItem(
-                            text = { Text(stringResource(f.labelRes)) },
-                            onClick = {
-                                fieldMenuOpen = false
-                                vm.setField(f)
-                            },
-                        )
-                    }
-                }
-            }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { vm.setIncludeArchived(!s.includeArchived) },
-            ) {
-                Checkbox(checked = s.includeArchived, onCheckedChange = { vm.setIncludeArchived(it) })
                 Text(
                     stringResource(R.string.home_include_archived),
                     style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.clickable { vm.setIncludeArchived(!s.includeArchived) },
                 )
+                Spacer(Modifier.weight(1f))
+                Box {
+                    AssistChip(
+                        onClick = { fieldMenuOpen = true },
+                        label = { Text(stringResource(s.field.labelRes)) },
+                        trailingIcon = {
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                        },
+                        colors = AssistChipDefaults.assistChipColors(),
+                    )
+                    DropdownMenu(
+                        expanded = fieldMenuOpen,
+                        onDismissRequest = { fieldMenuOpen = false },
+                    ) {
+                        HomeSearchField.values().forEach { f ->
+                            DropdownMenuItem(
+                                text = { Text(stringResource(f.labelRes)) },
+                                onClick = {
+                                    fieldMenuOpen = false
+                                    vm.setField(f)
+                                },
+                            )
+                        }
+                    }
+                }
             }
 
             s.error?.let {
                 Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-            }
-
-            // Jump-to tiles mirror the bottom nav so users can map icons to sections.
-            Spacer(Modifier.height(4.dp))
-            Text(
-                stringResource(R.string.home_shortcuts_heading),
-                style = MaterialTheme.typography.labelLarge,
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                JumpToTile(
-                    icon = Icons.Default.Folder,
-                    label = stringResource(R.string.collections),
-                    onClick = { onJumpTo(1) },
-                    modifier = Modifier.weight(1f),
-                )
-                JumpToTile(
-                    icon = Icons.AutoMirrored.Filled.List,
-                    label = stringResource(R.string.grocery_list),
-                    onClick = { onJumpTo(2) },
-                    modifier = Modifier.weight(1f),
-                )
-                JumpToTile(
-                    icon = Icons.Default.Build,
-                    label = stringResource(R.string.maintenance),
-                    onClick = { onJumpTo(3) },
-                    modifier = Modifier.weight(1f),
-                )
-                JumpToTile(
-                    icon = Icons.Default.Settings,
-                    label = stringResource(R.string.settings),
-                    onClick = { onJumpTo(4) },
-                    modifier = Modifier.weight(1f),
-                )
             }
 
             when {
@@ -341,10 +314,51 @@ fun HomeTabScreen(
                             ResultRow(
                                 item = item,
                                 collections = s.collections,
-                                onClick = { onOpenItem(item.id) },
+                                onClick = {
+                                    if (item.list_type != null) onJumpTo(2)
+                                    else onOpenItem(item.id)
+                                },
                             )
                         }
                     }
+                }
+            }
+
+            // Jump-to tiles — hidden while search is active.
+            if (!s.searched && s.q.isBlank()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    stringResource(R.string.home_shortcuts_heading),
+                    style = MaterialTheme.typography.labelLarge,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    JumpToTile(
+                        icon = Icons.Default.Folder,
+                        label = stringResource(R.string.collections),
+                        onClick = { onJumpTo(1) },
+                        modifier = Modifier.weight(1f),
+                    )
+                    JumpToTile(
+                        icon = Icons.AutoMirrored.Filled.List,
+                        label = stringResource(R.string.grocery_list),
+                        onClick = { onJumpTo(2) },
+                        modifier = Modifier.weight(1f),
+                    )
+                    JumpToTile(
+                        icon = Icons.Default.Build,
+                        label = stringResource(R.string.maintenance),
+                        onClick = { onJumpTo(3) },
+                        modifier = Modifier.weight(1f),
+                    )
+                    JumpToTile(
+                        icon = Icons.Default.Settings,
+                        label = stringResource(R.string.settings),
+                        onClick = { onJumpTo(4) },
+                        modifier = Modifier.weight(1f),
+                    )
                 }
             }
         }
@@ -448,6 +462,7 @@ private fun ResultRow(
     val cat = item.category_slug?.takeIf { it.isNotBlank() }?.substringAfterLast('.')
     val collectionName = collections.firstOrNull { it.id == item.collection_id }?.name
     val statusRes = when {
+        item.list_type != null -> R.string.home_status_on_list
         item.archived_at != null -> R.string.home_status_archived
         item.wanted -> R.string.home_status_wishlist
         item.depleted -> R.string.home_status_depleted

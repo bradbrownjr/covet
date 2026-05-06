@@ -87,7 +87,16 @@
         debounceTimer = setTimeout(runSearch, 250);
     }
 
+    function clearSearch() {
+        q = '';
+        results = [];
+        searched = false;
+        error = '';
+        searchInput?.focus();
+    }
+
     function statusOf(item: Item): { label: string; tone: string } {
+        if (item.list_type) return { label: $_('home.status.on_list'), tone: 'list' };
         if (item.archived_at) return { label: $_('home.status.archived'), tone: 'muted' };
         if (item.wanted) return { label: $_('home.status.wishlist'), tone: 'wish' };
         if (item.depleted) return { label: $_('home.status.depleted'), tone: 'warn' };
@@ -143,29 +152,33 @@
         runSearch();
     }}
 >
-    <input
-        bind:this={searchInput}
-        bind:value={q}
-        oninput={onInput}
-        type="search"
-        placeholder={$_('home.search.placeholder')}
-        autocomplete="off"
-    />
+    <div class="search-input-wrap">
+        <input
+            bind:this={searchInput}
+            bind:value={q}
+            oninput={onInput}
+            type="text"
+            placeholder={$_('home.search.placeholder')}
+            autocomplete="off"
+        />
+        {#if q}
+            <button type="button" class="input-clear" onclick={clearSearch} aria-label="Clear search">✕</button>
+        {/if}
+    </div>
     <button type="submit">{$_('home.search.submit')}</button>
 </form>
 
 <div class="search-controls">
+    <label class="archived-toggle">
+        <input type="checkbox" bind:checked={includeArchived} onchange={runSearch} />
+        <span>{$_('home.search.include_archived_short')}</span>
+    </label>
     <label class="field-select">
-        <span class="label">{$_('home.search.field_label')}</span>
         <select bind:value={field} onchange={runSearch}>
             {#each FIELDS as f (f.value)}
                 <option value={f.value}>{$_(f.key)}</option>
             {/each}
         </select>
-    </label>
-    <label class="archived-toggle">
-        <input type="checkbox" bind:checked={includeArchived} onchange={runSearch} />
-        <span>{$_('home.search.include_archived')}</span>
     </label>
 </div>
 
@@ -191,7 +204,7 @@
             {@const cat = categoryLabel(item)}
             {@const col = collectionsById[item.collection_id]}
             <li>
-                <a class="result" href={`/collections/${item.collection_id}#item-${item.id}`}>
+                <a class="result" href={item.list_type ? `/lists/${item.list_type}` : `/collections/${item.collection_id}#item-${item.id}`}>
                     <div class="line">
                         <span class="title">{item.title}</span>
                         <span class="status status-{s.tone}">{s.label}</span>
@@ -216,6 +229,7 @@
     </ul>
 {/if}
 
+{#if !searched && !q.trim()}
 <h2>{$_('home.shortcuts.heading')}</h2>
 <div class="tiles">
     <a href="/collections" class="tile">
@@ -239,6 +253,7 @@
         <strong>{$_('nav.settings')}</strong>
     </a>
 </div>
+{/if}
 
 {#if addOpen}
     <div class="dialog-backdrop" role="presentation" onclick={() => (addOpen = false)}>
@@ -284,25 +299,44 @@
         margin-bottom: 0.5rem;
         flex-wrap: wrap;
     }
-    .search-bar input[type='search'] {
+    .search-input-wrap {
+        position: relative;
         flex: 1 1 240px;
         min-width: 200px;
+        display: flex;
+        align-items: center;
     }
+    .search-input-wrap input {
+        width: 100%;
+        padding-right: 2rem;
+        box-sizing: border-box;
+    }
+    .input-clear {
+        position: absolute;
+        right: 0.4rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        padding: 0.1rem 0.3rem;
+        cursor: pointer;
+        color: var(--muted);
+        font-size: 0.85rem;
+        line-height: 1;
+        border-radius: 3px;
+    }
+    .input-clear:hover { color: var(--text); }
     .search-controls {
         display: flex;
-        gap: 1rem;
+        gap: 0.75rem;
         align-items: center;
         flex-wrap: wrap;
         margin-bottom: 1rem;
     }
     .field-select {
+        margin-left: auto;
         display: inline-flex;
-        gap: 0.4rem;
         align-items: center;
-    }
-    .field-select .label {
-        font-size: 0.875rem;
-        color: var(--muted);
     }
     .archived-toggle {
         display: inline-flex;
@@ -311,6 +345,7 @@
         font-size: 0.875rem;
         color: var(--muted);
         white-space: nowrap;
+        cursor: pointer;
     }
     .results {
         list-style: none;
@@ -358,6 +393,7 @@
     .status-warn { color: #b87005; border-color: #b87005; }
     .status-wish { color: #6c4ab6; border-color: #6c4ab6; }
     .status-muted { color: var(--muted); }
+    .status-list { color: #0f766e; border-color: #0f766e; }
     .empty { margin: 1rem 0; }
     .empty-actions { margin-top: 0.75rem; }
     .tiles {
