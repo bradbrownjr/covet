@@ -279,16 +279,19 @@ fun AboutScreen(
 // Simple Markdown renderer for the changelog and help text.
 // ---------------------------------------------------------------------------
 
-private enum class MdBlockStyle { H2, H3, BULLET, NORMAL }
+private enum class MdBlockStyle { H1, H2, H3, BULLET, NORMAL }
 private data class MdBlock(val text: String, val style: MdBlockStyle)
+
+private fun stripBold(text: String): String = text.replace(Regex("\\*\\*(.+?)\\*\\*"), "$1")
 
 private fun parseMarkdown(text: String): List<MdBlock> = text.lines().mapNotNull { line ->
     when {
-        line.startsWith("## ")  -> MdBlock(line.removePrefix("## "), MdBlockStyle.H2)
-        line.startsWith("### ") -> MdBlock(line.removePrefix("### "), MdBlockStyle.H3)
-        line.startsWith("- ")   -> MdBlock("\u2022 " + line.removePrefix("- "), MdBlockStyle.BULLET)
+        line.startsWith("# ")   -> MdBlock(stripBold(line.removePrefix("# ")), MdBlockStyle.H1)
+        line.startsWith("## ")  -> MdBlock(stripBold(line.removePrefix("## ")), MdBlockStyle.H2)
+        line.startsWith("### ") -> MdBlock(stripBold(line.removePrefix("### ")), MdBlockStyle.H3)
+        line.startsWith("- ")   -> MdBlock("\u2022 " + stripBold(line.removePrefix("- ")), MdBlockStyle.BULLET)
         line.isBlank()          -> null
-        else                    -> MdBlock(line, MdBlockStyle.NORMAL)
+        else                    -> MdBlock(stripBold(line), MdBlockStyle.NORMAL)
     }
 }
 
@@ -298,6 +301,12 @@ private fun MarkdownContent(text: String) {
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         blocks.forEach { block ->
             when (block.style) {
+                MdBlockStyle.H1 -> Text(
+                    block.text,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
+                )
                 MdBlockStyle.H2 -> Text(
                     block.text,
                     style = MaterialTheme.typography.titleSmall,

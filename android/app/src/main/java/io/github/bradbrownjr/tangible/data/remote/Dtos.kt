@@ -179,6 +179,7 @@ data class ItemPatch(
     val location_id: String? = null,
     val depleted: Boolean? = null,
     val wanted: Boolean? = null,
+    val attrs: Map<String, @JvmSuppressWildcards Any?>? = null,
 )
 
 @JsonClass(generateAdapter = true)

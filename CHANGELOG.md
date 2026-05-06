@@ -4,6 +4,15 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.18.1] — 2026-05-06
+
+### Fixed
+
+- **Android: What's New renders properly** — the changelog modal now formats `# Heading` as a title, `## Version` headers as section headers, `- bullet` as bullet points, and strips `**bold**` markers instead of showing them literally.
+- **Android: Item edit shows photos and NFC on one screen** — tapping the pencil on an item now shows the photo strip, all editable fields (including Brand), and the NFC write button together. Previously photos and NFC were only visible in the read-only detail view.
+- **Android: Brand field editable on item** — the Brand field (stored in item attributes) is now shown and editable on the item edit screen.
+- **Android: Collections + button moved to toolbar** — the add-collection button is now an icon in the top bar (matching the Lists tab style) rather than a floating action button.
+
 ## [0.18.0] — 2026-05-05
 
 ### Added

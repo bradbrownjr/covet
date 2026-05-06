@@ -123,12 +123,12 @@ fun CollectionListScreen(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.collections)) },
+                actions = {
+                    IconButton(onClick = vm::openWizard) {
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_new_collection))
+                    }
+                },
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = vm::openWizard) {
-                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_new_collection))
-            }
         },
     ) { padding ->
         PullToRefreshBox(
