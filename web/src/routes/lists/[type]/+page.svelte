@@ -7,6 +7,7 @@
     import { categoriesForType } from '$lib/shoppingCategories';
     import { _ } from 'svelte-i18n';
     import Icon from '$lib/Icon.svelte';
+    import IconButton from '$lib/components/IconButton.svelte';
     import DataTable from '$lib/components/DataTable.svelte';
     import type { Column } from '$lib/components/data-table-types.js';
     import Modal from '$lib/components/Modal.svelte';
@@ -428,16 +429,16 @@
 
     {#snippet rowActions(entry: FeedEntry)}
         <div class="row-actions">
-            <Button variant="primary" onclick={() => markPurchased(entry)}>
-                {listType === 'wish_list' ? $_('lists.mark_received_button') : $_('grocery.mark_purchased_button')}
-            </Button>
+            <IconButton
+                name={listType === 'wish_list' ? 'package-check' : 'check-circle'}
+                label={listType === 'wish_list' ? $_('lists.mark_received_button') : $_('grocery.mark_purchased_button')}
+                variant="primary"
+                btnSize="sm"
+                onclick={() => markPurchased(entry)}
+            />
             {#if entry.source.kind === 'ad_hoc'}
-                <Button variant="secondary" icon="pencil" onclick={() => startEdit(entry)}>
-                    {$_('grocery.edit_button')}
-                </Button>
-                <Button variant="danger" icon="trash-2" onclick={() => openDelete(entry)}>
-                    {$_('grocery.remove_button')}
-                </Button>
+                <IconButton name="pencil" label={$_('grocery.edit_button')} variant="secondary" btnSize="sm" onclick={() => startEdit(entry)} />
+                <IconButton name="trash-2" label={$_('grocery.remove_button')} variant="danger" btnSize="sm" onclick={() => openDelete(entry)} />
             {/if}
         </div>
     {/snippet}
@@ -601,7 +602,7 @@
     .qty-row { display: flex; gap: 0.4rem; }
     .qty { width: 4.5rem !important; flex: none !important; }
     .unit { width: 6rem !important; flex: none !important; }
-    .row-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .row-actions { display: flex; gap: 0.25rem; flex-wrap: nowrap; }
     .cat-chip {
         display: inline-block;
         font-size: 0.75rem;

@@ -96,7 +96,7 @@
     }
 
     function statusOf(item: Item): { label: string; tone: string } {
-        if (item.list_type) return { label: $_('home.status.on_list'), tone: 'list' };
+        if (item.list_type) return { label: $_(`lists.type.${item.list_type}`), tone: 'list' };
         if (item.archived_at) return { label: $_('home.status.archived'), tone: 'muted' };
         if (item.wanted) return { label: $_('home.status.wishlist'), tone: 'wish' };
         if (item.depleted) return { label: $_('home.status.depleted'), tone: 'warn' };
@@ -204,7 +204,7 @@
             {@const cat = categoryLabel(item)}
             {@const col = collectionsById[item.collection_id]}
             <li>
-                <a class="result" href={item.list_type ? `/lists/${item.list_type}` : `/collections/${item.collection_id}#item-${item.id}`}>
+                <a class="result" href={item.list_type ? `/lists/${item.list_type}#item-${item.id}` : `/collections/${item.collection_id}#item-${item.id}`}>
                     <div class="line">
                         <span class="title">{item.title}</span>
                         <span class="status status-{s.tone}">{s.label}</span>

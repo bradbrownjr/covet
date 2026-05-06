@@ -105,7 +105,7 @@
                 </thead>
                 <tbody>
                     {#each rows as row (rowKey ? row[rowKey] : row)}
-                        <tr>
+                        <tr id={rowKey ? `item-${row[rowKey]}` : undefined}>
                             {#each cols as col (col.key)}
                                 <td
                                     class:dt-td--right={col.align === 'right'}
@@ -130,7 +130,7 @@
         <!-- Mobile cards -->
         <ul class="dt-cards">
             {#each rows as row (rowKey ? row[rowKey] : row)}
-                <li class="dt-card card">
+                <li class="dt-card card" id={rowKey ? `item-${row[rowKey]}` : undefined}>
                     {#each cols as col (col.key)}
                         <div class="dt-card__row">
                             <span class="dt-card__label">
