@@ -42,6 +42,7 @@
 </script>
 
 <div class="auth">
+    <img src="/branding/logo-stacked.png" alt="Tangible" class="auth-logo" />
     <h1>{$_('auth.register')}</h1>
     <form onsubmit={submit} class="card">
         <FormField label={$_('auth.username')} for="u" required>
@@ -82,5 +83,11 @@
     .auth {
         max-width: 400px;
         margin: 4rem auto 0;
+    }
+    .auth-logo {
+        display: block;
+        margin: 0 auto 1.5rem;
+        width: 180px;
+        height: auto;
     }
 </style>

@@ -146,7 +146,10 @@
 <svelte:document onclick={handleDocumentClick} />
 
 <header>
-    <a href="/" class="brand">Tangible</a>
+    <a href="/" class="brand">
+        <img src="/icon-192.png" alt="" width="28" height="28" class="brand-logo" />
+        <span>Tangible</span>
+    </a>
     {#if $publicConfig?.version}<span class="version muted">v{$publicConfig.version}</span>{/if}
     <button
         class="icon-btn whats-new"
@@ -262,9 +265,17 @@
         position: relative;
     }
     .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
         font-weight: 700;
         font-size: 1.25rem;
         color: var(--text);
+    }
+    .brand-logo {
+        display: block;
+        width: 28px;
+        height: 28px;
     }
     .version {
         font-size: 0.75rem;

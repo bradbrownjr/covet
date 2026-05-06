@@ -1,7 +1,6 @@
-<h1>
-  <img src="web/static/icon-512.png" alt="" width="48" height="48" align="left" style="vertical-align: middle; margin-right: 12px;" />
-  Tangible
-</h1>
+<p align="center">
+  <img src="web/static/branding/logo-full.png" alt="Tangible" width="420" />
+</p>
 
 Self-hosted personal inventory management for collectibles, tools, spices —
 anything you want to keep track of. Built for collectors who need to check

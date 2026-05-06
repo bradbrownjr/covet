@@ -1,35 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   Monochrome adaptive-icon foreground for Android 13+ themed icons.
-  Same composition as ic_launcher_foreground.xml, but every shape uses
-  black so the platform can tint it to match the user's wallpaper.
-  Brass and gem facet detail are dropped because themed icons cannot
-  carry color, so the silhouette must read as a single mass.
+  Bitmap wrapper that points at the per-density mipmap silhouette PNGs
+  (shield+box mass in solid black on transparent). The platform tints
+  this to match the user's wallpaper.
 -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108"
-    android:tint="?attr/colorControlNormal">
-    <group
-        android:translateX="18"
-        android:translateY="18"
-        android:scaleX="0.0703"
-        android:scaleY="0.0703">
-
-        <!-- Gem silhouette (single closed shape) -->
-        <path android:fillColor="#000000"
-            android:pathData="M 447 80 L 577 80 L 629 119 L 655 171 L 512 379 L 369 171 L 395 119 Z" />
-
-        <!-- Chest body + dome (single mass) -->
-        <path android:fillColor="#000000"
-            android:pathData="M 160 620
-                              Q 160 460 512 460
-                              Q 864 460 864 620
-                              L 864 872
-                              Q 864 920 816 920
-                              L 208 920
-                              Q 160 920 160 872 Z" />
-    </group>
-</vector>
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@mipmap/ic_launcher_monochrome"
+    android:gravity="fill" />

@@ -56,6 +56,7 @@
 </script>
 
 <div class="auth">
+    <img src="/branding/logo-stacked.png" alt="Tangible" class="auth-logo" />
     <h1>{$_('auth.sign_in')}</h1>
 
     {#if totpTicket}
@@ -140,6 +141,12 @@
     .auth {
         max-width: 400px;
         margin: 4rem auto 0;
+    }
+    .auth-logo {
+        display: block;
+        margin: 0 auto 1.5rem;
+        width: 180px;
+        height: auto;
     }
     .setup {
         margin-top: 1rem;

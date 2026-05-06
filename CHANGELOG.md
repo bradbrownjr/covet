@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.18.9] — 2026-05-06
+
+### Changed
+
+- **Brand refresh.** New shield-and-box logo and color palette (charcoal #2C343B / teal #1B8A74 / #22A88E) across the web UI, browser favicons, and Android launcher / adaptive / themed icons. The default `tangible-light` and `tangible-dark` themes now use the brand teal as the accent color. The web header and the login / register screens display the new logo. The repo README leads with the full wordmark.
+
 ## [0.18.8] — 2026-05-06
 
 ### Added

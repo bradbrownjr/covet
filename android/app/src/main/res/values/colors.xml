@@ -1,3 +1,6 @@
 <resources>
-    <color name="ic_launcher_background">#0F172A</color>
+    <!-- Tangible brand: charcoal shield. Matches the mark in logo-mark.png so any
+         launcher mask shape (circle/squircle/square) blends seamlessly with the
+         shield silhouette of the foreground. -->
+    <color name="ic_launcher_background">#2C343B</color>
 </resources>
