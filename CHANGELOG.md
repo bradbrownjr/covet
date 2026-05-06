@@ -4,6 +4,16 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.18.5] — 2026-05-06
+
+### Fixed
+
+- **Android: Brand, notes, and quantity now carried over when adding a collection item to the shopping list** — previously only the item name and category were copied; brand (e.g. "Hannaford") was silently dropped.
+
+### Changed
+
+- **Android: "Add to shopping list" dialog now offers Copy or Move** — the confirmation dialog has three options: **Cancel**, **Copy** (adds to the shopping list, item stays in the collection unchanged), and **Move** (adds to the shopping list and marks the collection item as depleted, indicating it has been used up and needs restocking). Works for any collection type — useful for pantry items, disposable batteries, cleaning supplies, etc.
+
 ## [0.18.4] — 2026-05-06
 
 ### Added

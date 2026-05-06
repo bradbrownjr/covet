@@ -205,13 +205,38 @@ class CollectionsTabsViewModel @Inject constructor(
 
     fun executeAddToList(item: ItemDto) {
         _state.value = _state.value.copy(pendingShoppingItem = null)
+        val brand = item.attrs["brand"] as? String
         viewModelScope.launch {
             try {
                 shoppingRepo.addItem(
                     collectionId = item.collection_id,
                     name = item.title,
+                    quantity = item.quantity,
+                    brand = brand,
+                    notes = item.notes,
                     categorySlug = item.category_slug,
                 )
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(error = t.message)
+            }
+        }
+    }
+
+    fun executeMoveToList(item: ItemDto) {
+        _state.value = _state.value.copy(pendingShoppingItem = null)
+        val brand = item.attrs["brand"] as? String
+        viewModelScope.launch {
+            try {
+                shoppingRepo.addItem(
+                    collectionId = item.collection_id,
+                    name = item.title,
+                    quantity = item.quantity,
+                    brand = brand,
+                    notes = item.notes,
+                    categorySlug = item.category_slug,
+                )
+                itemsRepo.update(item.id, depleted = true)
+                loadItems(item.collection_id, force = true)
             } catch (t: Throwable) {
                 _state.value = _state.value.copy(error = t.message)
             }
@@ -578,8 +603,13 @@ private fun ConfirmAddToListDialog(s: CollectionsTabsUi, vm: CollectionsTabsView
         title = { Text(stringResource(R.string.cd_add_to_list)) },
         text = { Text(stringResource(R.string.add_to_list_confirm, item.title)) },
         confirmButton = {
-            TextButton(onClick = { vm.executeAddToList(item) }) {
-                Text(stringResource(R.string.add))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = { vm.executeAddToList(item) }) {
+                    Text(stringResource(R.string.copy))
+                }
+                TextButton(onClick = { vm.executeMoveToList(item) }) {
+                    Text(stringResource(R.string.move))
+                }
             }
         },
         dismissButton = { TextButton(onClick = vm::cancelAddToList) { Text(stringResource(R.string.cancel)) } },
