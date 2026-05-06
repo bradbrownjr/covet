@@ -223,7 +223,15 @@
     "consumable_purchased": "Acquistato il",
     "consumable_use_by": "Da consumarsi entro",
     "consumable_frozen": "Congelato il",
-    "consumable_opened": "Aperto il"
+    "consumable_opened": "Aperto il",
+    "consumable_dates_label": "Dates",
+    "more_actions": "More actions",
+    "bulk_group_status": "Status",
+    "bulk_group_tags": "Tags",
+    "bulk_group_location": "Location",
+    "bulk_group_lend": "Lend",
+    "advanced_filters": "Filters",
+    "edit_panel_title": "Edit item"
   },
   "members": {
     "add_placeholder": "Nome utente o e-mail",

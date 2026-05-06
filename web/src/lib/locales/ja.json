@@ -223,7 +223,15 @@
     "consumable_purchased": "購入日",
     "consumable_use_by": "賞味期限",
     "consumable_frozen": "冷凍日",
-    "consumable_opened": "開封日"
+    "consumable_opened": "開封日",
+    "consumable_dates_label": "Dates",
+    "more_actions": "More actions",
+    "bulk_group_status": "Status",
+    "bulk_group_tags": "Tags",
+    "bulk_group_location": "Location",
+    "bulk_group_lend": "Lend",
+    "advanced_filters": "Filters",
+    "edit_panel_title": "Edit item"
   },
   "members": {
     "add_placeholder": "ユーザー名またはメールアドレス",

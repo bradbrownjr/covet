@@ -223,7 +223,15 @@
     "consumable_purchased": "Gekauft am",
     "consumable_use_by": "Verbrauch bis",
     "consumable_frozen": "Eingefroren am",
-    "consumable_opened": "Geöffnet am"
+    "consumable_opened": "Geöffnet am",
+    "consumable_dates_label": "Dates",
+    "more_actions": "More actions",
+    "bulk_group_status": "Status",
+    "bulk_group_tags": "Tags",
+    "bulk_group_location": "Location",
+    "bulk_group_lend": "Lend",
+    "advanced_filters": "Filters",
+    "edit_panel_title": "Edit item"
   },
   "members": {
     "add_placeholder": "Benutzername oder E-Mail",

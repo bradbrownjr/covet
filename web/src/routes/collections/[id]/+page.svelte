@@ -5,10 +5,19 @@
     import { _ } from 'svelte-i18n';
     import { api, type Category, type Collection, type Contact, type Item, type ItemTemplate, type LocationNode, type Tag } from '$lib/api';
     import { childrenOf, loadCategories, rootCategories } from '$lib/categories';
-    import ItemComments from '$lib/ItemComments.svelte';
-    import PhotoGallery from '$lib/PhotoGallery.svelte';
-    import { ConfirmDialog, Modal } from '$lib/components';
+    import { ConfirmDialog } from '$lib/components';
     import { me } from '$lib/session';
+    import AddItemCard from './AddItemCard.svelte';
+    import FilterBar from './FilterBar.svelte';
+    import AdvancedFilters from './AdvancedFilters.svelte';
+    import BulkToolbar from './BulkToolbar.svelte';
+    import ItemGrid from './ItemGrid.svelte';
+    import ItemTable from './ItemTable.svelte';
+    import ItemEditPanel from './ItemEditPanel.svelte';
+    import DeleteItemDialog from './modals/DeleteItemDialog.svelte';
+    import MarkOwnedDialog from './modals/MarkOwnedDialog.svelte';
+    import ArchiveItemDialog from './modals/ArchiveItemDialog.svelte';
+    import FlagItemDialog from './modals/FlagItemDialog.svelte';
 
     let collection = $state<Collection | null>(null);
     let items = $state<Item[]>([]);
@@ -18,7 +27,7 @@
     let relatedItemTitles = $state<Record<string, string>>({});
     let categories = $state<Category[]>([]);
     let search = $state('');
-    let rootFilter = $state(''); // only used when collection has no default category
+    let rootFilter = $state('');
     let wantedFilter = $state<'all' | 'wanted' | 'owned'>('all');
     let archivedFilter = $state<'active' | 'archived' | 'all'>('active');
     let sortBy = $state<'sort_order' | 'title' | 'value' | 'acquired_at' | 'attr'>('title');
@@ -32,34 +41,22 @@
     let didSeedDefaults = $state(false);
     let viewMode = $state<'list' | 'grid'>('list');
 
-    // Inline item editing
-    let editingId = $state<string | null>(null);
-    let editTitle = $state('');
-    let editCreator = $state('');
-    let editSubtitle = $state('');
-    let editCondition = $state('');
-    let editQuantity = $state(1);
-    let editPurchasedAt = $state('');
-    let editUseByDate = $state('');
-    let editDateFrozen = $state('');
-    let editDateOpened = $state('');
+    // Slide-over edit panel
+    let editPanelItem = $state<Item | null>(null);
+
+    // Item action dialog state
     let confirmDialog = $state<'delete-item' | 'delete-collection' | 'flag-item' | 'mark-owned' | 'archive-item' | null>(null);
     let pendingDeleteItemId = $state<string | null>(null);
     let pendingDeleteItemTitle = $state('');
     let pendingFlagItemId = $state<string | null>(null);
     let pendingFlagItemTitle = $state('');
-    let flagNoteInput = $state('');
+    let pendingFlagItemNote = $state('');
     let pendingOwnedItemId = $state<string | null>(null);
     let pendingOwnedItemTitle = $state('');
-    let ownedAtInput = $state('');
-    let ownedPriceInput = $state('');
     let pendingArchiveItemId = $state<string | null>(null);
     let pendingArchiveItemTitle = $state('');
-    let archiveDispositionType = $state<'sold' | 'disposed' | 'donated' | 'archived'>('archived');
-    let archiveDispositionAt = $state('');
-    let archiveDispositionAmount = $state('');
-    let archiveDispositionBuyer = $state('');
-    let archiveDispositionNote = $state('');
+
+    // Bulk action state
     let bulkBusy = $state(false);
     let selectedBulkTagId = $state('');
     let bulkMoveLocationId = $state('');
@@ -67,21 +64,17 @@
     let selectedBulkContactId = $state('');
     let bulkLoanDueAt = $state('');
 
-    // Inline create form: cascading root → leaf.
+    // Create form
     let newRoot = $state('other');
     let newLeaf = $state('other.generic');
-    let newQuery = $state(''); // smart input: URL / ISBN / EAN / Title
+    let newQuery = $state('');
     let newCreator = $state('');
     let newSubtitle = $state('');
     let scraping = $state(false);
 
-    let creatorInput: HTMLInputElement | undefined;
-    let titleInput: HTMLInputElement | undefined;
-    let subtitleInput: HTMLInputElement | undefined;
-    let barcodeImageInput: HTMLInputElement | undefined;
-    let searchInput: HTMLInputElement | undefined;
+    let searchInputEl: HTMLInputElement | undefined;
+    let addCardRef: { focusTitle?: () => void } | undefined;
 
-    // Label for the creator field based on leaf category; null = hide the field.
     const creatorLabel = $derived.by(() => {
         if (newLeaf.startsWith('music.')) return $_('collection.creator_artist');
         if (newLeaf.startsWith('books.')) return $_('collection.creator_author');
@@ -90,21 +83,18 @@
         if (newLeaf.startsWith('tabletop.')) return $_('collection.creator_designer');
         return null;
     });
-    // Label for the subtitle/series field; null = hide.
     const subtitleLabel = $derived.by(() => {
         if (newLeaf.startsWith('books.') || newLeaf.startsWith('movies.') || newLeaf.startsWith('games.'))
             return $_('collection.subtitle_placeholder');
         return null;
     });
 
-    // Helper to determine if a category slug is for consumables (pantry, spices, batteries, etc).
     function isConsumable(slug: string | null): boolean {
         if (!slug) return false;
         const root = slug.split('.')[0];
-        return root === 'spices'; // spices root includes pantry items
+        return root === 'spices';
     }
 
-    // Quick-action config for maintenance-relevant categories.
     const QUICK_ACTIONS: Record<string, { label: () => string; choreName: (title: string) => string; intervalDays: number }> = {
         'home_equipment.hvac': {
             label: () => $_('collection.quick_action_filter_change'),
@@ -133,18 +123,8 @@
         return QUICK_ACTIONS[slug] ?? null;
     }
 
-    async function triggerQuickAction(item: Item) {
-        const action = quickActionFor(item.category_slug);
-        if (!action) return;
-        try {
-            await api.post(`/items/${item.id}/quick-chore`, {
-                chore_name: action.choreName(item.title),
-                interval_days: action.intervalDays,
-            });
-            await load();
-        } catch (err) {
-            error = (err as Error).message;
-        }
+    function quickActionLabel(slug: string | null): (() => string) | null {
+        return quickActionFor(slug)?.label ?? null;
     }
 
     const cid = $derived(page.params.id ?? '');
@@ -156,7 +136,7 @@
         const out: { id: string; label: string }[] = [];
         const walk = (nodes: LocationNode[], depth: number) => {
             for (const n of nodes) {
-                out.push({ id: n.id, label: `${'\u00a0\u00a0'.repeat(depth)}${n.name}` });
+                out.push({ id: n.id, label: `${'  '.repeat(depth)}${n.name}` });
                 walk(n.children, depth + 1);
             }
         };
@@ -168,18 +148,12 @@
         if (!root) return [];
         return childrenOf(categories, root.id);
     });
-    // True when this collection is "focused" on a single root (preset wizard).
     const isFocused = $derived.by(() => {
         const def = collection?.default_category_slug;
         if (!def) return false;
         const c = categories.find((x) => x.slug === def);
         return !!c;
     });
-
-    // Check if current leaf is consumable
-    const isCurrentLeafConsumable = $derived(isConsumable(newLeaf));
-
-    // Column headers for the items table based on the collection's root category.
     const collectionCreatorLabel = $derived.by(() => {
         const root = (collection?.default_category_slug ?? '').split('.')[0];
         if (root === 'music') return $_('collection.creator_artist');
@@ -209,8 +183,8 @@
         const s = q.trim();
         if (/^https?:\/\//i.test(s)) return 'url';
         const digits = s.replace(/[\s-]/g, '');
-        if (/^(?:97[89])\d{10}$/.test(digits)) return 'isbn'; // ISBN-13
-        if (/^\d{9}[\dXx]$/.test(digits)) return 'isbn'; // ISBN-10
+        if (/^(?:97[89])\d{10}$/.test(digits)) return 'isbn';
+        if (/^\d{9}[\dXx]$/.test(digits)) return 'isbn';
         if (/^\d{12,13}$/.test(digits)) return 'ean';
         return 'title';
     }
@@ -255,12 +229,8 @@
         return relatedItemTitles[targetId] ?? targetId;
     }
 
-    function isSelected(itemId: string): boolean {
-        return selectedItemIds.includes(itemId);
-    }
-
     function toggleSelected(itemId: string) {
-        if (isSelected(itemId)) {
+        if (selectedItemIds.includes(itemId)) {
             selectedItemIds = selectedItemIds.filter((id) => id !== itemId);
         } else {
             selectedItemIds = [...selectedItemIds, itemId];
@@ -350,14 +320,7 @@
             tags = fetchedTags;
             contacts = fetchedContacts;
             locations = fetchedLocations;
-            if (selectedBulkTagId && !fetchedTags.some((t) => t.id === selectedBulkTagId)) {
-                selectedBulkTagId = '';
-            }
-            if (selectedBulkContactId && !fetchedContacts.some((c) => c.id === selectedBulkContactId)) {
-                selectedBulkContactId = '';
-            }
-            selectedItemIds = selectedItemIds.filter((id) => fetchedItems.some((i) => i.id === id));
-            await hydrateRelatedItemTitles(fetchedItems);
+            await hydrateRelatedItemTitles(items);
         } catch (e) {
             error = (e as Error).message;
         } finally {
@@ -365,7 +328,7 @@
         }
     }
 
-    async function bulkPatch(payload: { depleted?: boolean; wanted?: boolean }) {
+    async function bulkPatch(payload: Record<string, unknown>) {
         if (!selectedItemIds.length) return;
         bulkBusy = true;
         error = '';
@@ -565,10 +528,6 @@
         return result.getText();
     }
 
-    function triggerBarcodeImagePicker() {
-        barcodeImageInput?.click();
-    }
-
     async function onBarcodeImagePicked(e: Event) {
         const input = e.currentTarget as HTMLInputElement;
         const file = input.files?.[0];
@@ -621,7 +580,7 @@
         newSubtitle = '';
         await load();
         await tick();
-        (creatorLabel ? creatorInput : titleInput)?.focus();
+        addCardRef?.focusTitle?.();
     }
 
     async function addItem(e: Event) {
@@ -644,59 +603,9 @@
         await load();
     }
 
-    let conditionSuggestions = $state<string[]>([]);
-    let creatorSuggestions = $state<string[]>([]);
-
-    function startEdit(i: Item) {
-        editingId = i.id;
-        editTitle = i.title;
-        editCreator = String(i.attrs?.creator ?? '');
-        editSubtitle = i.subtitle ?? '';
-        editCondition = i.condition ?? '';
-        editQuantity = i.quantity;
-        // Convert ISO strings to datetime-local format for input fields (remove Z, handle truncation)
-        editPurchasedAt = i.purchased_at ? new Date(i.purchased_at).toISOString().slice(0, 16) : '';
-        editUseByDate = i.use_by_date ? new Date(i.use_by_date).toISOString().slice(0, 16) : '';
-        editDateFrozen = i.date_frozen ? new Date(i.date_frozen).toISOString().slice(0, 16) : '';
-        editDateOpened = i.date_opened ? new Date(i.date_opened).toISOString().slice(0, 16) : '';
-        // Lazy-load suggestions on first edit (silent — non-critical, user just gets no autocomplete).
-        if (!conditionSuggestions.length) {
-            api.get<string[]>(`/collections/${cid}/field-suggestions?field=condition`, true)
-                .then((v) => { conditionSuggestions = v; })
-                .catch(() => {});
-        }
-        if (collectionCreatorLabel && !creatorSuggestions.length) {
-            api.get<string[]>(`/collections/${cid}/field-suggestions?field=creator`, true)
-                .then((v) => { creatorSuggestions = v; })
-                .catch(() => {});
-        }
-    }
-
-    function cancelEdit() {
-        editingId = null;
-    }
-
-    async function saveEdit() {
-        if (!editingId) return;
-        const attrsPayload: Record<string, string> = {};
-        if (editCreator.trim()) attrsPayload.creator = editCreator.trim();
-        const updatePayload: Record<string, unknown> = {
-            title: editTitle.trim(),
-            subtitle: editSubtitle.trim() || null,
-            condition: editCondition.trim() || null,
-            quantity: editQuantity,
-            attrs: attrsPayload,
-        };
-        // Add consumable dates if this item is in a consumable category
-        const editingItem = items.find((it) => it.id === editingId);
-        if (editingItem && isConsumable(editingItem.category_slug)) {
-            updatePayload.purchased_at = editPurchasedAt ? new Date(editPurchasedAt).toISOString() : null;
-            updatePayload.use_by_date = editUseByDate ? new Date(editUseByDate).toISOString() : null;
-            updatePayload.date_frozen = editDateFrozen ? new Date(editDateFrozen).toISOString() : null;
-            updatePayload.date_opened = editDateOpened ? new Date(editDateOpened).toISOString() : null;
-        }
-        await api.patch(`/items/${editingId}`, updatePayload);
-        editingId = null;
+    async function saveEditFromPanel(id: string, payload: Record<string, unknown>) {
+        await api.patch(`/items/${id}`, payload);
+        editPanelItem = null;
         await load();
     }
 
@@ -709,8 +618,6 @@
         if (item.wanted) {
             pendingOwnedItemId = item.id;
             pendingOwnedItemTitle = item.title;
-            ownedAtInput = new Date().toISOString().slice(0, 16);
-            ownedPriceInput = '';
             confirmDialog = 'mark-owned';
             return;
         }
@@ -718,16 +625,14 @@
         await load();
     }
 
-    async function markOwnedConfirmed() {
+    async function markOwnedConfirmed(ownedAt: string, ownedPrice: string) {
         if (!pendingOwnedItemId) return;
         const payload: Record<string, unknown> = { wanted: false };
-        if (ownedAtInput) payload.acquired_at = new Date(ownedAtInput).toISOString();
-        if (ownedPriceInput.trim()) payload.purchase_price = Number(ownedPriceInput);
+        if (ownedAt) payload.acquired_at = new Date(ownedAt).toISOString();
+        if (ownedPrice.trim()) payload.purchase_price = Number(ownedPrice);
         await api.patch(`/items/${pendingOwnedItemId}`, payload);
         pendingOwnedItemId = null;
         pendingOwnedItemTitle = '';
-        ownedAtInput = '';
-        ownedPriceInput = '';
         confirmDialog = null;
         await load();
     }
@@ -735,16 +640,16 @@
     function requestFlagItem(item: Item) {
         pendingFlagItemId = item.id;
         pendingFlagItemTitle = item.title;
-        flagNoteInput = item.flagged_note ?? '';
+        pendingFlagItemNote = item.flagged_note ?? '';
         confirmDialog = 'flag-item';
     }
 
-    async function flagItemConfirmed() {
+    async function flagItemConfirmed(note: string) {
         if (!pendingFlagItemId) return;
-        await api.post(`/items/${pendingFlagItemId}/flag`, { note: flagNoteInput });
+        await api.post(`/items/${pendingFlagItemId}/flag`, { note });
         pendingFlagItemId = null;
         pendingFlagItemTitle = '';
-        flagNoteInput = '';
+        pendingFlagItemNote = '';
         confirmDialog = null;
         await load();
     }
@@ -757,23 +662,11 @@
     function requestArchiveItem(item: Item) {
         pendingArchiveItemId = item.id;
         pendingArchiveItemTitle = item.title;
-        archiveDispositionType = 'archived';
-        archiveDispositionAt = new Date().toISOString().slice(0, 16);
-        archiveDispositionAmount = '';
-        archiveDispositionBuyer = '';
-        archiveDispositionNote = '';
         confirmDialog = 'archive-item';
     }
 
-    async function archiveItemConfirmed() {
+    async function archiveItemConfirmed(payload: { disposition_type: string; disposition_at?: string; disposition_buyer?: string; disposition_note?: string; disposition_amount?: number }) {
         if (!pendingArchiveItemId) return;
-        const payload: Record<string, unknown> = {
-            disposition_type: archiveDispositionType,
-            disposition_at: archiveDispositionAt ? new Date(archiveDispositionAt).toISOString() : undefined,
-            disposition_buyer: archiveDispositionBuyer.trim() || undefined,
-            disposition_note: archiveDispositionNote.trim() || undefined,
-        };
-        if (archiveDispositionAmount.trim()) payload.disposition_amount = Number(archiveDispositionAmount);
         await api.post(`/items/${pendingArchiveItemId}/archive`, payload);
         pendingArchiveItemId = null;
         pendingArchiveItemTitle = '';
@@ -812,6 +705,20 @@
         await load();
     }
 
+    async function triggerQuickAction(item: Item) {
+        const action = quickActionFor(item.category_slug);
+        if (!action) return;
+        try {
+            await api.post(`/items/${item.id}/quick-chore`, {
+                chore_name: action.choreName(item.title),
+                interval_days: action.intervalDays,
+            });
+            await load();
+        } catch (err) {
+            error = (err as Error).message;
+        }
+    }
+
     function requestDeleteCollection() {
         confirmDialog = 'delete-collection';
     }
@@ -835,8 +742,8 @@
             const active = document.activeElement;
             if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) return;
             event.preventDefault();
-            searchInput?.focus();
-            searchInput?.select();
+            searchInputEl?.focus();
+            searchInputEl?.select();
         };
         window.addEventListener('keydown', onGlobalKeydown);
         load();
@@ -853,15 +760,6 @@
         void load();
     }
 
-    function toggleTagFilter(tagId: string) {
-        if (activeTagIds.includes(tagId)) {
-            activeTagIds = activeTagIds.filter((t) => t !== tagId);
-        } else {
-            activeTagIds = [...activeTagIds, tagId];
-        }
-        void load();
-    }
-
     $effect(() => {
         localStorage.setItem('tangible:viewMode', viewMode);
     });
@@ -869,209 +767,75 @@
 
 {#if collection}
     {#if canEdit}
-    <form onsubmit={addItem} class="card add-form">
-        <input
-            bind:this={barcodeImageInput}
-            type="file"
-            accept="image/*"
-            style="display:none"
-            onchange={onBarcodeImagePicked}
+        <AddItemCard
+            bind:this={addCardRef}
+            {isFocused}
+            {roots}
+            {leaves}
+            {creatorLabel}
+            {subtitleLabel}
+            bind:newRoot
+            bind:newLeaf
+            bind:newQuery
+            bind:newCreator
+            bind:newSubtitle
+            {scraping}
+            {error}
+            {detected}
+            onSubmit={addItem}
+            onLookup={lookupAndPrefill}
+            onBarcodeChange={onBarcodeImagePicked}
         />
-        <label class="add-label" for="addq">
-            {$_('collection.add_item_label')}
-            <span class="muted">— {$_('collection.add_item_help')}</span>
-        </label>
-        <div class="add-row">
-            {#if !isFocused}
-                <select bind:value={newRoot} title="Category root">
-                    {#each roots as r (r.id)}
-                        <option value={r.slug}>{r.name}</option>
-                    {/each}
-                </select>
-            {/if}
-            <select bind:value={newLeaf} title="Category">
-                {#each leaves as l (l.id)}
-                    <option value={l.slug}>{l.name}</option>
-                {/each}
-            </select>
-            {#if creatorLabel}
-                <input
-                    bind:this={creatorInput}
-                    bind:value={newCreator}
-                    placeholder={creatorLabel}
-                    autocomplete="off"
-                    class="creator-field"
-                    onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); titleInput?.focus(); } }}
-                />
-            {/if}
-            <input
-                id="addq"
-                bind:this={titleInput}
-                bind:value={newQuery}
-                placeholder={$_('collection.item_title_placeholder')}
-                autocomplete="off"
-                class="title-field"
-                onkeydown={(e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        if (subtitleLabel && subtitleInput) subtitleInput.focus();
-                        else performAdd();
-                    }
-                }}
-            />
-            {#if subtitleLabel}
-                <input
-                    bind:this={subtitleInput}
-                    bind:value={newSubtitle}
-                    placeholder={subtitleLabel}
-                    autocomplete="off"
-                    class="subtitle-field"
-                    onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); performAdd(); } }}
-                />
-            {/if}
-            {#if detected !== 'title' && newQuery.trim()}
-                <button type="button" onclick={lookupAndPrefill} disabled={scraping}>
-                    {scraping ? $_('collection.looking_up_button') : $_('collection.lookup_button', { values: { type: detected.toUpperCase() } })}
-                </button>
-            {/if}
-            <button type="button" class="secondary" onclick={triggerBarcodeImagePicker} disabled={scraping}>
-                {$_('collection.scan_image_button')}
-            </button>
-            <button type="submit" disabled={scraping || !newQuery.trim()}>{$_('collection.add_button')}</button>
-        </div>
-        {#if error}<p class="error">{error}</p>{/if}
-    </form>
     {/if}
 
-    <div class="filters">
-        <input
-            bind:this={searchInput}
-            bind:value={search}
-            placeholder={$_('collection.search_placeholder')}
-            oninput={() => load()}
-        />
-        {#if !isFocused}
-            <select bind:value={rootFilter} onchange={() => load()}>
-                <option value="">{$_('collection.all_categories')}</option>
-                {#each roots as r (r.id)}
-                    <option value={r.slug}>{r.name}</option>
-                {/each}
-            </select>
-        {/if}
-        <div class="view-toggle" role="group" aria-label="View mode">
-            <button type="button" class="toggle-btn" class:active={viewMode === 'list'} onclick={() => viewMode = 'list'} title={$_('collection.view_list')} aria-label={$_('collection.view_list')}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                    <rect x="0" y="2" width="16" height="2" rx="1"/>
-                    <rect x="0" y="7" width="16" height="2" rx="1"/>
-                    <rect x="0" y="12" width="16" height="2" rx="1"/>
-                </svg>
-            </button>
-            <button type="button" class="toggle-btn" class:active={viewMode === 'grid'} onclick={() => viewMode = 'grid'} title={$_('collection.view_grid')} aria-label={$_('collection.view_grid')}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                    <rect x="0" y="0" width="7" height="7" rx="1"/>
-                    <rect x="9" y="0" width="7" height="7" rx="1"/>
-                    <rect x="0" y="9" width="7" height="7" rx="1"/>
-                    <rect x="9" y="9" width="7" height="7" rx="1"/>
-                </svg>
-            </button>
-        </div>
-        <select bind:value={sortBy} onchange={() => load()} title="Sort by">
-            <option value="title">{$_('collection.sort_title')}</option>
-            <option value="sort_order">{$_('collection.sort_custom')}</option>
-            <option value="value">{$_('collection.sort_value')}</option>
-            <option value="acquired_at">{$_('collection.sort_acquired')}</option>
-            <option value="attr">{$_('collection.sort_attr')}</option>
-        </select>
-        <select bind:value={wantedFilter} onchange={() => load()} title="Wanted status">
-            <option value="all">{$_('collection.filter_all_ownership')}</option>
-            <option value="owned">{$_('collection.filter_owned')}</option>
-            <option value="wanted">{$_('collection.filter_wanted')}</option>
-        </select>
-        <select bind:value={archivedFilter} onchange={() => load()} title="Archived status">
-            <option value="active">{$_('collection.filter_active')}</option>
-            <option value="archived">{$_('collection.filter_archived')}</option>
-            <option value="all">{$_('collection.filter_active_archived')}</option>
-        </select>
-        <select bind:value={sortDir} onchange={() => load()} title="Sort direction">
-            <option value="asc">{$_('collection.sort_asc')}</option>
-            <option value="desc">{$_('collection.sort_desc')}</option>
-        </select>
-        {#if sortBy === 'attr'}
-            <input
-                bind:value={sortAttr}
-                placeholder={$_('collection.sort_attr_key_placeholder')}
-                title="Custom field key"
-                onkeydown={(e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        load();
-                    }
-                }}
-                onblur={() => load()}
-            />
-        {/if}
-    </div>
-    {#if tags.length}
-        <div class="tag-filters">
-            {#each tags as t (t.id)}
-                <button
-                    type="button"
-                    class="tag-chip"
-                    class:active={activeTagIds.includes(t.id)}
-                    onclick={() => toggleTagFilter(t.id)}
-                >{t.name}</button>
-            {/each}
-            {#if activeTagIds.length > 1}
-                <button
-                    type="button"
-                    class="tag-mode-toggle"
-                    onclick={() => { tagMode = tagMode === 'all' ? 'any' : 'all'; void load(); }}
-                    title={$_('collection.tag_mode_toggle_title')}
-                >{tagMode === 'all' ? $_('collection.tag_mode_all') : $_('collection.tag_mode_any')}</button>
-            {/if}
-            {#if activeTagIds.length}
-                <button type="button" class="tag-clear" onclick={() => { activeTagIds = []; void load(); }}>{$_('collection.tag_filter_clear')}</button>
-            {/if}
-        </div>
-    {/if}
+    <FilterBar
+        bind:search
+        bind:viewMode
+        bind:sortBy
+        bind:sortDir
+        bind:sortAttr
+        bind:searchInputEl
+        onchange={() => load()}
+    />
 
-    {#if canEdit && selectedItemIds.length > 0}
-        <div class="bulk-toolbar bulk-toolbar-floating">
-            <span class="muted">{$_('collection.selected_count', { values: { count: selectedItemIds.length } })}</span>
-            <button type="button" class="secondary" onclick={selectVisibleItems} disabled={!items.length || bulkBusy}>{$_('collection.select_visible')}</button>
-            <button type="button" class="secondary" onclick={clearSelection} disabled={!selectedItemIds.length || bulkBusy}>{$_('collection.clear_selection')}</button>
-            <button type="button" class="secondary" onclick={() => bulkPatch({ depleted: true })} disabled={!selectedItemIds.length || bulkBusy}>{$_('collection.bulk_depleted')}</button>
-            <button type="button" class="secondary" onclick={() => bulkPatch({ depleted: false })} disabled={!selectedItemIds.length || bulkBusy}>{$_('collection.bulk_in_stock')}</button>
-            <button type="button" class="secondary" onclick={() => bulkPatch({ wanted: true })} disabled={!selectedItemIds.length || bulkBusy}>{$_('collection.bulk_wanted')}</button>
-            <button type="button" class="secondary" onclick={() => bulkPatch({ wanted: false })} disabled={!selectedItemIds.length || bulkBusy}>{$_('collection.bulk_owned')}</button>
-            <button type="button" class="secondary" onclick={bulkArchive} disabled={!selectedItemIds.length || bulkBusy}>{$_('collection.bulk_archive')}</button>
-            <button type="button" class="secondary" onclick={bulkRestore} disabled={!selectedItemIds.length || bulkBusy}>{$_('collection.bulk_restore')}</button>
-            <select bind:value={selectedBulkTagId} disabled={bulkBusy || tags.length === 0} title="Tag for bulk tagging">
-                <option value="">{$_('collection.tag_dropdown')}</option>
-                {#each tags as t (t.id)}
-                    <option value={t.id}>{t.name}</option>
-                {/each}
-            </select>
-            <button type="button" class="secondary" onclick={() => bulkTag('add')} disabled={!selectedItemIds.length || !selectedBulkTagId || bulkBusy}>{$_('collection.bulk_add_tag')}</button>
-            <button type="button" class="secondary" onclick={() => bulkTag('remove')} disabled={!selectedItemIds.length || !selectedBulkTagId || bulkBusy}>{$_('collection.bulk_remove_tag')}</button>
-            <select bind:value={bulkMoveLocationId} disabled={bulkBusy || locationOptions.length === 0} title="Bulk location move">
-                <option value="">{$_('collection.location_dropdown')}</option>
-                {#each locationOptions as opt (opt.id)}
-                    <option value={opt.id}>{opt.label}</option>
-                {/each}
-            </select>
-            <button type="button" class="secondary" onclick={() => runBulkMoveLocation(false)} disabled={!selectedItemIds.length || !bulkMoveLocationId || bulkBusy}>{$_('collection.bulk_move_location')}</button>
-            <button type="button" class="secondary" onclick={() => runBulkMoveLocation(true)} disabled={!selectedItemIds.length || bulkBusy}>{$_('collection.bulk_clear_location')}</button>
-            <select bind:value={selectedBulkContactId} disabled={bulkBusy || contacts.length === 0} title="Contact for bulk lend">
-                <option value="">{$_('collection.contact_dropdown')}</option>
-                {#each contacts as c (c.id)}
-                    <option value={c.id}>{c.name}</option>
-                {/each}
-            </select>
-            <input type="datetime-local" bind:value={bulkLoanDueAt} title="Bulk lend due date" />
-            <button type="button" class="secondary" onclick={bulkLend} disabled={!selectedItemIds.length || !selectedBulkContactId || bulkBusy}>{$_('collection.bulk_lend')}</button>
-            <button type="button" class="danger" onclick={bulkDelete} disabled={!selectedItemIds.length || bulkBusy}>{$_('collection.bulk_delete')}</button>
-        </div>
+    <AdvancedFilters
+        {isFocused}
+        {roots}
+        bind:rootFilter
+        bind:wantedFilter
+        bind:archivedFilter
+        {tags}
+        bind:activeTagIds
+        bind:tagMode
+        onchange={() => load()}
+    />
+
+    {#if canEdit}
+        <BulkToolbar
+            selectedCount={selectedItemIds.length}
+            busy={bulkBusy}
+            {tags}
+            {locationOptions}
+            {contacts}
+            bind:selectedBulkTagId
+            bind:bulkMoveLocationId
+            bind:selectedBulkContactId
+            bind:bulkLoanDueAt
+            onSelectAll={selectVisibleItems}
+            onClearSelection={clearSelection}
+            onBulkDepleted={() => bulkPatch({ depleted: true })}
+            onBulkInStock={() => bulkPatch({ depleted: false })}
+            onBulkWanted={() => bulkPatch({ wanted: true })}
+            onBulkOwned={() => bulkPatch({ wanted: false })}
+            onBulkArchive={bulkArchive}
+            onBulkRestore={bulkRestore}
+            onBulkAddTag={() => bulkTag('add')}
+            onBulkRemoveTag={() => bulkTag('remove')}
+            onBulkMoveLocation={() => runBulkMoveLocation(false)}
+            onBulkClearLocation={() => runBulkMoveLocation(true)}
+            onBulkLend={bulkLend}
+            onBulkDelete={bulkDelete}
+        />
     {/if}
 
     {#if loading}
@@ -1079,247 +843,57 @@
     {:else if items.length === 0}
         <p class="muted">{$_('collection.no_items')}</p>
     {:else if viewMode === 'grid'}
-        <div class="item-grid">
-            {#each items as i (i.id)}
-                {#if editingId === i.id}
-                    <div class="item-card item-card-edit">
-                        <div class="item-card-body">
-                            {#if collectionCreatorLabel}
-                                <input bind:value={editCreator} placeholder={collectionCreatorLabel} class="edit-input" list="creator-suggestions" />
-                            {/if}
-                            <input bind:value={editTitle} placeholder={$_('collection.col_title')} class="edit-input" />
-                            {#if showCollectionSubtitle}
-                                <input bind:value={editSubtitle} placeholder={$_('collection.subtitle_placeholder')} class="edit-input" />
-                            {/if}
-                            <input bind:value={editCondition} placeholder={$_('collection.col_condition')} class="edit-input" list="condition-suggestions" />
-                            <input type="number" bind:value={editQuantity} min="0" placeholder={$_('collection.col_qty')} class="edit-input" style="width:5rem" />
-                            {#if isConsumable(i.category_slug)}
-                                <input type="datetime-local" bind:value={editPurchasedAt} placeholder={$_('collection.consumable_purchased')} class="edit-input" title="Purchased date" />
-                                <input type="datetime-local" bind:value={editUseByDate} placeholder={$_('collection.consumable_use_by')} class="edit-input" title="Use by date" />
-                                <input type="datetime-local" bind:value={editDateFrozen} placeholder={$_('collection.consumable_frozen')} class="edit-input" title="Date frozen" />
-                                <input type="datetime-local" bind:value={editDateOpened} placeholder={$_('collection.consumable_opened')} class="edit-input" title="Date opened" />
-                            {/if}
-                        </div>
-                        <div class="item-card-actions">
-                            <button onclick={saveEdit}>{$_('common.save')}</button>
-                            <button type="button" class="secondary" onclick={cancelEdit}>{$_('common.cancel')}</button>
-                        </div>
-                    </div>
-                {:else}
-                    <div class="item-card" class:depleted-card={i.depleted} class:wanted-card={i.wanted} class:archived-card={i.archived_at != null}>
-                        <div class="item-card-body">
-                            {#if canEdit}
-                                <label class="select-chip">
-                                    <input
-                                        type="checkbox"
-                                        checked={isSelected(i.id)}
-                                        onchange={() => toggleSelected(i.id)}
-                                    />
-                                    {$_('collection.item_select_label')}
-                                </label>
-                            {/if}
-                            {#if !isFocused && i.category_slug}
-                                <button type="button" class="category-badge filter-link" onclick={() => filterByCategory(i.category_slug!)}>{i.category_slug.split('.').at(-1) ?? i.category_slug}</button>
-                            {/if}
-                            {#if i.attrs?.creator}
-                                <p class="item-creator"><button type="button" class="filter-link" onclick={() => filterBySearch(String(i.attrs!.creator))}>{String(i.attrs.creator)}</button></p>
-                            {/if}
-                            <p class="item-title">{i.title}</p>
-                            {#if i.subtitle}
-                                <p class="item-subtitle">{i.subtitle}</p>
-                            {/if}
-                            <PhotoGallery itemId={i.id} canEdit={canEdit} compact />
-                            <ItemComments itemId={i.id} currentUserId={$me?.id} canManage={canEdit} />
-                            {#if relationEntries(i).length}
-                                <div class="relation-list">
-                                    {#each relationEntries(i) as rel (`${rel.key}:${rel.targetId}`)}
-                                        <div class="relation-card" title={rel.targetId}>
-                                            <span class="relation-label">{rel.label}</span>
-                                            <span class="relation-target">{relationTitle(rel.targetId)}</span>
-                                        </div>
-                                    {/each}
-                                </div>
-                            {/if}
-                            <div class="item-meta">
-                                {#if i.condition}<button type="button" class="filter-link" onclick={() => filterBySearch(i.condition!)}>{i.condition}</button>{/if}
-                                {#if i.quantity > 1}<span>×{i.quantity}</span>{/if}
-                                {#if displayValue(i) != null}<span>{formatValue(i)}</span>{/if}
-                                {#if i.location_path && i.location_path.length}<button type="button" class="location-badge filter-link" title="Filter by location" onclick={() => filterBySearch(i.location_path!.at(-1)!)}>{i.location_path.join(' / ')}</button>{/if}
-                                {#if i.depleted}<span class="depleted-badge">{$_('collection.badge_depleted')}</span>{/if}
-                                {#if i.wanted}<span class="wanted-badge">{$_('collection.badge_wanted')}</span>{/if}
-                                {#if i.archived_at}<span class="archived-badge">{$_('collection.badge_archived')}</span>{/if}
-                                {#if i.flagged_at}
-                                    <span class="flagged-badge" title={i.flagged_note ?? $_('collection.flag_for_review')}>
-                                        {$_('collection.badge_flagged')}
-                                    </span>
-                                {/if}
-                                {#if isConsumable(i.category_slug)}
-                                    {#if i.use_by_date}<span class="date-badge use-by">{$_('collection.badge_use_by', { values: { date: new Date(i.use_by_date).toLocaleDateString() } })}</span>{/if}
-                                    {#if i.date_opened}<span class="date-badge opened">{$_('collection.badge_opened', { values: { date: new Date(i.date_opened).toLocaleDateString() } })}</span>{/if}
-                                {/if}
-                            </div>
-                        </div>
-                        {#if canEdit}
-                            <div class="item-card-actions">
-                                <button type="button" class="secondary" onclick={() => startEdit(i)}>{$_('collection.item_edit')}</button>
-                                {#if quickActionFor(i.category_slug)}
-                                    <button type="button" class="secondary" onclick={() => triggerQuickAction(i)} disabled={i.archived_at != null}>{quickActionFor(i.category_slug)!.label()}</button>
-                                {/if}
-                                <button type="button" class="secondary" onclick={() => duplicateItem(i)} disabled={i.archived_at != null}>{$_('collection.item_duplicate')}</button>
-                                <button
-                                    type="button"
-                                    class={i.depleted ? 'secondary' : 'warn'}
-                                    onclick={() => toggleDepleted(i)}
-                                    disabled={i.archived_at != null}
-                                >{i.depleted ? $_('collection.item_in_stock') : $_('collection.item_depleted')}</button>
-                                <button
-                                    type="button"
-                                    class={i.wanted ? 'secondary' : 'warn'}
-                                    onclick={() => toggleWanted(i)}
-                                    disabled={i.archived_at != null}
-                                >{i.wanted ? $_('collection.item_owned') : $_('collection.item_wanted')}</button>
-                                <button
-                                    type="button"
-                                    class="secondary"
-                                    onclick={() => (i.flagged_at ? clearFlag(i) : requestFlagItem(i))}
-                                    disabled={i.archived_at != null}
-                                >{i.flagged_at ? $_('collection.item_unflag') : $_('collection.item_flag')}</button>
-                                <button type="button" class="secondary" onclick={() => (i.archived_at ? restoreArchivedItem(i) : requestArchiveItem(i))}>{i.archived_at ? $_('collection.item_restore') : $_('collection.item_archive')}</button>
-                                <button class="danger item-card-delete" onclick={() => requestRemoveItem(i)}>{$_('collection.item_delete')}</button>
-                            </div>
-                        {/if}
-                    </div>
-                {/if}
-            {/each}
-        </div>
+        <ItemGrid
+            {items}
+            {canEdit}
+            {isFocused}
+            {selectedItemIds}
+            {collectionCreatorLabel}
+            currentUserId={$me?.id}
+            {formatValue}
+            {displayValue}
+            {relationEntries}
+            {relationTitle}
+            {quickActionLabel}
+            {isConsumable}
+            onToggleSelect={toggleSelected}
+            onEdit={(item) => { editPanelItem = item; }}
+            onQuickAction={triggerQuickAction}
+            onDuplicate={duplicateItem}
+            onToggleDepleted={toggleDepleted}
+            onToggleWanted={toggleWanted}
+            onToggleFlag={(item) => (item.flagged_at ? clearFlag(item) : requestFlagItem(item))}
+            onArchive={(item) => (item.archived_at ? restoreArchivedItem(item) : requestArchiveItem(item))}
+            onDelete={requestRemoveItem}
+            onFilterByCategory={filterByCategory}
+            onFilterBySearch={filterBySearch}
+        />
     {:else}
-        <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    {#if canEdit}<th style="width:1%"><input type="checkbox" checked={items.length > 0 && selectedItemIds.length === items.length} onchange={(e) => ((e.target as HTMLInputElement).checked ? selectVisibleItems() : clearSelection())} /></th>{/if}
-                    {#if !isFocused}<th>{$_('collection.col_category')}</th>{/if}
-                    {#if collectionCreatorLabel}<th>{collectionCreatorLabel}</th>{/if}
-                    <th>{$_('collection.col_title')}</th>
-                    {#if showCollectionSubtitle}<th>{$_('collection.subtitle_placeholder')}</th>{/if}
-                    <th>{$_('collection.col_qty')}</th>
-                    <th>{$_('collection.col_condition')}</th>
-                    <th>{$_('collection.col_value')}</th>
-                    {#if canEdit}<th></th>{/if}
-                </tr>
-            </thead>
-            <tbody>
-                {#each items as i (i.id)}
-                    {#if editingId === i.id}
-                        <tr class="editing-row">
-                            {#if canEdit}<td></td>{/if}
-                            {#if !isFocused}<td></td>{/if}
-                            {#if collectionCreatorLabel}
-                                <td><input bind:value={editCreator} placeholder={collectionCreatorLabel} class="edit-input" /></td>
-                            {/if}
-                            <td><input bind:value={editTitle} placeholder={$_('collection.col_title')} class="edit-input" /></td>
-                            {#if showCollectionSubtitle}
-                                <td><input bind:value={editSubtitle} placeholder={$_('collection.subtitle_placeholder')} class="edit-input" /></td>
-                            {/if}
-                            <td><input type="number" bind:value={editQuantity} min="0" placeholder={$_('collection.col_qty')} class="edit-input qty-input" /></td>
-                            <td><input bind:value={editCondition} placeholder={$_('collection.col_condition')} class="edit-input" list="condition-suggestions" /></td>
-                            <td class="muted">{formatValue(i)}</td>
-                            {#if canEdit}
-                                <td class="row-actions">
-                                    <button onclick={saveEdit}>{$_('common.save')}</button>
-                                    <button type="button" class="secondary" onclick={cancelEdit}>{$_('common.cancel')}</button>
-                                </td>
-                            {/if}
-                        </tr>
-                        {#if isConsumable(i.category_slug)}
-                            <tr class="editing-row consumable-dates-row">
-                                <td colspan="100" style="padding: 0.5rem;">
-                                    <div class="consumable-dates-grid">
-                                        <input type="datetime-local" bind:value={editPurchasedAt} placeholder={$_('collection.consumable_purchased')} class="edit-input" title="Purchased date" />
-                                        <input type="datetime-local" bind:value={editUseByDate} placeholder={$_('collection.consumable_use_by')} class="edit-input" title="Use by date" />
-                                        <input type="datetime-local" bind:value={editDateFrozen} placeholder={$_('collection.consumable_frozen')} class="edit-input" title="Date frozen" />
-                                        <input type="datetime-local" bind:value={editDateOpened} placeholder={$_('collection.consumable_opened')} class="edit-input" title="Date opened" />
-                                    </div>
-                                </td>
-                            </tr>
-                        {/if}
-                    {:else}
-                        <tr class:depleted-row={i.depleted} class:wanted-row={i.wanted} class:archived-row={i.archived_at != null}>
-                            {#if canEdit}
-                                <td>
-                                    <input
-                                        type="checkbox"
-                                        checked={isSelected(i.id)}
-                                        onchange={() => toggleSelected(i.id)}
-                                    />
-                                </td>
-                            {/if}
-                            {#if !isFocused}<td class="muted"><button type="button" class="filter-link" onclick={() => i.category_slug && filterByCategory(i.category_slug)}>{i.category_slug ?? ''}</button></td>{/if}
-                            {#if collectionCreatorLabel}<td class="muted"><button type="button" class="filter-link" onclick={() => filterBySearch(String(i.attrs?.creator ?? ''))}>{String(i.attrs?.creator ?? '')}</button></td>{/if}
-                            <td>
-                                {i.title}
-                                {#if i.subtitle && !showCollectionSubtitle}<span class="muted"> · {i.subtitle}</span>{/if}
-                                {#if i.flagged_at}
-                                    <span class="flagged-inline" title={i.flagged_note ?? $_('collection.flag_for_review')}>{$_('collection.badge_flagged')}</span>
-                                {/if}
-                                {#if i.wanted}
-                                    <span class="wanted-inline" title="Marked as wanted / not currently owned">{$_('collection.badge_wanted')}</span>
-                                {/if}
-                                {#if i.archived_at}
-                                    <span class="archived-inline" title={i.disposition_type ?? 'archived'}>{$_('collection.badge_archived')}</span>
-                                {/if}
-                                {#if relationEntries(i).length}
-                                    <div class="relation-inline-list">
-                                        {#each relationEntries(i) as rel (`${rel.key}:${rel.targetId}`)}
-                                            <div class="relation-inline-card" title={rel.targetId}>
-                                                <span class="relation-label">{rel.label}</span>
-                                                <span class="relation-target">{relationTitle(rel.targetId)}</span>
-                                            </div>
-                                        {/each}
-                                    </div>
-                                {/if}
-                            </td>
-                            {#if showCollectionSubtitle}<td class="muted">{i.subtitle ?? ''}</td>{/if}
-                            <td>{i.quantity}</td>
-                            <td>{i.condition ?? ''}</td>
-                            <td class="muted">{formatValue(i)}</td>
-                            {#if canEdit}
-                                <td class="row-actions">
-                                    <button class="secondary" onclick={() => startEdit(i)}>{$_('collection.item_edit')}</button>
-                                    {#if quickActionFor(i.category_slug)}
-                                        <button class="secondary" onclick={() => triggerQuickAction(i)} disabled={i.archived_at != null}>{quickActionFor(i.category_slug)!.label()}</button>
-                                    {/if}
-                                    <button class="secondary" onclick={() => duplicateItem(i)} disabled={i.archived_at != null}>{$_('collection.item_duplicate')}</button>
-                                    <button
-                                        type="button"
-                                        class={i.depleted ? 'secondary' : 'warn'}
-                                        onclick={() => toggleDepleted(i)}
-                                        disabled={i.archived_at != null}
-                                        title={i.depleted ? $_('collection.item_in_stock') : $_('collection.item_depleted')}
-                                    >{i.depleted ? $_('collection.item_in_stock') : $_('collection.item_depleted')}</button>
-                                    <button
-                                        type="button"
-                                        class={i.wanted ? 'secondary' : 'warn'}
-                                        onclick={() => toggleWanted(i)}
-                                        disabled={i.archived_at != null}
-                                        title={i.wanted ? $_('collection.item_owned') : $_('collection.item_wanted')}
-                                    >{i.wanted ? $_('collection.item_owned') : $_('collection.item_wanted')}</button>
-                                    <button
-                                        type="button"
-                                        class="secondary"
-                                        onclick={() => (i.flagged_at ? clearFlag(i) : requestFlagItem(i))}
-                                        disabled={i.archived_at != null}
-                                    >{i.flagged_at ? $_('collection.item_unflag') : $_('collection.item_flag')}</button>
-                                    <button type="button" class="secondary" onclick={() => (i.archived_at ? restoreArchivedItem(i) : requestArchiveItem(i))}>{i.archived_at ? $_('collection.item_restore') : $_('collection.item_archive')}</button>
-                                    <button class="danger" onclick={() => requestRemoveItem(i)}>{$_('collection.item_delete')}</button>
-                                </td>
-                            {/if}
-                        </tr>
-                    {/if}
-                {/each}
-            </tbody>
-        </table>
-        </div>
+        <ItemTable
+            {items}
+            {canEdit}
+            {isFocused}
+            {selectedItemIds}
+            {collectionCreatorLabel}
+            {showCollectionSubtitle}
+            {formatValue}
+            {relationEntries}
+            {relationTitle}
+            {quickActionLabel}
+            {isConsumable}
+            onSelectAll={(checked) => (checked ? selectVisibleItems() : clearSelection())}
+            onToggleSelect={toggleSelected}
+            onEdit={(item) => { editPanelItem = item; }}
+            onQuickAction={triggerQuickAction}
+            onDuplicate={duplicateItem}
+            onToggleDepleted={toggleDepleted}
+            onToggleWanted={toggleWanted}
+            onToggleFlag={(item) => (item.flagged_at ? clearFlag(item) : requestFlagItem(item))}
+            onArchive={(item) => (item.archived_at ? restoreArchivedItem(item) : requestArchiveItem(item))}
+            onDelete={requestRemoveItem}
+            onFilterByCategory={filterByCategory}
+            onFilterBySearch={filterBySearch}
+        />
     {/if}
 
     {#if collection.my_role === 'owner'}
@@ -1331,14 +905,21 @@
     <p class="error">{$_('collection.not_found')}</p>
 {/if}
 
-<ConfirmDialog
+<ItemEditPanel
+    item={editPanelItem}
+    {cid}
+    {collectionCreatorLabel}
+    {showCollectionSubtitle}
+    {isConsumable}
+    onSave={saveEditFromPanel}
+    onClose={() => { editPanelItem = null; }}
+/>
+
+<DeleteItemDialog
     open={confirmDialog === 'delete-item'}
-    title={$_('collection.delete_item_title')}
-    variant="danger"
-    confirmLabel={$_('common.delete')}
-    message={$_('collection.delete_item_text', { values: { title: pendingDeleteItemTitle || 'This item' } })}
+    itemTitle={pendingDeleteItemTitle}
     onconfirm={removeItemConfirmed}
-    oncancel={() => (confirmDialog = null)}
+    oncancel={() => { confirmDialog = null; }}
 />
 
 <ConfirmDialog
@@ -1351,482 +932,32 @@
     oncancel={() => (confirmDialog = null)}
 />
 
-<Modal open={confirmDialog === 'flag-item'} title={$_('collection.flag_title')} onclose={() => (confirmDialog = null)}>
-    <p style="margin:0 0 0.75rem;color:var(--text-muted)">{$_('collection.flag_text', { values: { title: pendingFlagItemTitle || 'This item' } })}</p>
-    <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.875rem">
-        {$_('collection.flag_note_label')}
-        <input bind:value={flagNoteInput} maxlength="256" placeholder={$_('collection.flag_note_placeholder')} />
-    </label>
-    {#snippet footer()}
-        <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>{$_('common.cancel')}</button>
-        <button type="button" onclick={flagItemConfirmed}>{$_('collection.flag_confirm')}</button>
-    {/snippet}
-</Modal>
+<FlagItemDialog
+    open={confirmDialog === 'flag-item'}
+    itemTitle={pendingFlagItemTitle}
+    initialNote={pendingFlagItemNote}
+    onconfirm={flagItemConfirmed}
+    oncancel={() => { confirmDialog = null; }}
+/>
 
-<Modal open={confirmDialog === 'mark-owned'} title={$_('collection.mark_owned_title')} onclose={() => (confirmDialog = null)}>
-    <p style="margin:0 0 0.75rem;color:var(--text-muted)">{$_('collection.mark_owned_text', { values: { title: pendingOwnedItemTitle || 'this item' } })}</p>
-    <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.875rem">
-        {$_('collection.mark_owned_date_label')}
-        <input type="datetime-local" bind:value={ownedAtInput} />
-    </label>
-    <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.875rem">
-        {$_('collection.mark_owned_price_label')}
-        <input type="number" min="0" step="0.01" bind:value={ownedPriceInput} placeholder={$_('collection.mark_owned_price_placeholder')} />
-    </label>
-    {#snippet footer()}
-        <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>{$_('common.cancel')}</button>
-        <button type="button" onclick={markOwnedConfirmed}>{$_('collection.mark_owned_confirm')}</button>
-    {/snippet}
-</Modal>
+<MarkOwnedDialog
+    open={confirmDialog === 'mark-owned'}
+    itemTitle={pendingOwnedItemTitle}
+    onconfirm={markOwnedConfirmed}
+    oncancel={() => { confirmDialog = null; }}
+/>
 
-<Modal open={confirmDialog === 'archive-item'} title={$_('collection.archive_title')} onclose={() => (confirmDialog = null)}>
-    <p style="margin:0 0 0.75rem;color:var(--text-muted)">{$_('collection.archive_text', { values: { title: pendingArchiveItemTitle || 'this item' } })}</p>
-    <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.875rem">
-        {$_('collection.archive_disposition_label')}
-        <select bind:value={archiveDispositionType}>
-            <option value="archived">{$_('collection.archive_archived')}</option>
-            <option value="sold">{$_('collection.archive_sold')}</option>
-            <option value="disposed">{$_('collection.archive_disposed')}</option>
-            <option value="donated">{$_('collection.archive_donated')}</option>
-        </select>
-    </label>
-    <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.875rem">
-        {$_('collection.archive_date_label')}
-        <input type="datetime-local" bind:value={archiveDispositionAt} />
-    </label>
-    <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.875rem">
-        {$_('collection.archive_amount_label')}
-        <input type="number" min="0" step="0.01" bind:value={archiveDispositionAmount} placeholder={$_('collection.archive_amount_placeholder')} />
-    </label>
-    <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.875rem">
-        {$_('collection.archive_buyer_label')}
-        <input bind:value={archiveDispositionBuyer} maxlength="256" placeholder={$_('collection.archive_buyer_placeholder')} />
-    </label>
-    <label style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.875rem">
-        {$_('collection.archive_note_label')}
-        <input bind:value={archiveDispositionNote} maxlength="512" placeholder={$_('collection.archive_note_placeholder')} />
-    </label>
-    {#snippet footer()}
-        <button type="button" class="secondary" onclick={() => (confirmDialog = null)}>{$_('common.cancel')}</button>
-        <button type="button" onclick={archiveItemConfirmed}>{$_('collection.archive_confirm')}</button>
-    {/snippet}
-</Modal>
-
-<!-- Type-ahead datalists for inline edit -->
-<datalist id="condition-suggestions">
-    <option value="New" />
-    <option value="Mint" />
-    <option value="Excellent" />
-    <option value="Good" />
-    <option value="Fair" />
-    <option value="Poor" />
-    {#each conditionSuggestions as s (s)}<option value={s} />{/each}
-</datalist>
-<datalist id="creator-suggestions">
-    {#each creatorSuggestions as s (s)}<option value={s} />{/each}
-</datalist>
+<ArchiveItemDialog
+    open={confirmDialog === 'archive-item'}
+    itemTitle={pendingArchiveItemTitle}
+    onconfirm={archiveItemConfirmed}
+    oncancel={() => { confirmDialog = null; }}
+/>
 
 <style>
-    .table-wrap {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
     .danger-zone {
         margin-top: 3rem;
         padding-top: 1rem;
         border-top: 1px solid var(--border);
-    }
-    .edit-input {
-        width: 100%;
-        box-sizing: border-box;
-        padding: 0.3rem 0.5rem;
-        font: inherit;
-        font-size: 0.875rem;
-    }
-    .qty-input {
-        width: 4rem;
-    }
-    .editing-row td {
-        background: color-mix(in srgb, var(--accent) 6%, var(--surface));
-    }
-    .row-actions {
-        white-space: nowrap;
-        display: flex;
-        gap: 0.35rem;
-    }
-    .item-card-actions {
-        display: flex;
-        gap: 0;
-        border-top: 1px solid var(--border);
-    }
-    .item-card-actions button {
-        flex: 1;
-        border-radius: 0;
-        font-size: 0.8rem;
-        padding: 0.4rem;
-        border: none;
-        border-right: 1px solid var(--border);
-    }
-    .item-card-actions button:last-child {
-        border-right: none;
-    }
-    .add-form {
-        margin: 1rem 0;
-    }
-    .add-label {
-        display: block;
-        margin-bottom: 0.5rem;
-        font-weight: 500;
-    }
-    .add-row {
-        display: flex;
-        gap: 0.5rem;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-    .add-row select {
-        flex: 0 0 auto;
-        min-width: 130px;
-        max-width: 180px;
-    }
-    .creator-field {
-        flex: 1 1 150px;
-        min-width: 120px;
-        max-width: 210px;
-    }
-    .title-field {
-        flex: 2 1 180px;
-        min-width: 140px;
-    }
-    .subtitle-field {
-        flex: 2 1 180px;
-        min-width: 140px;
-    }
-    .filters {
-        display: flex;
-        gap: 0.5rem;
-        margin-bottom: 1rem;
-        align-items: center;
-    }
-    .filters > input {
-        flex: 1;
-    }
-    .bulk-toolbar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.45rem;
-        align-items: center;
-        margin-bottom: 0.75rem;
-    }
-    .bulk-toolbar-floating {
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 50;
-        margin: 0;
-        padding: 0.6rem 1rem;
-        background: var(--surface, #1a1d29);
-        border-top: 1px solid var(--border, #333);
-        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.25);
-        max-height: 50vh;
-        overflow-y: auto;
-    }
-    .bulk-toolbar-floating select,
-    .bulk-toolbar-floating input[type="datetime-local"] {
-        max-width: 14rem;
-        flex: 0 1 auto;
-    }
-    .select-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-        font-size: 0.75rem;
-        color: var(--text-muted, #888);
-    }
-    .view-toggle {
-        display: flex;
-        gap: 0;
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        overflow: hidden;
-        flex-shrink: 0;
-    }
-    .toggle-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0.4rem 0.6rem;
-        background: var(--surface);
-        border: none;
-        border-radius: 0;
-        color: var(--text-muted, #888);
-        cursor: pointer;
-    }
-    .toggle-btn:hover {
-        color: var(--accent);
-    }
-    .toggle-btn.active {
-        background: var(--accent);
-        color: var(--accent-fg, white);
-    }
-    /* Grid / card view */
-    .item-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        gap: 0.75rem;
-    }
-    .item-card {
-        display: flex;
-        flex-direction: column;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        overflow: hidden;
-    }
-    .item-card-body {
-        flex: 1;
-        padding: 0.75rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-    .category-badge {
-        display: inline-block;
-        font-size: 0.7rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--accent);
-        background: color-mix(in srgb, var(--accent) 12%, transparent);
-        border-radius: 4px;
-        padding: 0.15em 0.45em;
-        align-self: flex-start;
-    }
-    .filter-link {
-        background: none;
-        border: none;
-        padding: 0;
-        font: inherit;
-        cursor: pointer;
-        color: inherit;
-        text-align: left;
-    }
-    .filter-link {
-        background: none;
-        border: none;
-        padding: 0;
-        font: inherit;
-        cursor: pointer;
-        color: inherit;
-        text-align: left;
-    }
-    .filter-link:hover { text-decoration: underline; opacity: 0.8; }
-    .tag-filters {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.4rem;
-        margin-top: 0.25rem;
-        margin-bottom: 0.25rem;
-    }
-    .tag-chip {
-        padding: 0.2rem 0.6rem;
-        border-radius: 999px;
-        border: 1px solid var(--border-color, #ccc);
-        background: none;
-        font-size: 0.8rem;
-        cursor: pointer;
-        color: var(--text-muted, #555);
-        transition: background 0.1s, color 0.1s;
-    }
-    .tag-chip.active {
-        background: var(--accent, #5b8af5);
-        color: #fff;
-        border-color: var(--accent, #5b8af5);
-    }
-    .tag-mode-toggle {
-        padding: 0.2rem 0.6rem;
-        border-radius: 4px;
-        border: 1px solid var(--accent, #5b8af5);
-        background: none;
-        font-size: 0.75rem;
-        font-weight: 600;
-        cursor: pointer;
-        color: var(--accent, #5b8af5);
-    }
-    .tag-clear {
-        background: none;
-        border: none;
-        font-size: 0.75rem;
-        color: var(--text-muted, #888);
-        cursor: pointer;
-        text-decoration: underline;
-    }
-    .item-creator {
-        font-size: 0.8rem;
-        color: var(--text-muted, #888);
-        margin: 0;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .item-title {
-        font-size: 0.9rem;
-        font-weight: 600;
-        margin: 0;
-        line-height: 1.3;
-    }
-    .item-subtitle {
-        font-size: 0.8rem;
-        color: var(--text-muted, #888);
-        margin: 0;
-    }
-    .item-meta {
-        display: flex;
-        gap: 0.5rem;
-        font-size: 0.75rem;
-        color: var(--text-muted, #888);
-        margin-top: auto;
-        padding-top: 0.25rem;
-    }
-    .relation-list {
-        display: grid;
-        gap: 0.3rem;
-        margin-top: 0.2rem;
-    }
-    .relation-card,
-    .relation-inline-card {
-        display: grid;
-        grid-template-columns: auto 1fr;
-        gap: 0.45rem;
-        align-items: baseline;
-        border: 1px solid var(--border);
-        background: color-mix(in srgb, var(--accent) 6%, var(--surface));
-        border-radius: 6px;
-        padding: 0.2rem 0.4rem;
-    }
-    .relation-inline-list {
-        display: grid;
-        gap: 0.2rem;
-        margin-top: 0.3rem;
-        max-width: 32rem;
-    }
-    .relation-label {
-        font-size: 0.72rem;
-        color: var(--text-muted, #888);
-        white-space: nowrap;
-    }
-    .relation-target {
-        font-size: 0.8rem;
-        font-weight: 600;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-    .item-card-delete {
-        width: 100%;
-        border-radius: 0;
-        border-top: 1px solid var(--border);
-        font-size: 0.8rem;
-        padding: 0.4rem;
-    }
-    /* Depleted items */
-    .depleted-row td {
-        opacity: 0.55;
-        text-decoration: line-through;
-        text-decoration-color: var(--danger, #c00);
-    }
-    .wanted-row td {
-        background: color-mix(in srgb, #2c7a7b 8%, transparent);
-    }
-    .archived-row td {
-        opacity: 0.75;
-        background: color-mix(in srgb, #666 8%, transparent);
-    }
-    .flagged-badge {
-        display: inline-flex;
-        align-items: center;
-        background: color-mix(in srgb, var(--warn, #c67a00) 18%, transparent);
-        color: var(--warn, #c67a00);
-        border: 1px solid color-mix(in srgb, var(--warn, #c67a00) 45%, transparent);
-        border-radius: 999px;
-        padding: 0.05rem 0.45rem;
-        font-size: 0.72rem;
-        font-weight: 600;
-    }
-    .flagged-inline {
-        margin-left: 0.4rem;
-        font-size: 0.72rem;
-        font-weight: 600;
-        color: var(--warn, #c67a00);
-    }
-    .depleted-card {
-        opacity: 0.6;
-    }
-    .wanted-card {
-        border-color: color-mix(in srgb, #2c7a7b 35%, var(--border));
-    }
-    .archived-card {
-        border-style: dashed;
-    }
-    .depleted-card .item-title {
-        text-decoration: line-through;
-        text-decoration-color: var(--danger, #c00);
-    }
-    .depleted-badge {
-        color: var(--danger, #c00);
-        font-weight: 600;
-    }
-    .wanted-badge,
-    .wanted-inline {
-        color: #2c7a7b;
-        font-weight: 600;
-    }
-    .archived-badge,
-    .archived-inline {
-        color: #666;
-        font-weight: 600;
-    }
-    .wanted-inline {
-        margin-left: 0.4rem;
-        font-size: 0.72rem;
-    }
-    .archived-inline {
-        margin-left: 0.4rem;
-        font-size: 0.72rem;
-    }
-    .date-badge {
-        font-size: 0.7rem;
-        font-weight: 500;
-        padding: 0.2em 0.4em;
-        border-radius: 3px;
-        background: color-mix(in srgb, currentColor 12%, transparent);
-    }
-    .date-badge.use-by {
-        color: color-mix(in srgb, orange 70%, var(--fg));
-    }
-    .date-badge.opened {
-        color: color-mix(in srgb, #0066cc 70%, var(--fg));
-    }
-    button.warn {
-        background: color-mix(in srgb, orange 15%, var(--surface));
-        border-color: orange;
-        color: color-mix(in srgb, orange 60%, var(--fg));
-    }
-    button.warn:hover {
-        background: orange;
-        color: white;
-    }
-    /* Consumable date fields */
-    .consumable-dates-row {
-        background: color-mix(in srgb, var(--accent) 3%, var(--surface));
-    }
-    .consumable-dates-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 0.5rem;
-    }
-    .consumable-dates-grid .edit-input {
-        font-size: 0.875rem;
     }
 </style>
