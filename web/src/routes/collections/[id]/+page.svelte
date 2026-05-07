@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount, tick } from 'svelte';
+    import { onMount, tick, untrack } from 'svelte';
     import { goto } from '$app/navigation';
     import { page } from '$app/state';
     import { _ } from 'svelte-i18n';
@@ -778,7 +778,7 @@
         archivedFilter = 'active';
         didSeedDefaults = false;
         loading = true;
-        void load();
+        untrack(() => void load());
     });
 
     function filterBySearch(value: string) {
