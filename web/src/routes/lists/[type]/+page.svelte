@@ -106,6 +106,56 @@
     let newWishUrl = $state('');
     let newWishPriority = $state<number | ''>('');
     let adding = $state(false);
+    let scanningBarcode = $state(false);
+    let barcodeImageInput: HTMLInputElement | undefined;
+
+    async function decodeBarcodeFromImage(file: File): Promise<string> {
+        const { BrowserMultiFormatReader } = await import('@zxing/browser');
+        const reader = new BrowserMultiFormatReader();
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+            const fr = new FileReader();
+            fr.onload = () => resolve(String(fr.result));
+            fr.onerror = () => reject(new Error('Could not read image file'));
+            fr.readAsDataURL(file);
+        });
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+            const el = new Image();
+            el.onload = () => resolve(el);
+            el.onerror = () => reject(new Error('Could not decode image'));
+            el.src = dataUrl;
+        });
+        const result = await reader.decodeFromImageElement(img);
+        return result.getText();
+    }
+
+    async function onBarcodeImagePicked(e: Event) {
+        const input = e.currentTarget as HTMLInputElement;
+        const file = input.files?.[0];
+        input.value = '';
+        if (!file) return;
+        scanningBarcode = true;
+        error = '';
+        try {
+            const code = await decodeBarcodeFromImage(file);
+            const digits = code.replace(/[\s-]/g, '');
+            const res = await api.post<{ candidates?: Array<{ title?: string; category?: string; attrs?: Record<string, unknown> }> }>(
+                '/metadata/barcode',
+                { barcode: digits }
+            );
+            const first = res.candidates?.[0];
+            if (first) {
+                if (first.title) newName = first.title;
+                if (first.attrs?.brand) newBrand = String(first.attrs.brand);
+                if (first.category) newCategorySlug = first.category;
+            } else {
+                newName = code; // fall back: put the raw code in the name field
+            }
+        } catch (err) {
+            error = (err as Error).message;
+        } finally {
+            scanningBarcode = false;
+        }
+    }
 
     // Edit state
     let editOpen = $state(false);
@@ -323,6 +373,13 @@
 <p class="muted">{$_(`lists.description.${listType}`)}</p>
 
 <form class="add-form" onsubmit={addItem}>
+    <input
+        bind:this={barcodeImageInput}
+        type="file"
+        accept="image/*"
+        style="display:none"
+        onchange={onBarcodeImagePicked}
+    />
     <div class="add-row-main">
         <input
             class="name-input"
@@ -340,7 +397,10 @@
                 <option value="custom">{$_('grocery.custom_option')}</option>
             </select>
         {/if}
-        <Button type="submit" loading={adding} disabled={adding || !newName.trim()}>
+        <Button variant="secondary" type="button" disabled={scanningBarcode} onclick={() => barcodeImageInput?.click()}>
+            {$_('collection.scan_image_button')}
+        </Button>
+        <Button type="submit" loading={adding} disabled={adding || scanningBarcode || !newName.trim()}>
             {$_('grocery.add_button')}
         </Button>
     </div>

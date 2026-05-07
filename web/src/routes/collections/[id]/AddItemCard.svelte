@@ -85,16 +85,6 @@
                 <option value={l.slug}>{l.name}</option>
             {/each}
         </select>
-        {#if creatorLabel}
-            <input
-                bind:this={creatorInput}
-                bind:value={newCreator}
-                placeholder={creatorLabel}
-                autocomplete="off"
-                class="creator-field"
-                onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); titleInput?.focus(); } }}
-            />
-        {/if}
         <input
             id="addq"
             bind:this={titleInput}
@@ -105,21 +95,10 @@
             onkeydown={(e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    if (subtitleLabel && subtitleInput) subtitleInput.focus();
-                    else onSubmit(e);
+                    onSubmit(e);
                 }
             }}
         />
-        {#if subtitleLabel}
-            <input
-                bind:this={subtitleInput}
-                bind:value={newSubtitle}
-                placeholder={subtitleLabel}
-                autocomplete="off"
-                class="subtitle-field"
-                onkeydown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onSubmit(e); } }}
-            />
-        {/if}
         {#if detected !== 'title' && newQuery.trim()}
             <button type="button" onclick={onLookup} disabled={scraping}>
                 {scraping ? $_('collection.looking_up_button') : $_('collection.lookup_button', { values: { type: detected.toUpperCase() } })}
@@ -130,6 +109,32 @@
         </button>
         <button type="submit" disabled={scraping || !newQuery.trim()}>{$_('collection.add_button')}</button>
     </div>
+
+    {#if creatorLabel || subtitleLabel}
+        <details class="more-options">
+            <summary>{$_('common.more_options')}</summary>
+            <div class="more-options-grid">
+                {#if creatorLabel}
+                    <input
+                        bind:this={creatorInput}
+                        bind:value={newCreator}
+                        placeholder={creatorLabel}
+                        autocomplete="off"
+                        class="creator-field"
+                    />
+                {/if}
+                {#if subtitleLabel}
+                    <input
+                        bind:this={subtitleInput}
+                        bind:value={newSubtitle}
+                        placeholder={subtitleLabel}
+                        autocomplete="off"
+                        class="subtitle-field"
+                    />
+                {/if}
+            </div>
+        </details>
+    {/if}
     {#if error}<p class="error">{error}</p>{/if}
 </form>
 
@@ -196,5 +201,23 @@
     .subtitle-field {
         flex: 2 1 180px;
         min-width: 140px;
+    }
+    .more-options {
+        margin-top: 0.5rem;
+    }
+    .more-options > summary {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        cursor: pointer;
+        user-select: none;
+        list-style: none;
+        padding: 0.2rem 0;
+    }
+    .more-options > summary::-webkit-details-marker { display: none; }
+    .more-options-grid {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        padding-top: 0.5rem;
     }
 </style>
