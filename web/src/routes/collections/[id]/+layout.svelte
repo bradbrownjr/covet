@@ -24,12 +24,11 @@
     }
 </script>
 
-{#if collection}
-    <h1>{collection.name}</h1>
-    {#if collection.description}<p class="muted">{collection.description}</p>{/if}
-{:else}
-    <h1 class="skeleton-title" aria-label={$_('common.loading')}>&nbsp;</h1>
-{/if}
+<svelte:head>
+    <title>Tangible · {collection?.name ?? $_('common.loading')}</title>
+</svelte:head>
+
+{#if collection?.description}<p class="muted">{collection.description}</p>{/if}
 
 <nav class="subnav" aria-label="Collection sections">
     <a class:tab-active={isActive('')} class="tab" href="/collections/{cid}"
@@ -52,15 +51,6 @@
 {@render children()}
 
 <style>
-    h1 { margin-bottom: 0.2rem; }
-
-    .skeleton-title {
-        width: 12rem;
-        background: var(--surface-2);
-        border-radius: var(--radius-sm);
-        min-height: 1.75rem;
-    }
-
     .subnav {
         display: flex;
         gap: 0.25rem;

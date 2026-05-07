@@ -318,11 +318,11 @@
     });
 </script>
 
+<svelte:head>
+    <title>Tangible · {typeTitle(listType)}</title>
+</svelte:head>
+
 <div class="page-heading">
-    <h1 class="type-head">
-        <Icon name={LIST_ICON[listType] ?? 'list'} size={22} />
-        {typeTitle(listType)}
-    </h1>
     {#if listType === 'groceries'}
         <Button variant="secondary" icon="store" onclick={() => { showStoreManager = true; }}>
             {$_('grocery.manage_stores_title')}
