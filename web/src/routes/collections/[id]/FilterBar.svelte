@@ -124,4 +124,11 @@
         background: var(--accent);
         color: var(--accent-fg, white);
     }
+
+    /* Override global width:100% so selects stay inline in the flex row. */
+    select {
+        width: auto;
+        min-width: 7rem;
+        flex-shrink: 0;
+    }
 </style>

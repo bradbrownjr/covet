@@ -171,6 +171,12 @@
         text-decoration: underline;
     }
 
+    /* Override global width:100% so selects flow inline in the flex row. */
+    select {
+        width: auto;
+        min-width: 8rem;
+    }
+
     @media (min-width: 1024px) {
         .advanced-filters-body { padding-top: 0.5rem; }
     }

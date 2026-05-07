@@ -28,17 +28,17 @@ export interface Palette {
 }
 
 export const PALETTES: Palette[] = [
-    { id: 'tangible',   name: 'Tangible',   bg: '#1A1D29', accent: '#A78BFA', bgLight: '#F7F6FF', accentLight: '#7C3AED'  },
-    { id: 'granite',    name: 'Granite',    bg: '#1D2327', accent: '#22A88E', bgLight: '#ECF2EF', accentLight: '#0F7A65'  },
-    { id: 'gazette',    name: 'Gazette',    bg: '#1A2030', accent: '#60A5FA', bgLight: '#F2F7FF', accentLight: '#3B82F6'  },
-    { id: 'paper',      name: 'Paper',      bg: '#1E1C18', accent: '#C4A97A', bgLight: '#F8F6F1', accentLight: '#AA9A73'  },
-    { id: 'cloud',      name: 'Cloud',      bg: '#1A2328', accent: '#37BBE4', bgLight: '#F1F2F0', accentLight: '#37BBE4'  },
-    { id: 'passion',    name: 'Passion',    bg: '#1A0A2E', accent: '#CE93D8', bgLight: '#F5F5F5', accentLight: '#8E24AA'  },
-    { id: 'tron',       name: 'Tron',       bg: '#242B33', accent: '#6EE2FF', bgLight: '#EAF8FD', accentLight: '#0891B2'  },
-    { id: 'espresso',   name: 'Espresso',   bg: '#21211F', accent: '#C49A6C', bgLight: '#FDF8F0', accentLight: '#8B6339'  },
-    { id: 'onedark',    name: 'One Dark',   bg: '#282C34', accent: '#98C379', bgLight: '#F2F7EE', accentLight: '#3A7A22'  },
-    { id: 'blues',      name: 'Blues',      bg: '#2B2C56', accent: '#6677EB', bgLight: '#EEF0FF', accentLight: '#4338CA'  },
     { id: 'blackboard', name: 'Blackboard', bg: '#1A1A1A', accent: '#FFB347', bgLight: '#FDFCF8', accentLight: '#C26800'  },
+    { id: 'blues',      name: 'Blues',      bg: '#2B2C56', accent: '#6677EB', bgLight: '#EEF0FF', accentLight: '#4338CA'  },
+    { id: 'cloud',      name: 'Cloud',      bg: '#1A2328', accent: '#37BBE4', bgLight: '#F1F2F0', accentLight: '#37BBE4'  },
+    { id: 'espresso',   name: 'Espresso',   bg: '#21211F', accent: '#C49A6C', bgLight: '#FDF8F0', accentLight: '#8B6339'  },
+    { id: 'gazette',    name: 'Gazette',    bg: '#1A2030', accent: '#60A5FA', bgLight: '#F2F7FF', accentLight: '#3B82F6'  },
+    { id: 'granite',    name: 'Granite',    bg: '#1D2327', accent: '#22A88E', bgLight: '#ECF2EF', accentLight: '#0F7A65'  },
+    { id: 'onedark',    name: 'One Dark',   bg: '#282C34', accent: '#98C379', bgLight: '#F2F7EE', accentLight: '#3A7A22'  },
+    { id: 'paper',      name: 'Paper',      bg: '#1E1C18', accent: '#C4A97A', bgLight: '#F8F6F1', accentLight: '#AA9A73'  },
+    { id: 'passion',    name: 'Passion',    bg: '#1A0A2E', accent: '#CE93D8', bgLight: '#F5F5F5', accentLight: '#8E24AA'  },
+    { id: 'tangible',   name: 'Tangible',   bg: '#1A1D29', accent: '#A78BFA', bgLight: '#F7F6FF', accentLight: '#7C3AED'  },
+    { id: 'tron',       name: 'Tron',       bg: '#242B33', accent: '#6EE2FF', bgLight: '#EAF8FD', accentLight: '#0891B2'  },
 ];
 
 const MODE_KEY    = 'tangible:theme-mode';
