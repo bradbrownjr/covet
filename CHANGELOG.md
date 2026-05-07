@@ -4,6 +4,19 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.22.0] — 2026-05-16
+
+### Added
+
+- **Lists — Brand + Notes columns (web, Wave 10-B):** the Grocery, Hardware and Home Goods tables now show Brand and Notes as separate columns alongside Item, Category and Qty. Brand text is small and muted; Notes truncates with an ellipsis. Column widths are capped so the table never scrolls horizontally.
+- **Unified Filters panel (web, Wave 10-C):** a new `FiltersPanel.svelte` shell wraps both the collections detail page (search + sort + advanced filters) and the lists page. The panel shows a "Filters · N" chip with an active-count badge; clicking it collapses/expands the controls. Opens by default on ≥ 1024 px screens. Lists pages now have search (by name, brand, notes), sort (name / quantity / date / category) and a category filter — all applied client-side.
+- **Collection sections icon toolbar (web, Wave 10-F):** the inner Templates / Locations / Bundles / Chores / Members tab strip is replaced by a compact horizontal icon toolbar. Each button opens a modal dialog containing the matching panel. Import and Export remain as direct links. Old sub-route URLs (`/collections/{id}/templates` etc.) now redirect to `/collections/{id}` via server-side 302s.
+- **Stores top-level nav (web, Wave 10-E):** the Stores page is already a first-class nav destination between Lists and Maintenance; the inline "Manage stores" button has been removed from the Lists header.
+
+### Changed
+
+- **AdvancedFilters merged into FilterBar (web):** the separate `AdvancedFilters.svelte` component is retired; its controls (category, ownership, archived, tag chips) now live inside `FilterBar.svelte` which wraps the new `FiltersPanel` shell.
+
 ## [0.21.1] — 2026-05-07
 
 ### Fixed

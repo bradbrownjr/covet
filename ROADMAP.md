@@ -375,7 +375,7 @@ tools query and react to.
 
 ---
 
-## Phase 14 — Web UI redesign ✅ Wave 1-8 complete; Wave 9 in progress
+## Phase 14 — Web UI redesign ✅ Wave 1-9 complete; Wave 10 A–F shipped (v0.22.0)
 
 **Status snapshot (v0.18.16+):** All 8 waves shipped. Wave 1 (tokens +
 palette), Wave 2 (component library), Wave 3 (auth/chrome), Wave 4
@@ -902,6 +902,312 @@ constraints that make the two clients feel like the same product:
 Document the shared tokens in `AGENTS.md` under a new
 "Design Language Tokens" section so Android contributors can keep them
 in sync.
+
+### Wave 10 — Unified UI patterns and discoverability
+
+Wave 9 closed the visual gaps (themes, dark mode, filter layout). Wave
+10 closes the remaining **interaction-language** gaps surfaced in
+end-user QA on v0.21.x: the Add-item card, the items table, sub-page
+navigation, and the Templates page all behave differently depending on
+where you are in the app. This wave unifies them around a single set
+of patterns and reduces vertical/horizontal scroll on the busiest
+pages.
+
+**Guiding rules for this wave**
+
+- One Add pattern, one Filter pattern, one Items-table pattern,
+  reused everywhere.
+- Implicit context wherever possible — a control that asks "which
+  collection?" must not appear on a page that already _is_ a
+  collection.
+- Lists/Collections sub-functions open in **modals**, not by pushing
+  the items list further down the page.
+- Tabs name the page; the page does not also h1 its own name.
+- `lucide-svelte` (via `$lib/Icon.svelte`) is the only icon source.
+
+The wave ships in lettered sub-tasks A through H. Each is an
+independently shippable commit that passes
+`cd web && npm run check && npm run build` cleanly.
+
+#### A. Unified Add-item card
+
+The collection-detail Add card and the Lists Add card currently
+diverge: collections show a permanent two-row form (category + sub
++ query + Scan + Add) with no progressive disclosure; Lists show a
+compact one-row form with a `+ More options` `<details>` for the rest.
+Adopt the Lists pattern everywhere.
+
+- Rewrite [web/src/routes/collections/[id]/AddItemCard.svelte](web/src/routes/collections/[id]/AddItemCard.svelte) to one primary
+  row: category root + leaf + URL/ISBN/EAN/title input + **Scan image**
+  + Add. Everything else (creator, subtitle, custom slug, etc.) moves
+  into a `<details class="more-options">+ More options</details>`
+  collapsed by default.
+- Lists Add card already has `+ More options` — port the **Scan image**
+  affordance to it for parity (currently only on collections). Image
+  scan in Lists context resolves the barcode through the existing
+  metadata adapters and prefills `name` / `brand` / `category_slug`.
+- Implicit-context rule: when rendered inside `/collections/[id]`, the
+  collection picker is not present (the addition implicitly targets the
+  current collection). When the same component is rendered on a future
+  global "quick add" widget on `/` (home), the collection picker IS
+  shown — pass it as an opt-in prop `showCollectionPicker={true}`,
+  default `false`. Same rule for Lists: on `/lists/[type]` the list
+  type is implicit; the picker is hidden.
+- Default category selection on collection-detail uses the
+  collection's `default_category_slug` (already shipped in Wave 6) —
+  not a hardcoded "Other / Generic". On Lists, default category =
+  "(none)" so the user can opt into a category, not opt out.
+- Default backing-collection logic on Lists already prefers
+  Pantry / Hardware / Home Goods by name; keep that. Do not change.
+
+**Acceptance:** the Add card looks and behaves identically across
+`/collections/[id]` and `/lists/[type]`; on a collection page no
+collection picker is shown; the **Scan image** button works on both.
+
+#### B. Lists items table — column layout + DataTable
+
+The Lists items list is currently a stacked block per row (brand
+above, title bold, then collection name, badges, qty, actions all
+wrapping). On any viewport ≥ 640px this should be a true table
+matching the collection items table.
+
+- Replace the bespoke `<ul>` rendering in
+  [web/src/routes/lists/[type]/+page.svelte](web/src/routes/lists/[type]/+page.svelte) with the shared
+  `$lib/components/DataTable.svelte` (built in Wave 2 with built-in
+  mobile card fallback).
+- Columns: **Brand** (small muted, optional) · **Item** (bold +
+  optional subtitle below) · **Category** (chip) · **Qty** · **Notes**
+  (truncated) · trailing **actions** slot (mark purchased / edit /
+  delete).
+- Brand column is currently dropped from the visible row — re-add it
+  as a small muted column at far left, max-width ~10ch with ellipsis.
+- Eliminate horizontal scroll: each text cell uses `min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap`.
+  Title cell is the flex-grow column. The mobile fallback (DataTable
+  built-in at `max-width: 640px`) renders each row as a stacked card
+  with label/value pairs, so phones still get the dense view.
+- Wish list keeps its priority chip and external link affordance —
+  add them as additional columns / actions when `listType ===
+  'wish_list'`.
+
+**Acceptance:** no horizontal scroll on `/lists/groceries` at viewports
+≥ 768px; the four list types render in a consistent table; mobile
+cards still show all the same information.
+
+#### C. Unified search/filter pattern
+
+Today: collection-detail has a permanently-visible search row plus a
+collapsed `<details>` for advanced filters; Lists has none. Move both
+to a single shared pattern.
+
+- Combine search input + sort + sort-direction + advanced filters into
+  one collapsible **Filters** section. On viewports ≥ 1024px it is
+  open by default; on smaller it is collapsed.
+- One row visible in the collapsed state: a small **Filters** chip
+  (with active-count badge, e.g. "Filters · 2") + the **+ Add** action
+  on the right, both flush to the toolbar above the items table.
+- When expanded, the Filters block contains: Search input, Sort
+  selector, Direction toggle, plus the existing Category / Ownership /
+  Archived / Tag-chip controls. All sit inside the same SectionCard.
+- Lists pages get the same Filters block (search, sort by name / qty /
+  date added / category, filter by category, filter by purchased
+  state). Today they have none.
+- The shared Filters block is its own component:
+  `web/src/lib/components/FiltersPanel.svelte`. Both
+  `routes/collections/[id]/FilterBar.svelte` and
+  `routes/lists/[type]/+page.svelte` consume it.
+
+**Acceptance:** identical Filters affordance on both pages; the active
+filter count is visible in the collapsed-state chip; URL query params
+keep working as deep links.
+
+#### D. Drop redundant page titles
+
+When a route's identity is already shown by an active tab, the
+duplicated h1 is noise.
+
+- `/collections/[id]` — remove the `<h1>{collection.name}</h1>`. The
+  Collections tab strip (Wave 8) already shows the active collection.
+- `/lists/[type]` — remove the `<h1>{typeTitle(listType)}</h1>`. The
+  Lists tab strip already shows the active list.
+- Keep page titles on standalone routes that have no tab strip:
+  `/maintenance`, `/import`, `/settings/*`, `/login`, `/register`.
+- Update `<svelte:head><title>` so the browser tab still shows
+  "Tangible · Pantry" etc. — that does not duplicate on screen.
+
+**Acceptance:** no visible duplicated heading; document title in the
+browser still reflects the active route.
+
+#### E. Stores promoted to top-level nav
+
+The "Manage stores" button on Lists pages becomes a primary nav
+destination so it is discoverable from anywhere.
+
+- Add **Stores** to the main nav between **Lists** and **Maintenance**
+  (icon: `lucide:store`).
+- New route `web/src/routes/stores/+page.svelte` that renders the
+  existing `$lib/ShoppingStoreManager.svelte` content as a full page
+  (no modal wrapper).
+- Remove the **Manage stores** button from the Lists header.
+- "Stores" is a single shared list across all four list types — no
+  per-list scoping.
+
+**Acceptance:** clicking **Stores** in the nav shows the full store
+manager; the Lists header no longer has the inline Manage-stores
+button; existing per-store data is unchanged.
+
+#### F. Collection sub-tabs → icon toolbar with modals
+
+Layered tabs (top: Collection tabs, then sub-tabs: Items / Templates
+/ Locations / Bundles / Chores / Members / Import / Export) are
+disorienting. Replace the inner row with an **icon toolbar** of
+single-purpose buttons, each opening a **modal** instead of pushing
+the items list down the page.
+
+- Convert the inner sub-nav in
+  [web/src/routes/collections/[id]/+layout.svelte](web/src/routes/collections/[id]/+layout.svelte) from a
+  Tabs component into a horizontal `Toolbar` of `IconButton`s:
+  - `lucide:file-cog` Templates
+  - `lucide:map-pin` Locations
+  - `lucide:box` Bundles
+  - `lucide:wrench` Chores
+  - `lucide:users` Members
+  - `lucide:upload` Import
+  - `lucide:download` Export
+  Each button has a `tooltip` and accessible `aria-label`. The
+  **Items** view is the always-visible page body — no toolbar button
+  for it.
+- Each icon opens a `<Modal>` that renders the matching sub-page's
+  content. **Deep links to sub-pages are not a requirement** — the
+  existing `/collections/[id]/{templates,locations,bundles,chores,members,import,export}`
+  routes are removed in favor of modals, with a redirect from each
+  old URL to `/collections/[id]` (the toolbar makes the function
+  reachable in one click). This simplifies the implementation: each
+  sub-page becomes a single `<sub>Panel.svelte` mounted directly in
+  the modal, no shared full-page wrapper needed.
+- Modal closes return focus to the originating toolbar button. Modal
+  size adapts to content (Locations and Templates need wide; Members
+  is medium; Import/Export are small).
+- The active toolbar button (when its modal is open) shows the
+  accent color so users know what they are looking at.
+- Mobile (<640px): the icon toolbar wraps to two rows; modals become
+  full-screen sheets via the existing `Modal` component's mobile
+  fallback.
+
+**Acceptance:** the inner Items/Templates/... tab strip is replaced
+by an icon toolbar; clicking each icon opens a modal containing the
+sub-page; deep links like `/collections/[id]/templates` still render
+the same content as a full page; no Items list shifts down to make
+room for sub-page content.
+
+#### G. Templates page rewrite — clarify scrapers vs custom fields
+
+Today the Templates page mixes two concepts in one stack: a
+**Community scraper registry** (Open Library / MusicBrainz / Open
+Food Facts presets) and **Custom fields** (the actual template
+definition). Users do not understand the relationship.
+
+The fix is a clearer mental model + UI:
+
+- **Templates = additional fields** that augment the collection's
+  default category template. For a Music collection, a template might
+  add `Pressing year`, `Catalog #`, `Label`. Items in this collection
+  inherit the template's fields in addition to the built-in fields
+  for the chosen category.
+- **Scrapers** are a separate concern: they autopopulate the built-in
+  fields and any matching template fields when you scan or paste a
+  URL/ISBN/EAN. Scrapers are configured per-server and do not need
+  to live on every collection's Templates page.
+
+UI changes:
+
+- Move the Community scraper registry **out** of the Templates page
+  and into a new modal opened from the **+ Add field** flow:
+  "Start from a scraper preset" link. The modal lists the scrapers
+  with a one-line description; selecting one creates a template
+  pre-populated with that scraper's expected fields and links the
+  template to the scraper for auto-population on item add.
+- Rewrite the Templates page intro:
+  > "Templates add custom fields (e.g. **Pressing year**, **Catalog #**)
+  > to items in this collection. Each template extends the built-in
+  > fields for its category. Items inherit the matching template
+  > automatically based on their category."
+- Replace "No custom fields yet." / "+ Add field" / "Create template"
+  with a clearer two-step wizard:
+  1. **+ New template** opens a modal: "What kind of items?"
+     (category picker, defaults to the collection's
+     `default_category_slug`).
+  2. After category, fields editor opens: "Add a field" rows with
+     Name / Type / Required / (type-specific options).
+  At any point: "Start from a scraper preset" pulls the scraper modal
+  from above.
+- Keep the **Advanced (JSON)** affordance for power users — a
+  collapsible at the bottom shows the full JSON definition.
+
+Server changes (decide during implementation):
+
+- Inspect `ItemTemplate` to see whether it already references a
+  scraper. If yes, surface the link in `GET /collections/{id}/templates`
+  so the UI can show "Linked to: Open Library" beside the template
+  name. If no, add a nullable `scraper_id` text column via an Alembic
+  migration. Pick whichever is logical given the existing model — do
+  not over-engineer.
+
+**Acceptance:** the Templates page reads as one concept (custom
+fields), with scrapers reachable as an opt-in starting point; the
+two-step "+ New template" wizard works end-to-end; an item added
+via Scan image in a collection that has a scraper-linked template
+gets its template fields auto-populated.
+
+#### H. Icon source enforcement
+
+A grep across `web/src` for inline `<svg>` and emoji used as iconography
+should return only `$lib/Icon.svelte`'s internal usage and palette
+swatches.
+
+- Sweep all child components added in Waves 6–9 for stray `<svg>` and
+  emoji icons; replace with `<Icon name="lucide-name" />` (lucide is
+  already the project's standard icon set via `lucide-svelte`; there
+  is no carve-out for emoji as iconography).
+- Add a `web/scripts/check-icons.mjs` script that walks `src/`,
+  flags any file containing `<svg ` outside `$lib/Icon.svelte` or any
+  Unicode emoji used as a UI glyph (allowlist: `branding/` SVGs and
+  user-authored content like notes/comments).
+  Wire into `npm run check` so future regressions are caught.
+- Document the rule in `AGENTS.md` under a new "Iconography"
+  subsection of the Design Language Tokens area.
+
+**Acceptance:** `npm run check` runs the new icon audit clean; no
+file under `web/src/routes/` or `web/src/lib/` (excluding
+`Icon.svelte` and `branding/`) contains a raw `<svg>` or emoji used as
+an icon.
+
+#### Wave 10 commit & release strategy
+
+Each sub-task A–H is its own commit and independently shippable. The
+recommended ship order:
+
+1. D (drop redundant titles) — smallest risk, biggest visual win.
+2. E (Stores nav promotion) — small, isolated.
+3. A (unified Add card) — touches both pages but well-scoped.
+4. B (Lists DataTable) — high impact on the most-used screen.
+5. C (FiltersPanel extraction) — depends on A landing first.
+6. F (icon toolbar + modals) — biggest restructure; ship after the
+   above are stable so regressions are easy to bisect.
+7. G (Templates rewrite) — independent of F but easier to QA after
+   F because users navigate to it via the new toolbar.
+8. H (icon-source enforcement) — last, as cleanup + guard rail.
+
+Ship A–F as a single `0.22.0` release; G follows as `0.22.1`; H
+follows as `0.22.2`. Reserve `0.23.0` for the next wave
+(per-collection themes, Phase 17 carry-in).
+
+**Wave 10 acceptance:** all eight sub-tasks shipped; the Add card,
+Items table, Filters panel, and sub-page navigation feel identical
+across `/collections/[id]` and `/lists/[type]`; no inline tab content
+pushes items off-screen; Templates page communicates "custom fields"
+clearly with scrapers as an opt-in starter; no raw `<svg>` or emoji
+icons outside `Icon.svelte`.
 
 ### Out of scope for Phase 14
 
