@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.20.2] — 2026-05-07
+
+### Fixed
+
+- **Collections view crash (web, take 2):** the `effect_update_depth_exceeded` infinite loop was not fully resolved in v0.20.1. The `loadGen += 1` expression inside the `$effect` reads `loadGen` before writing it, registering it as a reactive dependency regardless of the `untrack()` wrapper added in v0.20.1. Changed `loadGen` from `$state` to a plain variable — it is a generation counter for async race protection only and never rendered, so it needs no reactivity.
+
 ## [0.20.1] — 2026-05-07
 
 ### Fixed
