@@ -58,3 +58,4 @@ secret.key
 # Generated clients
 shared/generated/
 tangible-release.keystore
+.vscode/mcp.json
