@@ -1,6 +1,7 @@
 <script lang="ts">
     import { _ } from 'svelte-i18n';
     import FiltersPanel from '$lib/components/FiltersPanel.svelte';
+    import Icon from '$lib/Icon.svelte';
     import type { Category, Tag } from '$lib/api';
 
     interface Props {
@@ -88,11 +89,7 @@
                 title={$_('collection.view_list')}
                 aria-label={$_('collection.view_list')}
             >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                    <rect x="0" y="2" width="16" height="2" rx="1"/>
-                    <rect x="0" y="7" width="16" height="2" rx="1"/>
-                    <rect x="0" y="12" width="16" height="2" rx="1"/>
-                </svg>
+                <Icon name="list" size={16} aria-hidden="true" />
             </button>
             <button
                 type="button"
@@ -102,12 +99,7 @@
                 title={$_('collection.view_grid')}
                 aria-label={$_('collection.view_grid')}
             >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                    <rect x="0" y="0" width="7" height="7" rx="1"/>
-                    <rect x="9" y="0" width="7" height="7" rx="1"/>
-                    <rect x="0" y="9" width="7" height="7" rx="1"/>
-                    <rect x="9" y="9" width="7" height="7" rx="1"/>
-                </svg>
+                <Icon name="grid-2x2" size={16} aria-hidden="true" />
             </button>
         </div>
 

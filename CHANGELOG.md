@@ -4,6 +4,17 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.22.2] — 2026-05-20
+
+### Added
+
+- **Icon source enforcement (web, Wave 10-H):** all stray `<svg>` elements and Unicode glyph icons (`▴ ▾ ▲ ▼ ↑ ↓ ✕`) have been replaced with `<Icon name="…" />` from `$lib/Icon.svelte`. Affected components: `FilterBar.svelte` (list/grid view toggles), `FiltersPanel.svelte` (open/close caret), `DataTable.svelte` (sort-direction arrows), `ItemComments.svelte` (expand/collapse toggle), `ShoppingStoreManager.svelte` (close and aisle-move buttons).
+- **`check-icons` script (web, Wave 10-H):** `web/scripts/check-icons.mjs` walks `src/**/*.svelte` and flags bare `<svg>` elements and Unicode glyph-icon characters. Run as `npm run check-icons`; wired into `npm run check` so it runs in CI automatically.
+
+### Changed
+
+- **Iconography rule added to AGENTS.md:** `$lib/Icon.svelte` is the sole source for icons on the web front-end; bare `<svg>` elements and Unicode glyph substitutes are banned and enforced by `npm run check-icons`.
+
 ## [0.22.1] — 2026-05-20
 
 ### Added

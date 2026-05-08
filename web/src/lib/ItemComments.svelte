@@ -152,7 +152,7 @@
 
 <div class="comments-section">
     <button class="comments-toggle secondary small" type="button" onclick={toggle}>
-        {open ? '▲' : '▼'} Comments{totalCount > 0 ? ` (${totalCount})` : ''}
+        <Icon name={open ? 'chevron-up' : 'chevron-down'} size={14} aria-hidden="true" /> Comments{totalCount > 0 ? ` (${totalCount})` : ''}
     </button>
 
     {#if open}

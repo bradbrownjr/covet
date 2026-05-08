@@ -448,6 +448,19 @@ matching token from this table rather than inventing new ones.
   `RoundedCornerShape(4/8/16/50.dp)` aligned to those same sizes.
 - Interactive tap targets: minimum 44px / 44 dp (`var(--tap-min)` on web).
 
+### Iconography
+
+- **Sole icon source (web):** all icons must use `<Icon name="lucide-name" />` from
+  `$lib/Icon.svelte`. Never add bare `<svg>` elements to `.svelte` files (except
+  inside `Icon.svelte` itself and `branding/` directories).
+- **No glyph substitutes:** do not use Unicode characters as icon replacements
+  (e.g. `↑ ↓ ▴ ▾ ▲ ▼ ✕ ✓`). Replace with the appropriate `<Icon>` component.
+  Prose text, `aria-label` values, and user-authored content are exempt.
+- **Enforcement:** `npm run check-icons` (wired into `npm run check`) flags bare
+  `<svg>` elements and glyph-icon Unicode in `.svelte` source files.
+- **Android:** use Material Icons from the `androidx.compose.material.icons`
+  package; do not embed custom vector drawables unless no Material icon matches.
+
 ---
 
 ## Feature Registry

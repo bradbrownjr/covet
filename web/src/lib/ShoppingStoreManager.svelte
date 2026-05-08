@@ -233,7 +233,7 @@
                                     class="del-btn"
                                     title="Delete store"
                                     onclick={() => { deleteStoreId = store.id; deleteStoreOpen = true; }}
-                                >✕</button>
+                                ><Icon name="x" size={14} /></button>
                             </li>
                         {/each}
                     </ul>
@@ -281,20 +281,20 @@
                                                     aria-label="Move aisle up"
                                                     disabled={idx === 0}
                                                     onclick={() => moveAisle(aisle.id, -1)}
-                                                >↑</button>
+                                                ><Icon name="arrow-up" size={14} /></button>
                                                 <button
                                                     type="button"
                                                     title="Move down"
                                                     aria-label="Move aisle down"
                                                     disabled={idx === sortedAisles.length - 1}
                                                     onclick={() => moveAisle(aisle.id, 1)}
-                                                >↓</button>
+                                                ><Icon name="arrow-down" size={14} /></button>
                                                 <button type="button" onclick={() => openEditAisle(aisle)}>{$_('common.edit')}</button>
                                                 <button
                                                     type="button"
                                                     class="del-btn"
                                                     onclick={() => deleteAisle(aisle.id)}
-                                                >✕</button>
+                                                ><Icon name="x" size={14} /></button>
                                             </div>
                                         </div>
                                     </li>

@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { _ } from 'svelte-i18n';
+    import Icon from '$lib/Icon.svelte';
     import type { Snippet } from 'svelte';
 
     interface Props {
@@ -31,7 +32,7 @@
             aria-expanded={isOpen}
         >
             {$_('filters.label')}{#if activeCount > 0}&thinsp;&middot;&thinsp;{activeCount}{/if}
-            <span class="caret" aria-hidden="true">{isOpen ? '▴' : '▾'}</span>
+            <span class="caret" aria-hidden="true"><Icon name={isOpen ? 'chevron-up' : 'chevron-down'} size={14} /></span>
         </button>
         {#if actions}
             <div class="panel-actions">

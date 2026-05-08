@@ -18,6 +18,7 @@
 -->
 <script lang="ts" generics="T extends Record<string, unknown>">
     import type { Snippet } from 'svelte';
+    import Icon from '$lib/Icon.svelte';
     import type { Column } from './data-table-types.js';
 
     interface Props {
@@ -93,7 +94,7 @@
                                 {col.label}
                                 {#if col.sortable && sortKey === col.key}
                                     <span class="dt-sort-icon" aria-hidden="true">
-                                        {sortDir === 'asc' ? '↑' : '↓'}
+                                        <Icon name={sortDir === 'asc' ? 'arrow-up' : 'arrow-down'} size={12} />
                                     </span>
                                 {/if}
                             </th>
