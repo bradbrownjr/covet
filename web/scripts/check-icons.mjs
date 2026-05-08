@@ -7,6 +7,8 @@
  *      and branding/ directories.
  *   2. Unicode characters that are being used as icon glyphs rather than
  *      real text content (arrows, carets, × marks, etc.).
+ *   3. <Icon name="…"> calls that reference a name not registered in ICON_MAP
+ *      (these render silently blank at runtime).
  *
  * Allowlisted:
  *   - $lib/Icon.svelte (the canonical icon wrapper — contains real <svg>)
@@ -24,6 +26,23 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SRC_DIR = path.resolve(__dirname, '../src');
+
+// ── Known-good icon names (must match ICON_MAP keys in Icon.svelte) ───────────
+const REGISTERED_ICONS = new Set([
+  'arrow-down', 'arrow-up', 'bell', 'box', 'check',
+  'chevron-left', 'chevron-right', 'circle-alert', 'corner-down-right',
+  'database-backup', 'download',
+  'file-archive', 'file-cog', 'file-spreadsheet',
+  'folder', 'grid-2x2',
+  'home', 'house', 'list',
+  'map-pin', 'more-horizontal',
+  'palette', 'pencil',
+  'settings', 'settings-2', 'shield', 'shopping-cart', 'sliders-horizontal',
+  'sparkles', 'star', 'store',
+  'trash-2', 'triangle-alert',
+  'upload', 'user', 'users',
+  'wrench', 'x',
+]);
 
 // ── Allowlisted paths (substring match against the resolved file path) ────────
 const PATH_ALLOWLIST = [
@@ -108,6 +127,17 @@ for await (const filePath of walkSvelte(SRC_DIR)) {
         console.error(`  > ${line.trim()}`);
         violations++;
         break; // one violation per line
+      }
+    }
+
+    // 3. <Icon name="..."> referencing an unregistered icon name
+    const iconMatches = line.matchAll(/Icon[^>]+name=["']([^"']+)["']/g);
+    for (const m of iconMatches) {
+      const iconName = m[1];
+      if (!REGISTERED_ICONS.has(iconName)) {
+        console.error(`${rel}:${lineNo}: <Icon name="${iconName}"> is not registered in ICON_MAP — add it to Icon.svelte and REGISTERED_ICONS`);
+        console.error(`  > ${line.trim()}`);
+        violations++;
       }
     }
   });

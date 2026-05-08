@@ -7,30 +7,34 @@
      (Named imports keep the build output small vs. `import * as lucide`.) -->
 <script lang="ts">
     import {
-        ArrowDown, ArrowUp, Bell, Check,
+        ArrowDown, ArrowUp, Bell, Box, Check,
         ChevronLeft, ChevronRight, CircleAlert, CornerDownRight,
-        DatabaseBackup, Download, FileArchive, FileSpreadsheet,
-        Folder, Grid2x2, Home, List, MoreHorizontal,
-        Pencil, Settings, Settings2, Sparkles, Store,
-        Trash2, TriangleAlert, Upload, User, Wrench,
+        DatabaseBackup, Download, FileArchive, FileCog, FileSpreadsheet,
+        Folder, Grid2x2, Home, House, List, MapPin, MoreHorizontal,
+        Palette, Pencil, Settings, Settings2, Shield, ShoppingCart,
+        SlidersHorizontal, Sparkles, Star, Store,
+        Trash2, TriangleAlert, Upload, User, Users, Wrench, X,
     } from 'lucide-svelte';
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ICON_MAP: Record<string, any> = {
         'arrow-down': ArrowDown, 'arrow-up': ArrowUp,
-        'bell': Bell, 'check': Check,
+        'bell': Bell, 'box': Box, 'check': Check,
         'chevron-left': ChevronLeft, 'chevron-right': ChevronRight,
         'circle-alert': CircleAlert, 'corner-down-right': CornerDownRight,
         'database-backup': DatabaseBackup, 'download': Download,
-        'file-archive': FileArchive, 'file-spreadsheet': FileSpreadsheet,
+        'file-archive': FileArchive, 'file-cog': FileCog, 'file-spreadsheet': FileSpreadsheet,
         'folder': Folder, 'grid-2x2': Grid2x2,
-        'home': Home, 'list': List,
-        'more-horizontal': MoreHorizontal, 'pencil': Pencil,
+        'home': Home, 'house': House, 'list': List,
+        'map-pin': MapPin, 'more-horizontal': MoreHorizontal,
+        'palette': Palette, 'pencil': Pencil,
         'settings': Settings, 'settings-2': Settings2,
-        'sparkles': Sparkles, 'store': Store,
+        'shield': Shield, 'shopping-cart': ShoppingCart,
+        'sliders-horizontal': SlidersHorizontal,
+        'sparkles': Sparkles, 'star': Star, 'store': Store,
         'trash-2': Trash2, 'triangle-alert': TriangleAlert,
-        'upload': Upload, 'user': User,
-        'wrench': Wrench,
+        'upload': Upload, 'user': User, 'users': Users,
+        'wrench': Wrench, 'x': X,
     };
 
     interface Props {
