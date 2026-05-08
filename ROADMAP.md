@@ -1532,6 +1532,60 @@ Remaining work:
 
 ---
 
+## Phase 19 — Stack modernisation (in progress)
+
+Keep the runtime dependencies current so security patches, performance
+improvements, and new framework features remain accessible.
+
+**Rule:** always fetch live versions with `npm info <pkg> version`,
+`uv run pip index versions <pkg>`, or equivalent before writing any
+version string. Never copy from training memory or conversation history.
+
+### Web toolchain
+
+| Package | Shipped in | Status |
+|---|---|---|
+| SvelteKit `2.8 → 2.59.1` | v0.23.0 | ✅ done |
+| vite `5.4 → 6.4.2` | v0.23.0 | ✅ done (Node 18 ceiling) |
+| @sveltejs/vite-plugin-svelte `4.0 → 5.1.1` | v0.23.0 | ✅ done (Node 18 ceiling) |
+| Icon.js bundle `9.1 MB → 153 kB` | v0.23.0 | ✅ done (static import map) |
+| **Node 18 → 22 (dev container)** | pending | ⬜ prerequisite for next vite bump |
+| vite `6 → 8.x` | pending | ⬜ blocked on Node 22 locally |
+| @sveltejs/vite-plugin-svelte `5 → 7.x` | pending | ⬜ blocked on vite 8 |
+
+Steps once Node 22 is in the dev container:
+1. `npm info vite version` + `npm info @sveltejs/vite-plugin-svelte version` — get live latest.
+2. Check peer dep chain: `npm info @sveltejs/kit@latest peerDependencies`.
+3. `npm install --save-dev vite@latest @sveltejs/vite-plugin-svelte@latest`
+4. `npm run check && npm run build` — svelte-check 0 errors, build passes.
+5. Bump to next patch version, CHANGELOG internal entry, commit + tag.
+
+### Android toolchain
+
+| Item | Current | Action |
+|---|---|---|
+| Compose BOM | 2024.11.00 | ⬜ bump to latest (check maven.google.com) |
+| AGP | 8.7.2 | ⬜ bump to latest stable |
+| Kotlin | 2.0.21 | ⬜ bump (must match KSP exactly) |
+| KSP | 2.0.21-1.0.28 | ⬜ bump with Kotlin |
+| Room | 2.6.1 | ⬜ bump minor |
+| Lifecycle | 2.8.7 | ⬜ bump minor |
+| Coil | 2.7.0 | ⬜ skip Coil 3.x (breaking API change) |
+
+Steps for Android bump:
+1. Look up current versions on maven.google.com for each library above.
+2. Update `android/gradle/libs.versions.toml`.
+3. Run `./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug --no-daemon`.
+4. Fix any API-change errors before pushing.
+
+### Server / Python
+
+Python 3.12 is in active maintenance until 2028 — no urgent action.
+All deps use `>=` floors and resolve to latest at install time via uv.
+Re-audit when Python 3.13 support stabilises across the dep tree.
+
+---
+
 ## Done
 
 See [CHANGELOG.md](CHANGELOG.md) for what has shipped (auth, items,
