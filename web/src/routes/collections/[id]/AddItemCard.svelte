@@ -55,7 +55,7 @@
     }
 </script>
 
-<form onsubmit={onSubmit} class="card add-form">
+<form onsubmit={onSubmit} class="add-form">
     <input
         bind:this={barcodeImageInput}
         type="file"
@@ -131,7 +131,10 @@
 
 <style>
     .add-form {
-        margin: 0.5rem 0 1rem;
+        margin: 1rem 0 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
     }
     .add-row {
         display: flex;
@@ -159,22 +162,26 @@
     }
     .more-options {
         margin-top: 0.5rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md, 8px);
+        background: var(--surface);
     }
     .more-options > summary {
-        font-size: 0.8rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
         color: var(--text-muted);
         cursor: pointer;
         user-select: none;
         list-style: none;
-        padding: 0.2rem 0;
     }
     .more-options > summary::-webkit-details-marker { display: none; }
     .more-options > summary::before { content: '+ '; }
-    .more-options[open] > summary::before { content: '− '; }
+    .more-options[open] > summary::before { content: '- '; }
     .more-options-grid {
         display: flex;
         gap: 0.5rem;
         flex-wrap: wrap;
-        padding-top: 0.5rem;
+        padding: 0.75rem;
+        border-top: 1px solid var(--border);
     }
 </style>

@@ -375,7 +375,7 @@ tools query and react to.
 
 ---
 
-## Phase 14 — Web UI redesign ✅ Wave 1-9 complete; Wave 10 A–F shipped (v0.22.0)
+## Phase 14 — Web UI redesign — Wave 1–9 complete; Wave 10 A–H complete (v0.25.2)
 
 **Status snapshot (v0.18.16+):** All 8 waves shipped. Wave 1 (tokens +
 palette), Wave 2 (component library), Wave 3 (auth/chrome), Wave 4
@@ -1202,12 +1202,11 @@ Ship A–F as a single `0.22.0` release; G follows as `0.22.1`; H
 follows as `0.22.2`. Reserve `0.23.0` for the next wave
 (per-collection themes, Phase 17 carry-in).
 
-**Wave 10 acceptance:** all eight sub-tasks shipped; the Add card,
-Items table, Filters panel, and sub-page navigation feel identical
-across `/collections/[id]` and `/lists/[type]`; no inline tab content
-pushes items off-screen; Templates page communicates "custom fields"
-clearly with scrapers as an opt-in starter; no raw `<svg>` or emoji
-icons outside `Icon.svelte`.
+**Wave 10 status:** A–H all shipped as of v0.25.2. Icon coverage fixed in
+v0.25.1–0.25.2 (all Icon.svelte ICON_MAP entries validated; check-icons.mjs
+now enforces registration at build time). Add-form visual uniformity fixed
+in v0.25.2 (collections AddItemCard no longer renders as a heavy card —
+matches lists page inline form treatment).
 
 ### Out of scope for Phase 14
 
