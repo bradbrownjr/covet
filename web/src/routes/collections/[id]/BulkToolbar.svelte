@@ -1,5 +1,6 @@
 <script lang="ts">
     import { _ } from 'svelte-i18n';
+    import { Button } from '$lib/components';
     import type { Contact, Tag } from '$lib/api';
 
     interface LocationOption { id: string; label: string; }
@@ -114,7 +115,7 @@
         <button type="button" class="secondary sm" onclick={onBulkLend} disabled={!hasItems || !selectedBulkContactId || busy}>{$_('collection.bulk_lend')}</button>
     </div>
 
-    <button type="button" class="danger sm" onclick={onBulkDelete} disabled={!hasItems || busy}>{$_('collection.bulk_delete')}</button>
+    <Button variant="danger" size="sm" disabled={!hasItems || busy} onclick={onBulkDelete}>{$_('collection.bulk_delete')}</Button>
 </div>
 {/if}
 

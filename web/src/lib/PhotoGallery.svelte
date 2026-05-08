@@ -1,6 +1,7 @@
 <script lang="ts">
     import { api } from '$lib/api';
     import Icon from '$lib/Icon.svelte';
+    import { Button } from '$lib/components';
 
     interface Photo {
         id: string;
@@ -205,7 +206,7 @@
                         {:else}
                             <span class="muted">Primary</span>
                         {/if}
-                        <button class="danger" onclick={() => deletePhoto(photos[lightboxIdx!])}>Delete</button>
+                        <Button variant="danger" onclick={() => deletePhoto(photos[lightboxIdx!])}>Delete</Button>
                     </div>
                 {/if}
             </div>

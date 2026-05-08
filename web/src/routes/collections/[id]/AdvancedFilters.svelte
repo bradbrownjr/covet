@@ -140,7 +140,7 @@
     .tag-chip {
         padding: 0.2rem 0.6rem;
         border-radius: 999px;
-        border: 1px solid var(--border-color, #ccc);
+        border: 1px solid var(--border);
         background: none;
         font-size: 0.8rem;
         cursor: pointer;
@@ -149,7 +149,7 @@
     }
     .tag-chip.active {
         background: var(--accent, #5b8af5);
-        color: #fff;
+        color: var(--accent-contrast);
         border-color: var(--accent, #5b8af5);
     }
     .tag-mode-toggle {

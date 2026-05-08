@@ -2,6 +2,7 @@
     import { _ } from 'svelte-i18n';
     import { api } from '$lib/api';
     import type { Item } from '$lib/api';
+    import Icon from '$lib/Icon.svelte';
 
     interface Props {
         item: Item | null;
@@ -102,13 +103,14 @@
     <div
         class="edit-panel"
         role="dialog"
+        tabindex="-1"
         aria-modal="true"
         aria-label={$_('collection.edit_panel_title')}
         onkeydown={handleKeydown}
     >
         <div class="panel-header">
             <h2 class="panel-title">{item.title}</h2>
-            <button type="button" class="panel-close" onclick={onClose} aria-label={$_('common.close')}>✕</button>
+            <button type="button" class="panel-close" onclick={onClose} aria-label={$_('common.close')}><Icon name="x" size={16} /></button>
         </div>
 
         <div class="panel-body">
@@ -171,16 +173,16 @@
         </div>
 
         <datalist id="edit-condition-suggestions">
-            <option value="New" />
-            <option value="Mint" />
-            <option value="Excellent" />
-            <option value="Good" />
-            <option value="Fair" />
-            <option value="Poor" />
-            {#each conditionSuggestions as s (s)}<option value={s} />{/each}
+            <option value="New"></option>
+            <option value="Mint"></option>
+            <option value="Excellent"></option>
+            <option value="Good"></option>
+            <option value="Fair"></option>
+            <option value="Poor"></option>
+            {#each conditionSuggestions as s (s)}<option value={s}></option>{/each}
         </datalist>
         <datalist id="edit-creator-suggestions">
-            {#each creatorSuggestions as s (s)}<option value={s} />{/each}
+            {#each creatorSuggestions as s (s)}<option value={s}></option>{/each}
         </datalist>
     </div>
 {/if}

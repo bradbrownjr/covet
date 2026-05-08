@@ -267,11 +267,6 @@
         text-overflow: ellipsis;
         white-space: nowrap;
     }
-    .item-subtitle {
-        font-size: 0.8rem;
-        color: var(--text-muted, #888);
-        margin: 0;
-    }
     .item-meta {
         display: flex;
         gap: 0.5rem;
@@ -316,17 +311,17 @@
         text-decoration: line-through;
         text-decoration-color: var(--danger, #c00);
     }
-    .wanted-card { border-color: color-mix(in srgb, #2c7a7b 35%, var(--border)); }
+    .wanted-card { border-color: color-mix(in srgb, var(--info) 35%, var(--border)); }
     .archived-card { border-style: dashed; }
     .depleted-badge { color: var(--danger, #c00); font-weight: 600; }
-    .wanted-badge { color: #2c7a7b; font-weight: 600; }
-    .archived-badge { color: #666; font-weight: 600; }
+    .wanted-badge { color: var(--info); font-weight: 600; }
+    .archived-badge { color: var(--text-muted); font-weight: 600; }
     .flagged-badge {
         display: inline-flex;
         align-items: center;
-        background: color-mix(in srgb, var(--warn, #c67a00) 18%, transparent);
-        color: var(--warn, #c67a00);
-        border: 1px solid color-mix(in srgb, var(--warn, #c67a00) 45%, transparent);
+        background: color-mix(in srgb, var(--warning) 18%, transparent);
+        color: var(--warning);
+        border: 1px solid color-mix(in srgb, var(--warning) 45%, transparent);
         border-radius: 999px;
         padding: 0.05rem 0.45rem;
         font-size: 0.72rem;
@@ -339,6 +334,6 @@
         border-radius: 3px;
         background: color-mix(in srgb, currentColor 12%, transparent);
     }
-    .date-badge.use-by { color: color-mix(in srgb, orange 70%, var(--fg)); }
-    .date-badge.opened { color: color-mix(in srgb, #0066cc 70%, var(--fg)); }
+    .date-badge.use-by { color: color-mix(in srgb, orange 70%, var(--text)); }
+    .date-badge.opened { color: var(--info); }
 </style>

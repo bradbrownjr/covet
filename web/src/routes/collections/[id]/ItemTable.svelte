@@ -262,28 +262,28 @@
         text-decoration: line-through;
         text-decoration-color: var(--danger, #c00);
     }
-    .wanted-row td { background: color-mix(in srgb, #2c7a7b 8%, transparent); }
+    .wanted-row td { background: color-mix(in srgb, var(--info) 8%, transparent); }
     .archived-row td {
         opacity: 0.75;
-        background: color-mix(in srgb, #666 8%, transparent);
+        background: color-mix(in srgb, var(--text-muted) 8%, transparent);
     }
     .flagged-inline {
         margin-left: 0.4rem;
         font-size: 0.72rem;
         font-weight: 600;
-        color: var(--warn, #c67a00);
+        color: var(--warning);
     }
     .wanted-inline {
         margin-left: 0.4rem;
         font-size: 0.72rem;
         font-weight: 600;
-        color: #2c7a7b;
+        color: var(--info);
     }
     .archived-inline {
         margin-left: 0.4rem;
         font-size: 0.72rem;
         font-weight: 600;
-        color: #666;
+        color: var(--text-muted);
     }
     .relation-inline-list {
         display: grid;

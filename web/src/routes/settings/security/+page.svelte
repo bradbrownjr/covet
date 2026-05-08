@@ -2,7 +2,7 @@
     import { onMount } from 'svelte';
     import { api } from '$lib/api';
     import { _ } from 'svelte-i18n';
-    import { ConfirmDialog, Modal } from '$lib/components';
+    import { Button, ConfirmDialog, Modal } from '$lib/components';
 
     interface Token {
         id: string;
@@ -178,7 +178,7 @@
                         <td>{t.last_used_at ?? '—'}</td>
                         <td>{t.expires_at ?? 'never'}</td>
                         <td>
-                            <button class="danger" onclick={() => (revokeTokenId = t.id)}>{$_('settings.token_revoke_button')}</button>
+                            <Button variant="danger" onclick={() => (revokeTokenId = t.id)}>{$_('settings.token_revoke_button')}</Button>
                         </td>
                     </tr>
                 {/each}
@@ -205,7 +205,7 @@
         {/if}
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap">
             <button class="secondary" onclick={() => (totpRegenOpen = true)}>{$_('settings.totp_regen_button')}</button>
-            <button class="danger" onclick={() => (totpDisableOpen = true)}>{$_('settings.totp_disable_button')}</button>
+            <Button variant="danger" onclick={() => (totpDisableOpen = true)}>{$_('settings.totp_disable_button')}</Button>
         </div>
     {:else if totpSetup}
         <p class="muted">{$_('settings.totp_setup_message')}</p>
@@ -245,7 +245,7 @@
     <div class="field"><label>{$_('settings.totp_disable_code_label')}<input bind:value={totpDisableCode} maxlength={10} inputmode="numeric" placeholder={$_('settings.totp_disable_code_placeholder')} /></label></div>
     {#snippet footer()}
         <button type="button" class="secondary" onclick={() => (totpDisableOpen = false)}>{$_('common.cancel')}</button>
-        <button type="button" class="danger" onclick={disableTotp}>{$_('settings.totp_disable_confirm')}</button>
+        <Button variant="danger" onclick={disableTotp}>{$_('settings.totp_disable_confirm')}</Button>
     {/snippet}
 </Modal>
 

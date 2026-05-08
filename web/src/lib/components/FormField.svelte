@@ -21,7 +21,7 @@
     let { label, for: forId, error, hint, required = false, class: cls = '', children }: Props = $props();
 
     // Use provided id, or auto-generate one. Consumers should pass for={inputId}.
-    const uid = forId ?? `ff-${Math.random().toString(36).slice(2, 7)}`;
+    const uid = $derived(forId ?? `ff-${Math.random().toString(36).slice(2, 7)}`);
 </script>
 
 <div class="form-field {cls}" class:form-field--error={!!error}>

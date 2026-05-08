@@ -91,7 +91,7 @@
     .btn--primary:hover   { background: var(--accent-hover); }
     .btn--secondary { background: var(--surface-2); color: var(--text); }
     .btn--secondary:hover { background: color-mix(in srgb, var(--surface-2) 80%, var(--text) 20%); }
-    .btn--danger    { background: var(--danger); color: #fff; }
+    .btn--danger    { background: var(--danger); color: var(--accent-contrast); }
     .btn--danger:hover    { background: color-mix(in srgb, var(--danger) 85%, #000 15%); }
     .btn--ghost     { background: transparent; color: var(--text); border: 1px solid var(--border); }
     .btn--ghost:hover     { background: color-mix(in srgb, var(--text) 8%, transparent); }

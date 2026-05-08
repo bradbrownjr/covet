@@ -4,7 +4,7 @@
     import { api, type SiteSetting } from '$lib/api';
     import { me } from '$lib/session';
     import { _ } from 'svelte-i18n';
-    import { Modal } from '$lib/components';
+    import { Button, Modal } from '$lib/components';
 
     const BARCODE_ADAPTER_INFO: Record<string, { label: string; description: string; keyHint?: string }> = {
         openlibrary:   { label: 'Open Library',    description: 'ISBN-10/13 lookup for books. Free, no API key required.' },
@@ -268,7 +268,7 @@
 <div class="card">
     <h3 style="margin-top:0">{$_('settings.system_maintenance_heading')}</h3>
     <p class="muted">{$_('settings.system_maintenance_description')}</p>
-    <button class="danger" type="button" onclick={() => (scrubModalOpen = true)}>{$_('settings.scrub_inventory_button')}</button>
+    <Button variant="danger" onclick={() => (scrubModalOpen = true)}>{$_('settings.scrub_inventory_button')}</Button>
 </div>
 
 <!-- Scrub modal -->
@@ -278,16 +278,16 @@
     <input id="scrub-confirm" bind:value={scrubConfirmText} placeholder={scrubPhrase} />
     {#snippet footer()}
         <button type="button" class="secondary" onclick={() => (scrubModalOpen = false)}>{$_('common.cancel')}</button>
-        <button type="button" class="danger"
+        <Button variant="danger"
             disabled={scrubConfirmText.trim().toUpperCase() !== scrubPhrase}
             onclick={scrubInventory}
-        >{$_('settings.scrub_confirm_button')}</button>
+        >{$_('settings.scrub_confirm_button')}</Button>
     {/snippet}
 </Modal>
 
 <style>
     h2 { margin-top: 0; }
-    .ok { color: #16a34a; }
+    .ok { color: var(--success); }
 
     .settings-grid { display: grid; gap: 0.75rem; }
     .setting-row {
@@ -316,11 +316,9 @@
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
-    .source-database    { background: #dbeafe; color: #1e40af; }
-    .source-environment { background: #d1fae5; color: #065f46; }
+    .source-database    { background: color-mix(in srgb, var(--info) 15%, transparent); color: var(--info); }
+    .source-environment { background: color-mix(in srgb, var(--success) 15%, transparent); color: var(--success); }
     .source-default     { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
-    [data-theme='dark'] .source-database    { background: #1e3a5f; color: #93c5fd; }
-    [data-theme='dark'] .source-environment { background: #064e3b; color: #6ee7b7; }
     .setting-desc  { margin: 0; font-size: 0.8rem; }
     .setting-input { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
     .setting-input input, .setting-input select { flex: 1; min-width: 0; }
@@ -335,10 +333,9 @@
         letter-spacing: 0.05em;
         padding: 0.15rem 0.45rem;
         border-radius: 999px;
-        background: #d1fae5;
-        color: #065f46;
-        border: 1px solid #6ee7b7;
+        background: color-mix(in srgb, var(--success) 15%, transparent);
+        color: var(--success);
+        border: 1px solid color-mix(in srgb, var(--success) 45%, transparent);
         white-space: nowrap;
     }
-    [data-theme='dark'] .set-badge { background: #064e3b; color: #6ee7b7; border-color: #065f46; }
 </style>

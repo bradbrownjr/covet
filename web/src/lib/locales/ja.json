@@ -103,6 +103,7 @@
     "tab_members": "メンバー",
     "tab_import": "インポート",
     "tab_export": "エクスポート",
+    "toolbar_search_filter": "Search & Filters",
     "delete_collection": "コレクションを削除",
     "add_item_label": "アイテムを追加",
     "add_item_help": "URLを貼り付けるか、バーコードをスキャンするか、ISBN/EANを入力するか、単にタイトルを入力してください",

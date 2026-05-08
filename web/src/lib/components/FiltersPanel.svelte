@@ -10,14 +10,29 @@
         children?: Snippet;
         /** Optional actions (e.g. + Add button) rendered on the right of the header chip row. */
         actions?: Snippet;
+        /**
+         * External open state. When provided (e.g. driven by a toolbar button via context),
+         * the chip and the external control share the same state. Omit for standalone use
+         * (e.g. Lists page) where the chip manages its own internal state.
+         */
+        open?: boolean;
+        /** Called when the user clicks the chip toggle. Required when `open` is provided. */
+        ontoggle?: () => void;
     }
 
-    let { activeCount = 0, children, actions }: Props = $props();
+    let { activeCount = 0, children, actions, open: externalOpen, ontoggle }: Props = $props();
 
-    // Filters start collapsed everywhere (Collections + Lists), at every viewport.
-    // The user opens the panel explicitly via the chip; the active-count badge
-    // makes any current filters visible while the panel is closed.
-    let isOpen = $state(false);
+    // Internal state used when no external binding is present (standalone use).
+    let internalOpen = $state(false);
+    const isOpen = $derived(externalOpen !== undefined ? externalOpen : internalOpen);
+
+    function toggle() {
+        if (ontoggle) {
+            ontoggle();
+        } else {
+            internalOpen = !internalOpen;
+        }
+    }
 </script>
 
 <div class="filters-panel">
@@ -26,7 +41,7 @@
             type="button"
             class="filters-chip"
             class:has-active={activeCount > 0}
-            onclick={() => (isOpen = !isOpen)}
+            onclick={toggle}
             aria-expanded={isOpen}
         >
             {$_('filters.label')}{#if activeCount > 0}&thinsp;&middot;&thinsp;{activeCount}{/if}

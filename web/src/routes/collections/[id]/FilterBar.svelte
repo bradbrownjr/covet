@@ -1,8 +1,17 @@
 <script lang="ts">
+    import { getContext } from 'svelte';
     import { _ } from 'svelte-i18n';
     import FiltersPanel from '$lib/components/FiltersPanel.svelte';
     import Icon from '$lib/Icon.svelte';
     import type { Category, Tag } from '$lib/api';
+
+    /** Context set by collections/[id]/+layout.svelte to connect the toolbar icon to this panel. */
+    interface FilterPanelCtx {
+        readonly open: boolean;
+        toggle(): void;
+        setActiveCount(n: number): void;
+    }
+    const filterCtx = getContext<FilterPanelCtx | undefined>('collectionFilterPanel');
 
     interface Props {
         search: string;
@@ -68,9 +77,18 @@
         activeTagIds = [];
         onchange();
     }
+
+    // Keep the toolbar badge in sync with the active filter count.
+    $effect(() => {
+        filterCtx?.setActiveCount(activeCount);
+    });
 </script>
 
-<FiltersPanel {activeCount}>
+<FiltersPanel
+    {activeCount}
+    open={filterCtx ? filterCtx.open : undefined}
+    ontoggle={filterCtx ? () => filterCtx.toggle() : undefined}
+>
     {#snippet children()}
         <input
             bind:this={searchInputEl}
@@ -235,7 +253,7 @@
     .tag-chip {
         padding: 0.2rem 0.6rem;
         border-radius: 999px;
-        border: 1px solid var(--border-color, #ccc);
+        border: 1px solid var(--border);
         background: none;
         font-size: 0.8rem;
         cursor: pointer;
@@ -244,7 +262,7 @@
     }
     .tag-chip.active {
         background: var(--accent, #5b8af5);
-        color: #fff;
+        color: var(--accent-contrast);
         border-color: var(--accent, #5b8af5);
     }
     .tag-mode-toggle {

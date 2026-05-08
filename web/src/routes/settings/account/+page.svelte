@@ -3,7 +3,7 @@
     import { api } from '$lib/api';
     import { me } from '$lib/session';
     import { _ } from 'svelte-i18n';
-    import { Modal } from '$lib/components';
+    import { Button, Modal } from '$lib/components';
 
     interface TOTPStatus { enabled: boolean; backup_codes_remaining: number; }
 
@@ -47,7 +47,7 @@
     <p class="muted">{$_('settings.account_description')}</p>
     <div style="display:flex; gap:0.5rem; flex-wrap:wrap">
         <button class="secondary" onclick={exportAccount}>{$_('settings.export_data_button')}</button>
-        <button class="danger" onclick={() => (deleteAccountOpen = true)}>{$_('settings.delete_account_button')}</button>
+        <Button variant="danger" onclick={() => (deleteAccountOpen = true)}>{$_('settings.delete_account_button')}</Button>
     </div>
 </div>
 
@@ -60,7 +60,7 @@
     {#if deleteMessage}<p class="error">{deleteMessage}</p>{/if}
     {#snippet footer()}
         <button type="button" class="secondary" onclick={() => (deleteAccountOpen = false)}>{$_('common.cancel')}</button>
-        <button type="button" class="danger" onclick={deleteAccount}>{$_('settings.delete_confirm_button')}</button>
+        <Button variant="danger" onclick={deleteAccount}>{$_('settings.delete_confirm_button')}</Button>
     {/snippet}
 </Modal>
 

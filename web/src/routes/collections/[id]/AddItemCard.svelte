@@ -42,9 +42,9 @@
 
     let barcodeImageInput: HTMLInputElement | undefined;
 
-    let creatorInput: HTMLInputElement | undefined;
+    let creatorInput: HTMLInputElement | undefined = $state();
     let titleInput: HTMLInputElement | undefined;
-    let subtitleInput: HTMLInputElement | undefined;
+    let subtitleInput: HTMLInputElement | undefined = $state();
 
     // Parity with Lists Add card: form is always visible. Extra fields live
     // inside the inner "+ More options" details. The outer collapse wrapper

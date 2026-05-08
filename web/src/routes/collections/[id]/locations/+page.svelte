@@ -3,7 +3,7 @@
     import { page } from '$app/state';
     import { _ } from 'svelte-i18n';
     import { api, type Collection, type LocationKind, type LocationNode } from '$lib/api';
-    import { ConfirmDialog } from '$lib/components';
+    import { Button, ConfirmDialog } from '$lib/components';
     import Icon from '$lib/Icon.svelte';
 
     const KIND_ICON: Record<LocationKind, string> = {
@@ -209,7 +209,7 @@
                             {#if canEdit}
                                 <span class="loc-actions">
                                     <button type="button" class="secondary" onclick={() => startEdit(node)}>{$_('locations.edit_button')}</button>
-                                    <button type="button" class="danger" onclick={() => requestDelete(node)}>{$_('locations.delete_button')}</button>
+                                    <Button variant="danger" onclick={() => requestDelete(node)}>{$_('locations.delete_button')}</Button>
                                 </span>
                             {/if}
                         </div>

@@ -103,6 +103,7 @@
     "tab_members": "Membres",
     "tab_import": "Importer",
     "tab_export": "Exporter",
+    "toolbar_search_filter": "Search & Filters",
     "delete_collection": "Supprimer la collection",
     "add_item_label": "Ajouter un article",
     "add_item_help": "collez une URL, scannez un code-barres, entrez un ISBN/EAN ou un titre",

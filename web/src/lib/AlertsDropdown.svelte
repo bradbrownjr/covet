@@ -150,8 +150,8 @@
         line-height: 1rem;
         text-align: center;
         border-radius: 999px;
-        background: #dc2626;
-        color: #fff;
+        background: var(--danger);
+        color: var(--accent-contrast);
         font-weight: 600;
         border: 2px solid var(--surface);
     }
@@ -187,8 +187,8 @@
         line-height: 1.4;
         text-align: center;
         border-radius: 999px;
-        background: #dc2626;
-        color: #fff;
+        background: var(--danger);
+        color: var(--accent-contrast);
         font-weight: 600;
     }
     .empty {

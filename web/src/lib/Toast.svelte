@@ -66,8 +66,8 @@
     }
 
     .toast-warning {
-        background: color-mix(in srgb, #f59e0b 18%, var(--surface));
-        border-color: #f59e0b;
+        background: color-mix(in srgb, var(--warning) 18%, var(--surface));
+        border-color: var(--warning);
         color: var(--text);
     }
 
@@ -79,7 +79,7 @@
 
     .toast-error .toast-icon   { color: var(--danger); }
     .toast-success .toast-icon { color: var(--success); }
-    .toast-warning .toast-icon { color: #f59e0b; }
+    .toast-warning .toast-icon { color: var(--warning); }
 
     @keyframes toast-in-out {
         0%   { opacity: 0; transform: translateY(16px); }

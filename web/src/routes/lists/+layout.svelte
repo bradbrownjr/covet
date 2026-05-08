@@ -14,7 +14,7 @@
         { id: 'wish_list',  labelKey: 'lists.type.wish_list' },
     ] as const;
 
-    let tabsEl: HTMLDivElement | undefined;
+    let tabsEl: HTMLDivElement | undefined = $state();
 
     const activeType = $derived.by(() => {
         const m = page.url.pathname.match(/^\/lists\/([^/]+)/);
@@ -119,6 +119,7 @@
             onpointerdown={onPointerDown}
             onpointerup={onPointerUp}
             role="tabpanel"
+            tabindex="0"
             aria-label={$_(TABS.find((t) => t.id === activeType)?.labelKey ?? 'nav.lists')}
         >
             {@render children()}

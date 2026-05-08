@@ -12,7 +12,7 @@
         type Role,
         type ShareLink
     } from '$lib/api';
-    import { ConfirmDialog } from '$lib/components';
+    import { Button, ConfirmDialog } from '$lib/components';
 
     let collection = $state<Collection | null>(null);
     let members = $state<Membership[]>([]);
@@ -235,7 +235,7 @@
                         </td>
                         <td>
                             {#if m.role !== 'owner'}
-                                    <button class="danger" onclick={() => requestRemoveMember(m)}>{$_('members.remove_button')}</button>
+                                    <Button variant="danger" onclick={() => requestRemoveMember(m)}>{$_('members.remove_button')}</Button>
                             {/if}
                         </td>
                     </tr>
@@ -301,9 +301,9 @@
                             {/if}
                         </td>
                         <td>
-                            <button class="danger" onclick={() => requestRevokeInvitation(inv)}>
+                            <Button variant="danger" onclick={() => requestRevokeInvitation(inv)}>
                                 {$_('members.revoke_invite_button')}
-                            </button>
+                            </Button>
                         </td>
                     </tr>
                 {/each}
@@ -348,9 +348,9 @@
                         </td>
                         <td class="muted">{l.expires_at ?? $_('common.never')}</td>
                         <td>
-                            <button class="danger" onclick={() => requestRevokeShareLink(l)}>
+                            <Button variant="danger" onclick={() => requestRevokeShareLink(l)}>
                                 {$_('members.revoke_share_button')}
-                            </button>
+                            </Button>
                         </td>
                     </tr>
                 {/each}

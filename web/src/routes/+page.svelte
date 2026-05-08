@@ -3,6 +3,7 @@
     import { goto } from '$app/navigation';
     import { _ } from 'svelte-i18n';
     import Icon from '$lib/Icon.svelte';
+    import { Button, Modal } from '$lib/components';
     import { api, type Item, type Collection } from '$lib/api';
 
     type SearchField =
@@ -256,15 +257,12 @@
 {/if}
 
 {#if addOpen}
-    <div class="dialog-backdrop" role="presentation" onclick={() => (addOpen = false)}>
-        <form
-            class="dialog card"
-            role="dialog"
-            aria-modal="true"
-            onclick={(e) => e.stopPropagation()}
-            onsubmit={submitAdd}
-        >
-            <h3>{$_('home.add_dialog.heading', { values: { q: q.trim() } })}</h3>
+    <Modal
+        open={addOpen}
+        title={$_('home.add_dialog.heading', { values: { q: q.trim() } })}
+        onclose={() => (addOpen = false)}
+    >
+        <form id="quick-add-form" onsubmit={submitAdd}>
             <div class="field">
                 <label for="add-collection">{$_('home.add_dialog.collection_label')}</label>
                 <select id="add-collection" bind:value={addCollectionId} required>
@@ -277,16 +275,14 @@
                 <input type="checkbox" bind:checked={addAsWish} />
                 {$_('home.add_dialog.as_wishlist')}
             </label>
-            <div class="dialog-actions">
-                <button type="button" class="link" onclick={() => (addOpen = false)}>
-                    {$_('common.cancel')}
-                </button>
-                <button type="submit" disabled={adding || !addCollectionId}>
-                    {adding ? $_('home.add_dialog.adding') : $_('home.add_dialog.add')}
-                </button>
-            </div>
         </form>
-    </div>
+        {#snippet footer()}
+            <Button variant="secondary" onclick={() => (addOpen = false)}>{$_('common.cancel')}</Button>
+            <Button type="submit" form="quick-add-form" disabled={adding || !addCollectionId}>
+                {adding ? $_('home.add_dialog.adding') : $_('home.add_dialog.add')}
+            </Button>
+        {/snippet}
+    </Modal>
 {/if}
 
 <style>
@@ -390,10 +386,10 @@
         white-space: nowrap;
     }
     .status-ok { color: var(--accent); border-color: var(--accent); }
-    .status-warn { color: #b87005; border-color: #b87005; }
-    .status-wish { color: #6c4ab6; border-color: #6c4ab6; }
+    .status-warn { color: var(--warning); border-color: var(--warning); }
+    .status-wish { color: var(--accent); border-color: var(--accent); }
     .status-muted { color: var(--muted); }
-    .status-list { color: #0f766e; border-color: #0f766e; }
+    .status-list { color: var(--info); border-color: var(--info); }
     .empty { margin: 1rem 0; }
     .empty-actions { margin-top: 0.75rem; }
     .tiles {
@@ -416,25 +412,7 @@
         text-decoration: none;
     }
     .tile:hover { border-color: var(--accent); }
-    .dialog-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.45);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 100;
-        padding: 1rem;
-    }
-    .dialog { max-width: 420px; width: 100%; }
-    .dialog-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 0.5rem;
-        margin-top: 1rem;
-    }
     .check { display: inline-flex; gap: 0.4rem; align-items: center; margin: 0.5rem 0; }
-    .link { background: none; border: none; padding: 0; color: var(--accent); cursor: pointer; }
     .field { margin: 0.75rem 0; }
     .field label { display: block; font-size: 0.875rem; margin-bottom: 0.25rem; }
 </style>

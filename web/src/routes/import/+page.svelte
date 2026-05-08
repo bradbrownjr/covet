@@ -283,14 +283,14 @@
             </div>
         {:else if mode === 'list'}
             <div class="field">
-                <label>{$_('import_page.list_category_label')}</label>
+                <label for="list-root">{$_('import_page.list_category_label')}</label>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:.5rem">
-                    <select bind:value={listRoot}>
+                    <select id="list-root" bind:value={listRoot}>
                         {#each roots as r (r.id)}
                             <option value={r.slug}>{r.name}</option>
                         {/each}
                     </select>
-                    <select bind:value={listLeaf}>
+                    <select aria-label={$_('import_page.list_category_label')} bind:value={listLeaf}>
                         {#each listLeaves as l (l.id)}
                             <option value={l.slug}>{l.name}</option>
                         {/each}
@@ -298,7 +298,7 @@
                 </div>
             </div>
             <div class="field">
-                <label>{$_('import_page.list_text_label')}</label>
+                <label for="list-text">{$_('import_page.list_text_label')}</label>
                 <textarea
                     id="list-text"
                     rows="8"
@@ -310,13 +310,13 @@
                 </p>
             </div>
             <div class="field">
-                <label>{$_('import_page.list_file_label')}</label>
-                <input type="file" accept=".txt,text/plain" bind:files={listFile} />
+                <label for="list-file">{$_('import_page.list_file_label')}</label>
+                <input id="list-file" type="file" accept=".txt,text/plain" bind:files={listFile} />
             </div>
         {:else}
             <div class="field">
-                <label>{$_('import_page.restore_file_label')}</label>
-                <input type="file" accept=".json,application/json" bind:files={restoreFile} />
+                <label for="restore-file">{$_('import_page.restore_file_label')}</label>
+                <input id="restore-file" type="file" accept=".json,application/json" bind:files={restoreFile} />
             </div>
         {/if}
 

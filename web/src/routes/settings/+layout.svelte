@@ -72,17 +72,12 @@
     }
 
     .banner-warn {
-        background: #fef3c7;
-        border: 1px solid #f59e0b;
+        background: color-mix(in srgb, var(--warning) 15%, var(--surface));
+        border: 1px solid var(--warning);
         border-radius: var(--radius-md);
         padding: 0.75rem 1rem;
         margin-bottom: 1rem;
-        color: #92400e;
-    }
-    [data-theme='dark'] .banner-warn {
-        background: #451a03;
-        border-color: #d97706;
-        color: #fcd34d;
+        color: var(--text);
     }
 
     .settings-layout {

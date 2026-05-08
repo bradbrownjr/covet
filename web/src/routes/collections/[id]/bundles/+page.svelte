@@ -9,7 +9,7 @@
         type Item,
         type ManualBundle
     } from '$lib/api';
-    import { ConfirmDialog, Modal } from '$lib/components';
+    import { Button, ConfirmDialog, Modal } from '$lib/components';
     import Icon from '$lib/Icon.svelte';
 
     const ASSET_KIND_ICON: Record<BundleAssetKind, string> = {
@@ -264,7 +264,7 @@
                             <div class="bundle-actions">
                                 <button type="button" class="secondary" onclick={() => startUpload(b.id)}>{$_('bundles.upload_asset_button')}</button>
                                 <button type="button" class="secondary" onclick={() => startEdit(b)}>{$_('bundles.edit_button')}</button>
-                                <button type="button" class="danger" onclick={() => requestDelete(b)}>{$_('bundles.delete_button')}</button>
+                                <Button variant="danger" onclick={() => requestDelete(b)}>{$_('bundles.delete_button')}</Button>
                             </div>
                         {/if}
                     </header>

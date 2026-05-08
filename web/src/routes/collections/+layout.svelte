@@ -136,6 +136,7 @@
         onpointerdown={onPointerDown}
         onpointerup={onPointerUp}
         role="tabpanel"
+        tabindex="0"
         aria-label={activeId === 'all' ? $_('collections.tab_all') : (collections.find((c) => c.id === activeId)?.name ?? '')}
     >
         {@render children()}

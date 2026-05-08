@@ -3,7 +3,7 @@
     import { page } from '$app/state';
     import { _ } from 'svelte-i18n';
     import { api, type Chore, type Collection } from '$lib/api';
-    import { ConfirmDialog, Modal } from '$lib/components';
+    import { Button, ConfirmDialog, Modal } from '$lib/components';
     import Icon from '$lib/Icon.svelte';
 
     let collection = $state<Collection | null>(null);
@@ -254,7 +254,7 @@
                                     <button class="secondary" onclick={() => snooze(ch.id)}>{$_('chores.snooze_button')}</button>
                                 {/if}
                                 <button class="secondary" onclick={() => startEdit(ch)}>{$_('chores.edit_button')}</button>
-                                <button class="danger" onclick={() => confirmDelete(ch.id, ch.name)}>{$_('chores.delete_button')}</button>
+                                <Button variant="danger" onclick={() => confirmDelete(ch.id, ch.name)}>{$_('chores.delete_button')}</Button>
                             </div>
                         {/if}
                     {/if}
@@ -328,6 +328,6 @@
     .btn-row { display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; }
     .edit-inline { display: flex; flex-direction: column; gap: 0.5rem; }
     .loading, .empty { text-align: center; color: var(--text-muted); padding: 2rem; }
-    .success { background: var(--success); color: #fff; border: none; }
+    .success { background: var(--success); color: var(--accent-contrast); border: none; }
     .success:hover { filter: brightness(1.1); }
 </style>

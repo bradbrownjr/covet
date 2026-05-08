@@ -5,7 +5,7 @@
     import { _ } from 'svelte-i18n';
     import { api, type Category, type Collection, type Contact, type Item, type ItemTemplate, type LocationNode, type Tag } from '$lib/api';
     import { childrenOf, loadCategories, rootCategories } from '$lib/categories';
-    import { ConfirmDialog } from '$lib/components';
+    import { Button, ConfirmDialog } from '$lib/components';
     import { me } from '$lib/session';
     import AddItemCard from './AddItemCard.svelte';
     import FilterBar from './FilterBar.svelte';
@@ -71,8 +71,8 @@
     let newSubtitle = $state('');
     let scraping = $state(false);
 
-    let searchInputEl: HTMLInputElement | undefined;
-    let addCardRef: { focusTitle?: () => void } | undefined;
+    let searchInputEl: HTMLInputElement | undefined = $state();
+    let addCardRef: { focusTitle?: () => void } | undefined = $state();
 
     const creatorLabel = $derived.by(() => {
         if (newLeaf.startsWith('music.')) return $_('collection.creator_artist');
@@ -925,7 +925,7 @@
 
     {#if collection.my_role === 'owner'}
         <div class="danger-zone">
-            <button type="button" class="danger" onclick={requestDeleteCollection}>{$_('collection.delete_collection')}</button>
+            <Button variant="danger" onclick={requestDeleteCollection}>{$_('collection.delete_collection')}</Button>
         </div>
     {/if}
 {:else if !loading}

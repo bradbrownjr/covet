@@ -138,7 +138,7 @@
 
 <style>
     h2 { margin-top: 0; }
-    .ok { color: #16a34a; }
+    .ok { color: var(--success); }
 
     .notif-table { border-collapse: collapse; width: 100%; }
     .notif-table thead tr { border-bottom: 1px solid var(--border); }

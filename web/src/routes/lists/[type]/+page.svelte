@@ -805,18 +805,15 @@
     }
     .badge-depleted {
         display: inline-block; font-size: 0.7rem; padding: 0.1rem 0.4rem;
-        border-radius: 99px; background: #7c2d12; color: #fed7aa; margin-left: 0.25rem;
+        border-radius: 99px; background: var(--danger); color: var(--accent-contrast); margin-left: 0.25rem;
     }
     .priority-chip {
         display: inline-block; font-size: 0.75rem; padding: 0.15rem 0.5rem;
         border-radius: 99px; white-space: nowrap;
     }
-    .priority-1 { background: #d1fae5; color: #065f46; }
-    .priority-2 { background: #fef9c3; color: #854d0e; }
-    .priority-3 { background: #fee2e2; color: #991b1b; }
-    [data-theme='dark'] .priority-1 { background: #064e3b; color: #6ee7b7; }
-    [data-theme='dark'] .priority-2 { background: #451a03; color: #fde68a; }
-    [data-theme='dark'] .priority-3 { background: #450a0a; color: #fca5a5; }
+    .priority-1 { background: color-mix(in srgb, var(--success) 15%, transparent); color: var(--success); }
+    .priority-2 { background: color-mix(in srgb, var(--warning) 15%, transparent); color: var(--warning); }
+    .priority-3 { background: color-mix(in srgb, var(--danger) 15%, transparent); color: var(--danger); }
     .wish-link { color: var(--accent); font-size: 0.875rem; }
     .small { font-size: 0.85rem; }
     .edit-form-body { display: flex; flex-direction: column; gap: 0.75rem; }

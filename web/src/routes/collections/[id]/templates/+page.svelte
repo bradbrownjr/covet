@@ -11,7 +11,7 @@
         type TemplateFieldType
     } from '$lib/api';
     import { loadCategories } from '$lib/categories';
-    import { ConfirmDialog, Modal } from '$lib/components';
+    import { Button, ConfirmDialog, Modal } from '$lib/components';
 
     const FIELD_TYPES: TemplateFieldType[] = [
         'text', 'number', 'boolean', 'date', 'url', 'select', 'multi_value', 'relation'
@@ -327,7 +327,7 @@
                                         }}
                                     >{editingTemplateId === t.id ? 'Cancel' : 'Edit'}</button>
                                     <button class="secondary" onclick={() => cloneTemplate(t)}>Clone</button>
-                                    <button class="danger" onclick={() => requestRemoveTemplate(t)}>Delete</button>
+                                    <Button variant="danger" onclick={() => requestRemoveTemplate(t)}>Delete</Button>
                                 </td>
                             {/if}
                         </tr>
@@ -364,7 +364,7 @@
                                                                     <td style="text-align:center"><input type="checkbox" checked={f.required ?? false} onchange={(e) => updateEditField(idx, { required: (e.target as HTMLInputElement).checked })} /></td>
                                                                     <td>{#if f.type === 'select'}<select value={f.select_source ?? 'static'} onchange={(e) => updateEditField(idx, { select_source: (e.target as HTMLSelectElement).value as 'static' | 'dynamic' })}><option value="static">Static list</option><option value="dynamic">Dynamic from used values</option></select>{:else if f.type === 'relation'}<select value={f.relation_scope ?? 'same_collection'} onchange={(e) => updateEditField(idx, { relation_scope: (e.target as HTMLSelectElement).value as 'same_collection' | 'any_collection' })}><option value="same_collection">Same collection</option><option value="any_collection">Any collection</option></select>{:else}<span class="muted">&#x2014;</span>{/if}</td>
                                                                     <td>{#if f.type === 'select' && (f.select_source ?? 'static') === 'static'}<input value={(f.options ?? []).join(', ')} placeholder="A, B, C" oninput={(e) => updateEditField(idx, { options: (e.target as HTMLInputElement).value.split(',').map((s) => s.trim()).filter(Boolean) })} />{:else if f.type === 'select'}<span class="muted">Auto from existing item values</span>{:else if f.type === 'relation'}<span class="muted">Resolved by item id</span>{:else}<span class="muted">&#x2014;</span>{/if}</td>
-                                                                    <td><button type="button" class="danger" onclick={() => removeEditField(idx)}>&#x00D7;</button></td>
+                                                                    <td><Button variant="danger" size="sm" onclick={() => removeEditField(idx)}>×</Button></td>
                                                                 </tr>
                                                             {/each}
                                                         </tbody>
@@ -563,7 +563,7 @@
                                             {/if}
                                         </td>
                                         <td>
-                                            <button type="button" class="danger" onclick={() => removeField(idx)}>&#x00D7;</button>
+                                            <Button variant="danger" size="sm" onclick={() => removeField(idx)}>×</Button>
                                         </td>
                                     </tr>
                                 {/each}
@@ -715,9 +715,9 @@
         font-weight: 600;
         padding: 0.05rem 0.4rem;
         border-radius: 999px;
-        border: 1px solid color-mix(in srgb, #2d8f3c 45%, transparent);
-        color: #2d8f3c;
-        background: color-mix(in srgb, #2d8f3c 12%, transparent);
+        border: 1px solid color-mix(in srgb, var(--success) 45%, transparent);
+        color: var(--success);
+        background: color-mix(in srgb, var(--success) 12%, transparent);
     }
     .registry-actions {
         display: flex;

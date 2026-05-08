@@ -1,5 +1,6 @@
 <script lang="ts">
     import { page } from '$app/state';
+    import { setContext } from 'svelte';
     import { api, type Collection } from '$lib/api';
     import { me } from '$lib/session';
     import { _ } from 'svelte-i18n';
@@ -16,8 +17,22 @@
     const cid = $derived(page.params.id ?? '');
     let collection = $state<Collection | null>(null);
 
+    // Filter panel state — shared with FilterBar.svelte via context so the toolbar
+    // icon and the in-page chip both drive the same open/closed state.
+    let filterOpen = $state(false);
+    let filterActiveCount = $state(0);
+
+    setContext('collectionFilterPanel', {
+        get open() { return filterOpen; },
+        toggle() { filterOpen = !filterOpen; },
+        setActiveCount(n: number) { filterActiveCount = n; },
+    });
+
     $effect(() => {
         if (!cid) return;
+        // Reset filter panel whenever the user navigates to a different collection.
+        filterOpen = false;
+        filterActiveCount = 0;
         api.get<Collection>(`/collections/${cid}`).then(c => { collection = c; }).catch(() => {});
     });
 
@@ -43,6 +58,25 @@
 {#if collection?.description}<p class="muted">{collection.description}</p>{/if}
 
 <div class="section-toolbar" role="toolbar" aria-label={$_('collection.section_toolbar_label')}>
+    <!-- Search & filter toggle — drives the FiltersPanel in the item list below. -->
+    <button
+        type="button"
+        class="toolbar-btn filter-toggle-btn"
+        class:active={filterOpen}
+        class:has-active={filterActiveCount > 0}
+        title={$_('collection.toolbar_search_filter')}
+        aria-label={$_('collection.toolbar_search_filter')}
+        aria-expanded={filterOpen}
+        onclick={() => { filterOpen = !filterOpen; }}
+    >
+        <Icon name="sliders-horizontal" size={17} />
+        {#if filterActiveCount > 0 && !filterOpen}
+            <span class="filter-badge" aria-hidden="true">{filterActiveCount}</span>
+        {/if}
+    </button>
+
+    <span class="toolbar-divider" aria-hidden="true"></span>
+
     <a
         class="toolbar-btn export-btn"
         href="/import?collection={cid}"
@@ -138,6 +172,42 @@
     }
     .export-btn + .export-btn {
         margin-right: 0.75rem;
+    }
+
+    /* Filter toggle button — shows accent fill when active filters exist (even closed). */
+    .filter-toggle-btn {
+        position: relative;
+    }
+    .filter-toggle-btn.has-active:not(.active) {
+        border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+        color: var(--accent);
+    }
+
+    /* Small badge showing the active filter count, visible when panel is closed. */
+    .filter-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        min-width: 1rem;
+        height: 1rem;
+        padding: 0 0.2rem;
+        border-radius: 9999px;
+        background: var(--accent);
+        color: var(--accent-contrast);
+        font-size: 0.6rem;
+        font-weight: 700;
+        line-height: 1rem;
+        text-align: center;
+        pointer-events: none;
+    }
+
+    /* Vertical rule separating filter toggle from the section/export buttons. */
+    .toolbar-divider {
+        width: 1px;
+        align-self: stretch;
+        background: var(--border);
+        margin: 0.15rem 0.2rem;
+        flex-shrink: 0;
     }
 
     @media (max-width: 640px) {

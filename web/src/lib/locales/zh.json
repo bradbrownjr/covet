@@ -103,6 +103,7 @@
     "tab_members": "成员",
     "tab_import": "导入",
     "tab_export": "导出",
+    "toolbar_search_filter": "Search & Filters",
     "delete_collection": "删除收藏",
     "add_item_label": "添加物品",
     "add_item_help": "粘贴URL、扫描条码、输入ISBN/EAN或直接输入标题",
