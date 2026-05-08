@@ -163,7 +163,7 @@
             autocomplete="off"
         />
         {#if q}
-            <button type="button" class="input-clear" onclick={clearSearch} aria-label="Clear search">✕</button>
+            <button type="button" class="input-clear" onclick={clearSearch} aria-label="Clear search"><Icon name="x" size={14} /></button>
         {/if}
     </div>
     <button type="submit">{$_('home.search.submit')}</button>

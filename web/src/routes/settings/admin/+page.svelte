@@ -5,6 +5,7 @@
     import { me } from '$lib/session';
     import { _ } from 'svelte-i18n';
     import { Button, Modal } from '$lib/components';
+    import Icon from '$lib/Icon.svelte';
 
     const BARCODE_ADAPTER_INFO: Record<string, { label: string; description: string; keyHint?: string }> = {
         openlibrary:   { label: 'Open Library',    description: 'ISBN-10/13 lookup for books. Free, no API key required.' },
@@ -195,8 +196,8 @@
                                     <button class="secondary small" disabled={testResults[s.key]?.status === 'testing'} onclick={() => testIntegration(s.key)}>
                                         {testResults[s.key]?.status === 'testing' ? $_('settings.testing_button') : $_('settings.test_connection_button')}
                                     </button>
-                                    {#if testResults[s.key]?.status === 'ok'}<span class="ok" style="font-size:0.8rem">&#10003; {testResults[s.key].message}</span>{/if}
-                                    {#if testResults[s.key]?.status === 'error'}<span class="error" style="font-size:0.8rem">&#10007; {testResults[s.key].message}</span>{/if}
+                                    {#if testResults[s.key]?.status === 'ok'}<span class="ok" style="font-size:0.8rem"><Icon name="check" size={13} /> {testResults[s.key].message}</span>{/if}
+                                    {#if testResults[s.key]?.status === 'error'}<span class="error" style="font-size:0.8rem"><Icon name="x" size={13} /> {testResults[s.key].message}</span>{/if}
                                 {/if}
                             </div>
                         </div>
@@ -207,8 +208,8 @@
                         <button class="secondary small" disabled={testResults['__email__']?.status === 'testing'} onclick={testEmail}>
                             {testResults['__email__']?.status === 'testing' ? $_('settings.testing_button') : $_('settings.test_email_button')}
                         </button>
-                        {#if testResults['__email__']?.status === 'ok'}<span class="ok" style="font-size:0.85rem">&#10003; {testResults['__email__'].message}</span>{/if}
-                        {#if testResults['__email__']?.status === 'error'}<span class="error" style="font-size:0.85rem">&#10007; {testResults['__email__'].message}</span>{/if}
+                        {#if testResults['__email__']?.status === 'ok'}<span class="ok" style="font-size:0.85rem"><Icon name="check" size={13} /> {testResults['__email__'].message}</span>{/if}
+                        {#if testResults['__email__']?.status === 'error'}<span class="error" style="font-size:0.85rem"><Icon name="x" size={13} /> {testResults['__email__'].message}</span>{/if}
                     </div>
                 {/if}
             {/if}
