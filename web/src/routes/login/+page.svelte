@@ -142,6 +142,11 @@
         max-width: 400px;
         margin: 4rem auto 0;
     }
+    .auth form.card {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+    }
     .auth-logo {
         display: block;
         margin: 0 auto 1.5rem;
