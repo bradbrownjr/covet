@@ -4,6 +4,13 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.23.0] — 2026-05-08
+
+### Internal
+
+- **Web toolchain bump:** SvelteKit `2.8 → 2.59.1`, Vite `5.4 → 6.4.2`, `@sveltejs/vite-plugin-svelte` `4.0 → 5.1.1`. No behaviour change.
+- **Icon bundle reduced 98% (web):** `Icon.svelte` now imports only the 27 icons used in the app instead of the entire lucide-svelte namespace. The `Icon.js` server chunk dropped from 9.1 MB to 153 kB; client-side JS transferred on first load is proportionally smaller.
+
 ## [0.22.3] — 2026-05-20
 
 ### Fixed
