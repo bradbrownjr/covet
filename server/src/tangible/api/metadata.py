@@ -245,18 +245,22 @@ def import_registry_entries(
                 detail=f"Unknown registry entry: {entry_id}",
             )
         marker = f"[registry:{entry.id}]"
-        match = next((t for t in existing if (t.description or "").find(marker) >= 0), None)
+        match = next(
+            (t for t in existing if t.scraper_id == entry.id or (t.description or "").find(marker) >= 0),
+            None,
+        )
         if match is not None:
             imported.append(match)
             continue
 
-        desc = f"{entry.description}\n\n{marker}".strip()
+        desc = entry.description or ""
         tmpl = ItemTemplate(
             collection_id=payload.collection_id,
             name=entry.name,
             category_slug=entry.category_slug,
             description=desc,
             fields=entry.fields,
+            scraper_id=entry.id,
             created_by=auth.user.id,
         )
         db.add(tmpl)

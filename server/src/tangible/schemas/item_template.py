@@ -58,6 +58,7 @@ class ItemTemplateRead(ItemTemplateBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
+    scraper_id: str | None = None
     collection_id: str
     created_by: str | None
     created_at: datetime

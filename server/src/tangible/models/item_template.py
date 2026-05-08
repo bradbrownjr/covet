@@ -30,6 +30,8 @@ class ItemTemplate(ULIDPrimaryKey, TimestampMixin, Base):
     # fields: list[{key, label, type, required, default?, options?}]
     # type ∈ {"text","number","boolean","date","url","select"}
     fields: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, nullable=False)
+    # registry entry id this template was imported from (if any)
+    scraper_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     created_by: Mapped[str | None] = mapped_column(
         String(26), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )

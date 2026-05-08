@@ -4,6 +4,14 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.22.1] — 2026-05-20
+
+### Added
+
+- **Templates two-step wizard (web, Wave 10-G):** the "New template" flow is now a two-step modal wizard. Step 1 picks a name and category (defaulting to the collection's default category). Step 2 is the custom fields editor with the Advanced JSON toggle. The community scraper registry is no longer shown upfront — it is accessible via a "Start from a scraper preset" link inside the wizard, opening a dedicated registry modal.
+- **Linked-to badge on imported templates (web, Wave 10-G):** templates imported from the community scraper registry now show a small "Linked to: &lt;entry name&gt;" pill in the templates table so users can see which preset each template came from.
+- **`scraper_id` on ItemTemplate (server, Wave 10-G):** a new nullable `scraper_id` column on `item_templates` stores the registry entry ID for templates imported via the registry. Alembic migration `0009_template_scraper_id` handles the upgrade. The field is exposed in `ItemTemplateRead`. Existing description-marker-based deduplication is preserved as a fallback.
+
 ## [0.22.0] — 2026-05-16
 
 ### Added

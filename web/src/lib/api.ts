@@ -343,6 +343,7 @@ export interface ItemTemplate {
     category_slug: string;
     description: string | null;
     fields: TemplateField[];
+    scraper_id: string | null;
     created_by: string | null;
     created_at: string;
     updated_at: string;
