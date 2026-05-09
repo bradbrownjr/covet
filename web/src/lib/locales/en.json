@@ -829,6 +829,15 @@
     "new_task_save": "Add Task",
     "new_task_cancel": "Cancel",
     "complete_tooltip": "Mark complete",
-    "delete_tooltip": "Delete task"
+    "delete_tooltip": "Delete task",
+    "tab_scoreboard": "Scoreboard",
+    "scoreboard_empty": "No completions yet.",
+    "scoreboard_hint": "Household completion leaderboard across chores, maintenance, and tasks.",
+    "achievement_first_finish": "First Finish — completed your first task",
+    "achievement_getting_started": "Getting Started — 5+ completions",
+    "achievement_on_a_roll": "On a Roll — 10+ completions",
+    "achievement_power_user": "Power User — 25+ completions",
+    "achievement_household_hero": "Household Hero — 50+ completions",
+    "achievement_legend": "Legend — 100+ completions"
   }
 }

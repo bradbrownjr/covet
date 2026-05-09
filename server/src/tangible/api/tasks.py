@@ -2,16 +2,28 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session as DBSession
 
 from tangible.auth.deps import AuthContext, collection_role, require_user
 from tangible.db import get_session
-from tangible.models import Collection, StandaloneTask
-from tangible.schemas import StandaloneTaskCreate, StandaloneTaskRead, StandaloneTaskUpdate
+from tangible.models import (
+    Chore,
+    ChoreCompletion,
+    Collection,
+    CollectionMembership,
+    Item,
+    MaintenanceCompletion,
+    MaintenanceTask,
+    StandaloneTask,
+    User,
+)
+from tangible.schemas import ScoreboardEntry, StandaloneTaskCreate, StandaloneTaskRead, StandaloneTaskUpdate
+from tangible.schemas.maintenance import _compute_achievements
 
 router = APIRouter(tags=["tasks"])
 
@@ -25,6 +37,21 @@ def _require_role(
     role = collection_role(db, auth.user, collection_id)
     if role is None or role not in allowed:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+
+def _readable_collection_ids(db: DBSession, user: User) -> list[str] | None:
+    """Return list of readable collection IDs, or None for admins (unrestricted)."""
+    if user.is_admin:
+        return None
+    owned = list(db.scalars(select(Collection.id).where(Collection.owner_id == user.id)).all())
+    member = list(
+        db.scalars(
+            select(CollectionMembership.collection_id).where(
+                CollectionMembership.user_id == user.id
+            )
+        ).all()
+    )
+    return list(set(owned + member))
 
 
 @router.get("/tasks", response_model=list[StandaloneTaskRead])
@@ -51,6 +78,90 @@ def list_tasks(
             continue
         out.append(StandaloneTaskRead.model_validate(task))
     return out
+
+
+# NOTE: this route must be registered before /tasks/{task_id} to avoid ambiguity
+@router.get("/tasks/scoreboard", response_model=list[ScoreboardEntry])
+def get_scoreboard(
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> list[ScoreboardEntry]:
+    """Return per-member completion counts across chores, maintenance, and standalone tasks."""
+    readable = _readable_collection_ids(db, auth.user)
+
+    def _col_filter(col_id_column):  # type: ignore[no-untyped-def]
+        if readable is None:
+            return True
+        if not readable:
+            return False
+        return col_id_column.in_(readable)
+
+    # Chore completions
+    chore_stmt = (
+        select(ChoreCompletion.completed_by_user_id, func.count().label("n"))
+        .join(Chore, ChoreCompletion.chore_id == Chore.id)
+        .where(ChoreCompletion.completed_by_user_id.isnot(None))
+        .where(_col_filter(Chore.collection_id))
+        .group_by(ChoreCompletion.completed_by_user_id)
+    )
+
+    # Maintenance completions (join through item to get collection_id)
+    maint_stmt = (
+        select(MaintenanceCompletion.completed_by_user_id, func.count().label("n"))
+        .join(MaintenanceTask, MaintenanceCompletion.task_id == MaintenanceTask.id)
+        .join(Item, MaintenanceTask.item_id == Item.id)
+        .where(MaintenanceCompletion.completed_by_user_id.isnot(None))
+        .where(_col_filter(Item.collection_id))
+        .group_by(MaintenanceCompletion.completed_by_user_id)
+    )
+
+    # Standalone task completions
+    task_stmt = (
+        select(StandaloneTask.completed_by_user_id, func.count().label("n"))
+        .where(StandaloneTask.completed_at.isnot(None))
+        .where(StandaloneTask.completed_by_user_id.isnot(None))
+        .where(_col_filter(StandaloneTask.collection_id))
+        .group_by(StandaloneTask.completed_by_user_id)
+    )
+
+    # Skip if no readable collections (non-admin with zero memberships)
+    if readable is not None and not readable:
+        return []
+
+    chore_counts: dict[str, int] = dict(db.execute(chore_stmt).all())
+    maint_counts: dict[str, int] = dict(db.execute(maint_stmt).all())
+    task_counts: dict[str, int] = dict(db.execute(task_stmt).all())
+
+    all_user_ids = set(chore_counts) | set(maint_counts) | set(task_counts)
+    if not all_user_ids:
+        return []
+
+    users = {
+        u.id: u
+        for u in db.scalars(select(User).where(User.id.in_(all_user_ids))).all()
+    }
+
+    entries: list[ScoreboardEntry] = []
+    for uid in all_user_ids:
+        c = chore_counts.get(uid, 0)
+        m = maint_counts.get(uid, 0)
+        t = task_counts.get(uid, 0)
+        total = c + m + t
+        user = users.get(uid)
+        entries.append(
+            ScoreboardEntry(
+                user_id=uid,
+                display_name=(user.display_name or user.username) if user else uid,
+                chore_count=c,
+                maintenance_count=m,
+                task_count=t,
+                total=total,
+                achievements=_compute_achievements(total),
+            )
+        )
+
+    entries.sort(key=lambda e: e.total, reverse=True)
+    return entries
 
 
 @router.post(

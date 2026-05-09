@@ -457,9 +457,20 @@ export interface StandaloneTask {
     due_at: string | null;
     completed_at: string | null;
     completed_by_user_id: string | null;
+    assigned_to_user_id: string | null;
     created_by_user_id: string | null;
     created_at: string;
     updated_at: string;
+}
+
+export interface ScoreboardEntry {
+    user_id: string;
+    display_name: string;
+    chore_count: number;
+    maintenance_count: number;
+    task_count: number;
+    total: number;
+    achievements: string[];
 }
 
 export interface CommentAuthor {

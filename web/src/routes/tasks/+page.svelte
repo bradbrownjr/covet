@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { api, type DueAlert, type StandaloneTask, type Collection } from '$lib/api';
+    import { api, type DueAlert, type StandaloneTask, type Collection, type ScoreboardEntry } from '$lib/api';
     import { _ } from 'svelte-i18n';
     import { EmptyState } from '$lib/components';
     import Icon from '$lib/Icon.svelte';
@@ -9,7 +9,7 @@
     let loading = $state(true);
     let error = $state('');
     let withinDays = $state(30);
-    let tab = $state<'alerts' | 'chores' | 'my-tasks'>('alerts');
+    let tab = $state<'alerts' | 'chores' | 'my-tasks' | 'scoreboard'>('alerts');
     let showConfetti = $state(false);
 
     // ── My Tasks tab state ──
@@ -163,6 +163,41 @@
             tasksError = (e as Error).message;
         }
     }
+
+    // ── Scoreboard tab state ──
+    let scoreboard = $state<ScoreboardEntry[]>([]);
+    let scoreboardLoading = $state(false);
+    let scoreboardError = $state('');
+    let scoreboardLoaded = $state(false);
+
+    const ACHIEVEMENT_EMOJI: Record<string, string> = {
+        first_finish:   '🏅',
+        getting_started:'⭐',
+        on_a_roll:      '🔥',
+        power_user:     '💪',
+        household_hero: '🏆',
+        legend:         '👑',
+    };
+
+    async function loadScoreboard() {
+        if (scoreboardLoading) return;
+        scoreboardLoading = true;
+        scoreboardError = '';
+        try {
+            scoreboard = await api.get<ScoreboardEntry[]>('/tasks/scoreboard');
+            scoreboardLoaded = true;
+        } catch (e) {
+            scoreboardError = (e as Error).message;
+        } finally {
+            scoreboardLoading = false;
+        }
+    }
+
+    $effect(() => {
+        if (tab === 'scoreboard' && !scoreboardLoaded && !scoreboardLoading) {
+            loadScoreboard();
+        }
+    });
 </script>
 
 <svelte:head><title>{$_('tasks.title')}</title></svelte:head>
@@ -219,6 +254,16 @@
         {#if myTasks.length > 0}
             <span class="tab-badge">{myTasks.length}</span>
         {/if}
+    </button>
+    <button
+        role="tab"
+        aria-selected={tab === 'scoreboard'}
+        class="tab-btn"
+        class:active={tab === 'scoreboard'}
+        onclick={() => (tab = 'scoreboard')}
+    >
+        <Icon name="users" size={15} />
+        {$_('tasks.tab_scoreboard')}
     </button>
 </div>
 
@@ -350,7 +395,7 @@
             {/each}
         </ul>
     {/if}
-{:else}
+{:else if tab === 'my-tasks'}
     <!-- ── My Tasks tab ── -->
     {#if tasksError}
         <p class="error">{tasksError}</p>
@@ -473,6 +518,67 @@
                 </li>
             {/each}
         </ul>
+    {/if}
+{:else if tab === 'scoreboard'}
+    <!-- ── Scoreboard tab ── -->
+    {#if scoreboardError}
+        <p class="error">{scoreboardError}</p>
+    {/if}
+    {#if scoreboardLoading}
+        <EmptyState icon="loader" heading={$_('common.loading')} />
+    {:else if scoreboard.length === 0 && scoreboardLoaded}
+        <EmptyState
+            icon="users"
+            heading={$_('tasks.scoreboard_empty')}
+            body={$_('tasks.scoreboard_hint')}
+        />
+    {:else if !scoreboardLoaded}
+        <!-- trigger effect on first render -->
+    {:else}
+        <p class="tab-hint">{$_('tasks.scoreboard_hint')}</p>
+        <ol class="scoreboard-list">
+            {#each scoreboard as entry, idx (entry.user_id)}
+                <li class="scoreboard-row" class:top-three={idx < 3}>
+                    <span class="rank" aria-hidden="true">
+                        {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`}
+                    </span>
+                    <div class="scoreboard-member">
+                        <span class="member-name">{entry.display_name}</span>
+                        <div class="score-breakdown">
+                            {#if entry.chore_count > 0}
+                                <span class="score-chip">
+                                    <Icon name="sparkles" size={11} />
+                                    {entry.chore_count}
+                                </span>
+                            {/if}
+                            {#if entry.maintenance_count > 0}
+                                <span class="score-chip">
+                                    <Icon name="wrench" size={11} />
+                                    {entry.maintenance_count}
+                                </span>
+                            {/if}
+                            {#if entry.task_count > 0}
+                                <span class="score-chip">
+                                    <Icon name="check-circle" size={11} />
+                                    {entry.task_count}
+                                </span>
+                            {/if}
+                        </div>
+                        {#if entry.achievements.length > 0}
+                            <div class="achievements">
+                                {#each entry.achievements as badge (badge)}
+                                    <span
+                                        class="badge"
+                                        title={$_(`tasks.achievement_${badge}`)}
+                                    >{ACHIEVEMENT_EMOJI[badge] ?? '🎖️'}</span>
+                                {/each}
+                            </div>
+                        {/if}
+                    </div>
+                    <span class="score-total">{entry.total}</span>
+                </li>
+            {/each}
+        </ol>
     {/if}
 {/if}
 
@@ -700,5 +806,78 @@
         color: var(--danger) !important;
         border-color: var(--danger) !important;
         background: color-mix(in srgb, var(--danger) 8%, transparent) !important;
+    }
+
+    /* Scoreboard */
+    .scoreboard-list {
+        list-style: none;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        counter-reset: none;
+    }
+    .scoreboard-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        transition: background 0.15s;
+    }
+    .scoreboard-row.top-three {
+        border-color: var(--accent);
+        background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+    }
+    .rank {
+        font-size: 1.25rem;
+        width: 2rem;
+        text-align: center;
+        flex-shrink: 0;
+    }
+    .scoreboard-member {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    .member-name {
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    .score-breakdown {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+    .score-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.2rem;
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        background: var(--surface-2);
+        padding: 0.1rem 0.4rem;
+        border-radius: var(--radius-full);
+    }
+    .achievements {
+        display: flex;
+        gap: 0.25rem;
+        flex-wrap: wrap;
+    }
+    .badge {
+        font-size: 1rem;
+        cursor: default;
+    }
+    .score-total {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--accent);
+        flex-shrink: 0;
+        min-width: 2.5rem;
+        text-align: right;
     }
 </style>

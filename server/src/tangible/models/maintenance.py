@@ -152,6 +152,9 @@ class StandaloneTask(ULIDPrimaryKey, TimestampMixin, Base):
     created_by_user_id: Mapped[str | None] = mapped_column(
         String(26), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
+    assigned_to_user_id: Mapped[str | None] = mapped_column(
+        String(26), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
 
     collection: Mapped[Collection] = relationship()
     item: Mapped[Item | None] = relationship(foreign_keys="[StandaloneTask.item_id]")

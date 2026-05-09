@@ -142,6 +142,7 @@ class StandaloneTaskBase(BaseModel):
 
 class StandaloneTaskCreate(StandaloneTaskBase):
     item_id: str | None = None
+    assigned_to_user_id: str | None = None
 
 
 class StandaloneTaskUpdate(BaseModel):
@@ -149,6 +150,7 @@ class StandaloneTaskUpdate(BaseModel):
     notes: str | None = None
     due_at: datetime | None = None
     item_id: str | None = None
+    assigned_to_user_id: str | None = None
 
 
 class StandaloneTaskRead(StandaloneTaskBase):
@@ -160,6 +162,35 @@ class StandaloneTaskRead(StandaloneTaskBase):
     completed_at: datetime | None
     completed_by_user_id: str | None
     created_by_user_id: str | None
+    assigned_to_user_id: str | None
     created_at: datetime
     updated_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# Scoreboard
+# ---------------------------------------------------------------------------
+
+_ACHIEVEMENT_THRESHOLDS: list[tuple[int, str]] = [
+    (100, "legend"),
+    (50, "household_hero"),
+    (25, "power_user"),
+    (10, "on_a_roll"),
+    (5, "getting_started"),
+    (1, "first_finish"),
+]
+
+
+def _compute_achievements(total: int) -> list[str]:
+    return [badge for threshold, badge in _ACHIEVEMENT_THRESHOLDS if total >= threshold]
+
+
+class ScoreboardEntry(BaseModel):
+    user_id: str
+    display_name: str
+    chore_count: int
+    maintenance_count: int
+    task_count: int
+    total: int
+    achievements: list[str]
 
