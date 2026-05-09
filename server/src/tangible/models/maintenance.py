@@ -62,6 +62,9 @@ class MaintenanceCompletion(ULIDPrimaryKey, Base):
     technician: Mapped[str | None] = mapped_column(String(128), nullable=True)
     odometer_reading: Mapped[Decimal | None] = mapped_column(Numeric(14, 2), nullable=True)
     hours_reading: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    completed_by_user_id: Mapped[str | None] = mapped_column(
+        String(26), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
 
     task: Mapped[MaintenanceTask] = relationship(back_populates="completions")
 
@@ -111,8 +114,47 @@ class ChoreCompletion(ULIDPrimaryKey, Base):
     cost: Mapped[Decimal | None] = mapped_column(Numeric(14, 4), nullable=True)
     currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
     technician: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    completed_by_user_id: Mapped[str | None] = mapped_column(
+        String(26), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
 
     chore: Mapped[Chore] = relationship(back_populates="completions")
+
+
+class StandaloneTask(ULIDPrimaryKey, TimestampMixin, Base):
+    """A one-off task not tied to any specific item, scoped to a collection."""
+
+    __tablename__ = "standalone_tasks"
+
+    collection_id: Mapped[str] = mapped_column(
+        String(26),
+        ForeignKey("collections.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    item_id: Mapped[str | None] = mapped_column(
+        String(26),
+        ForeignKey("items.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    title: Mapped[str] = mapped_column(String(128), nullable=False)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    due_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    completed_by_user_id: Mapped[str | None] = mapped_column(
+        String(26), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_by_user_id: Mapped[str | None] = mapped_column(
+        String(26), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+
+    collection: Mapped[Collection] = relationship()
+    item: Mapped[Item | None] = relationship(foreign_keys="[StandaloneTask.item_id]")
 
 
 class MaintenanceTaskConsumable(Base):

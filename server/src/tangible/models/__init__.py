@@ -23,6 +23,7 @@ from tangible.models.maintenance import (
     MaintenanceCompletion,
     MaintenanceTask,
     MaintenanceTaskConsumable,
+    StandaloneTask,
 )
 from tangible.models.manual_bundle import BundleAsset, BundleItem, ManualBundle
 from tangible.models.metadata_cache import MetadataCacheEntry
@@ -77,6 +78,7 @@ __all__ = [
     "MaintenanceTask",
     "MaintenanceTaskConsumable",
     "ManualBundle",
+    "StandaloneTask",
     "MetadataCacheEntry",
     "NotificationPreference",
     "OIDCIdentity",

@@ -143,6 +143,7 @@ def complete_chore(
     completion = ChoreCompletion(
         chore_id=chore_id,
         completed_at=now,
+        completed_by_user_id=auth.user.id,
         **p.model_dump(),
     )
     db.add(completion)

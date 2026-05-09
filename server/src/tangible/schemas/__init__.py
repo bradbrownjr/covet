@@ -69,6 +69,9 @@ from tangible.schemas.maintenance import (
     MaintenanceTaskCreate,
     MaintenanceTaskRead,
     MaintenanceTaskUpdate,
+    StandaloneTaskCreate,
+    StandaloneTaskRead,
+    StandaloneTaskUpdate,
 )
 from tangible.schemas.manual_bundle import (
     BundleAssetRead,
@@ -202,6 +205,9 @@ __all__ = [
     "SyncPullResponse",
     "SyncPushRequest",
     "SyncPushResponse",
+    "StandaloneTaskCreate",
+    "StandaloneTaskRead",
+    "StandaloneTaskUpdate",
     "SyncSnapshotResponse",
     "SyncSnapshotUpload",
     "TagCreate",

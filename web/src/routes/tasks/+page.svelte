@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { api, type DueAlert } from '$lib/api';
+    import { api, type DueAlert, type StandaloneTask, type Collection } from '$lib/api';
     import { _ } from 'svelte-i18n';
     import { EmptyState } from '$lib/components';
     import Icon from '$lib/Icon.svelte';
@@ -9,8 +9,20 @@
     let loading = $state(true);
     let error = $state('');
     let withinDays = $state(30);
-    let tab = $state<'alerts' | 'chores'>('alerts');
+    let tab = $state<'alerts' | 'chores' | 'my-tasks'>('alerts');
     let showConfetti = $state(false);
+
+    // ── My Tasks tab state ──
+    let myTasks = $state<StandaloneTask[]>([]);
+    let taskCollections = $state<Collection[]>([]);
+    let tasksLoading = $state(false);
+    let tasksError = $state('');
+    let showNewTaskForm = $state(false);
+    let newTitle = $state('');
+    let newNotes = $state('');
+    let newDueAt = $state('');
+    let newCollectionId = $state('');
+    let taskSaving = $state(false);
 
     async function load() {
         loading = true;
@@ -41,6 +53,7 @@
         item_expires:    'calendar-x',
         lot_use_by:      'clock',
         low_stock:       'package-x',
+        task_due:        'check-circle',
     };
 
     const kindLabels = $derived<Record<string, string>>({
@@ -50,6 +63,7 @@
         item_expires:    $_('maintenance.kind_item_expires'),
         lot_use_by:      $_('maintenance.kind_lot_use_by'),
         low_stock:       $_('maintenance.kind_low_stock'),
+        task_due:        $_('maintenance.kind_task_due'),
     });
 
     // All alerts sorted: critical (overdue) first, then by due_at ascending
@@ -80,6 +94,74 @@
     function launchConfetti() {
         showConfetti = true;
         setTimeout(() => { showConfetti = false; }, 2500);
+    }
+
+    async function loadTasks() {
+        if (tasksLoading) return;
+        tasksLoading = true;
+        tasksError = '';
+        try {
+            const [tasks, cols] = await Promise.all([
+                api.get<StandaloneTask[]>('/tasks'),
+                taskCollections.length
+                    ? Promise.resolve(taskCollections)
+                    : api.get<Collection[]>('/collections'),
+            ]);
+            myTasks = tasks;
+            taskCollections = cols;
+            if (!newCollectionId && cols.length) newCollectionId = cols[0].id;
+        } catch (e) {
+            tasksError = (e as Error).message;
+        } finally {
+            tasksLoading = false;
+        }
+    }
+
+    $effect(() => {
+        if (tab === 'my-tasks' && !tasksLoading && myTasks.length === 0 && !tasksError) {
+            loadTasks();
+        }
+    });
+
+    async function createTask() {
+        if (!newTitle.trim() || !newCollectionId) return;
+        taskSaving = true;
+        tasksError = '';
+        try {
+            const t = await api.post<StandaloneTask>(`/collections/${newCollectionId}/tasks`, {
+                title: newTitle.trim(),
+                notes: newNotes.trim() || null,
+                due_at: newDueAt || null,
+            });
+            myTasks = [...myTasks, t];
+            newTitle = '';
+            newNotes = '';
+            newDueAt = '';
+            showNewTaskForm = false;
+        } catch (e) {
+            tasksError = (e as Error).message;
+        } finally {
+            taskSaving = false;
+        }
+    }
+
+    async function completeTask(id: string) {
+        try {
+            await api.post(`/tasks/${id}/complete`, {});
+            myTasks = myTasks.filter(t => t.id !== id);
+            launchConfetti();
+        } catch (e) {
+            tasksError = (e as Error).message;
+        }
+    }
+
+    async function deleteTask(id: string) {
+        try {
+            await api.delete(`/tasks/${id}`);
+            myTasks = myTasks.filter(t => t.id !== id);
+        } catch (e) {
+            tasksError = (e as Error).message;
+        }
     }
 </script>
 
@@ -123,6 +205,19 @@
         {$_('tasks.tab_chores')}
         {#if choreAlerts.length > 0}
             <span class="tab-badge">{choreAlerts.length}</span>
+        {/if}
+    </button>
+    <button
+        role="tab"
+        aria-selected={tab === 'my-tasks'}
+        class="tab-btn"
+        class:active={tab === 'my-tasks'}
+        onclick={() => (tab = 'my-tasks')}
+    >
+        <Icon name="check-circle" size={15} />
+        {$_('tasks.tab_my_tasks')}
+        {#if myTasks.length > 0}
+            <span class="tab-badge">{myTasks.length}</span>
         {/if}
     </button>
 </div>
@@ -205,7 +300,7 @@
             </section>
         {/each}
     {/if}
-{:else}
+{:else if tab === 'chores'}
     <!-- ── Chores tab ── -->
     {#if choreAlerts.length === 0}
         <EmptyState
@@ -249,6 +344,130 @@
                         >
                             <Icon name="calendar-check" size={16} />
                             <span class="sr-only">{$_('tasks.mark_done_tooltip')}</span>
+                        </button>
+                    </div>
+                </li>
+            {/each}
+        </ul>
+    {/if}
+{:else}
+    <!-- ── My Tasks tab ── -->
+    {#if tasksError}
+        <p class="error">{tasksError}</p>
+    {/if}
+    <div class="my-tasks-header">
+        <p class="tab-hint">{$_('tasks.my_tasks_hint')}</p>
+        <button class="new-task-btn" onclick={() => { showNewTaskForm = !showNewTaskForm; }}>
+            <Icon name="check-circle" size={14} />
+            {$_('tasks.new_task_button')}
+        </button>
+    </div>
+
+    {#if showNewTaskForm}
+        <form class="new-task-form" onsubmit={(e) => { e.preventDefault(); createTask(); }}>
+            <div class="form-row">
+                <input
+                    type="text"
+                    class="form-input"
+                    placeholder={$_('tasks.new_task_title_placeholder')}
+                    bind:value={newTitle}
+                    required
+                />
+                <select bind:value={newCollectionId} class="form-select">
+                    {#each taskCollections as col (col.id)}
+                        <option value={col.id}>{col.name}</option>
+                    {/each}
+                </select>
+            </div>
+            <div class="form-row">
+                <input
+                    type="text"
+                    class="form-input"
+                    placeholder={$_('tasks.new_task_notes_placeholder')}
+                    bind:value={newNotes}
+                />
+                <label class="due-label">
+                    <span>{$_('tasks.new_task_due_label')}</span>
+                    <input type="datetime-local" class="form-input" bind:value={newDueAt} />
+                </label>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-primary" disabled={taskSaving || !newTitle.trim()}>
+                    {#if taskSaving}
+                        <Icon name="loader" size={14} />
+                    {:else}
+                        <Icon name="check-circle" size={14} />
+                    {/if}
+                    {$_('tasks.new_task_save')}
+                </button>
+                <button type="button" class="btn-ghost" onclick={() => { showNewTaskForm = false; }}>
+                    {$_('tasks.new_task_cancel')}
+                </button>
+            </div>
+        </form>
+    {/if}
+
+    {#if tasksLoading}
+        <EmptyState icon="loader" heading={$_('common.loading')} />
+    {:else if myTasks.length === 0 && !showNewTaskForm}
+        <EmptyState
+            icon="check-circle"
+            heading={$_('tasks.my_tasks_empty')}
+        />
+    {:else}
+        <ul class="alert-list">
+            {#each myTasks as task (task.id)}
+                {@const overdue = !!task.due_at && new Date(task.due_at) < new Date()}
+                {@const hasDue = !!task.due_at}
+                <li
+                    class="alert-card task-card"
+                    class:severity-critical={overdue}
+                    class:severity-warning={hasDue && !overdue}
+                >
+                    <div class="alert-left">
+                        <Icon
+                            name="check-circle"
+                            size={16}
+                            class="sev-icon {overdue ? 'sev-critical' : hasDue ? 'sev-warning' : ''}"
+                        />
+                    </div>
+                    <div class="alert-body">
+                        <div class="alert-main">
+                            <span class="alert-title">{task.title}</span>
+                            {#if task.due_at}
+                                <span class="due-badge" class:critical={overdue}>
+                                    <time datetime={task.due_at}>{daysLabel(task.due_at)}</time>
+                                </span>
+                            {/if}
+                        </div>
+                        {#if task.notes}
+                            <p class="alert-detail">{task.notes}</p>
+                        {/if}
+                        <div class="alert-links">
+                            {#if task.item_id}
+                                <a href="/collections/{task.collection_id}?item={task.item_id}">
+                                    {$_('maintenance.view_item_link')}
+                                </a>
+                            {/if}
+                            <a href="/collections/{task.collection_id}">{$_('maintenance.collection_link')}</a>
+                        </div>
+                    </div>
+                    <div class="chore-actions">
+                        <button
+                            class="done-btn"
+                            title={$_('tasks.complete_tooltip')}
+                            onclick={() => completeTask(task.id)}
+                        >
+                            <Icon name="check-circle" size={16} />
+                            <span class="sr-only">{$_('tasks.complete_tooltip')}</span>
+                        </button>
+                        <button
+                            class="done-btn delete-btn"
+                            title={$_('tasks.delete_tooltip')}
+                            onclick={() => deleteTask(task.id)}
+                        >
+                            <Icon name="trash-2" size={16} />
+                            <span class="sr-only">{$_('tasks.delete_tooltip')}</span>
                         </button>
                     </div>
                 </li>
@@ -403,5 +622,83 @@
         0%   { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
         80%  { opacity: 1; }
         100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
+    }
+
+    /* My Tasks tab */
+    .my-tasks-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
+    .my-tasks-header .tab-hint { margin: 0; }
+    .new-task-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        padding: 0.4rem 0.85rem;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        font-size: 0.85rem;
+        font-weight: 600;
+        transition: opacity 0.15s;
+    }
+    .new-task-btn:hover { opacity: 0.88; }
+
+    .new-task-form {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        margin-bottom: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+    }
+    .form-row { display: flex; gap: 0.65rem; flex-wrap: wrap; }
+    .form-input, .form-select {
+        flex: 1;
+        min-width: 0;
+        padding: 0.45rem 0.65rem;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: var(--surface);
+        color: var(--text);
+        font-size: 0.875rem;
+    }
+    .form-input:focus, .form-select:focus { outline: none; border-color: var(--accent); }
+    .due-label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.8rem; color: var(--text-muted); flex: 1; min-width: 0; }
+    .due-label .form-input { flex: unset; width: 100%; }
+    .form-actions { display: flex; gap: 0.5rem; }
+    .btn-primary {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        padding: 0.45rem 1rem;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 600;
+        transition: opacity 0.15s;
+    }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary:not(:disabled):hover { opacity: 0.88; }
+    .btn-ghost {
+        background: none;
+        border: 1px solid var(--border);
+        color: var(--text-muted);
+        padding: 0.45rem 0.85rem;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        font-size: 0.875rem;
+        transition: color 0.15s;
+    }
+    .btn-ghost:hover { color: var(--text); }
+
+    .delete-btn:hover {
+        color: var(--danger) !important;
+        border-color: var(--danger) !important;
+        background: color-mix(in srgb, var(--danger) 8%, transparent) !important;
     }
 </style>

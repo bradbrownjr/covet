@@ -125,6 +125,7 @@ def complete_task(
     completion = MaintenanceCompletion(
         task_id=task_id,
         completed_at=now,
+        completed_by_user_id=auth.user.id,
         **p.model_dump(),
     )
     db.add(completion)

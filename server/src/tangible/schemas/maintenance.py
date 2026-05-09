@@ -60,6 +60,7 @@ class MaintenanceCompletionRead(BaseModel):
     technician: str | None
     odometer_reading: Decimal | None
     hours_reading: Decimal | None
+    completed_by_user_id: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -125,4 +126,40 @@ class ChoreCompletionRead(BaseModel):
     cost: Decimal | None
     currency: str | None
     technician: str | None
+    completed_by_user_id: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Standalone tasks
+# ---------------------------------------------------------------------------
+
+
+class StandaloneTaskBase(BaseModel):
+    title: str = Field(min_length=1, max_length=128)
+    notes: str | None = None
+    due_at: datetime | None = None
+
+
+class StandaloneTaskCreate(StandaloneTaskBase):
+    item_id: str | None = None
+
+
+class StandaloneTaskUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=128)
+    notes: str | None = None
+    due_at: datetime | None = None
+    item_id: str | None = None
+
+
+class StandaloneTaskRead(StandaloneTaskBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    collection_id: str
+    item_id: str | None
+    completed_at: datetime | None
+    completed_by_user_id: str | None
+    created_by_user_id: str | None
+    created_at: datetime
+    updated_at: datetime
 

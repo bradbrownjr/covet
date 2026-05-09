@@ -512,6 +512,7 @@
     "kind_item_expires": "有効期限",
     "kind_lot_use_by": "パッケージ",
     "kind_low_stock": "在庫不足",
+    "kind_task_due": "Tasks",
     "view_item_link": "アイテムを表示",
     "collection_link": "コレクション",
     "chores_link": "家事",
@@ -756,6 +757,17 @@
     "chores_all_clear": "All chores are on schedule!",
     "chores_hint": "Showing chores due across all collections. Click Manage Chores to complete or edit.",
     "manage_chores_link": "Manage chores",
-    "mark_done_tooltip": "Mark done (opens chores page)"
+    "mark_done_tooltip": "Mark done (opens chores page)",
+    "tab_my_tasks": "My Tasks",
+    "my_tasks_empty": "No pending tasks.",
+    "my_tasks_hint": "One-off tasks. Create, track, and complete.",
+    "new_task_button": "New Task",
+    "new_task_title_placeholder": "Task title",
+    "new_task_notes_placeholder": "Notes (optional)",
+    "new_task_due_label": "Due date",
+    "new_task_save": "Add Task",
+    "new_task_cancel": "Cancel",
+    "complete_tooltip": "Mark complete",
+    "delete_tooltip": "Delete task"
   }
 }

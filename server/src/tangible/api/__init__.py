@@ -22,6 +22,7 @@ from tangible.api import loans as loans_router
 from tangible.api import locations as locations_router
 from tangible.api import maintenance as maintenance_router
 from tangible.api import manual_bundles as manual_bundles_router
+from tangible.api import tasks as tasks_router
 from tangible.api import meta as meta_router
 from tangible.api import metadata as metadata_router
 from tangible.api import notifications as notifications_router
@@ -67,6 +68,7 @@ async def _grocery_compat_redirect(request: Request, path: str = ""):
 api_router.include_router(_grocery_compat)
 api_router.include_router(maintenance_router.router)
 api_router.include_router(chores_router.router)
+api_router.include_router(tasks_router.router)
 api_router.include_router(notifications_router.router)
 api_router.include_router(photos_router.router)
 api_router.include_router(manual_bundles_router.router)

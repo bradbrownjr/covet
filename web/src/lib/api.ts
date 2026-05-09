@@ -448,6 +448,20 @@ export interface DueAlert {
     details: string | null;
 }
 
+export interface StandaloneTask {
+    id: string;
+    collection_id: string;
+    item_id: string | null;
+    title: string;
+    notes: string | null;
+    due_at: string | null;
+    completed_at: string | null;
+    completed_by_user_id: string | null;
+    created_by_user_id: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
 export interface CommentAuthor {
     id: string;
     username: string;

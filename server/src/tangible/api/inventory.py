@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session as DBSession
 
 from tangible.auth.deps import AuthContext, collection_role, require_user
 from tangible.db import get_session
-from tangible.models import Chore, Collection, Item, ItemLot, MaintenanceTask
+from tangible.models import Chore, Collection, Item, ItemLot, MaintenanceTask, StandaloneTask
 from tangible.models.base import as_utc
 from tangible.models.user import CollectionMembership
 from tangible.schemas.inventory import (
@@ -363,6 +363,33 @@ def _build_alerts(
                 lot_id=None,
                 due_at=due,
                 details=chore.notes,
+            )
+        )
+
+    # Standalone one-off tasks.
+    task_rows = db.execute(
+        select(StandaloneTask).where(
+            StandaloneTask.collection_id.in_(readable_collection_ids),
+            StandaloneTask.completed_at.is_(None),
+            StandaloneTask.due_at.isnot(None),
+            StandaloneTask.due_at <= horizon,
+        )
+    ).scalars()
+    for task in task_rows:
+        due = as_utc(task.due_at)
+        if due is None:
+            continue
+        out.append(
+            DueAlertRead(
+                id=f"task-{task.id}",
+                kind="task_due",
+                severity="warning" if due >= now else "critical",
+                title=task.title,
+                collection_id=task.collection_id,
+                item_id=task.item_id,
+                lot_id=None,
+                due_at=due,
+                details=task.notes,
             )
         )
 
