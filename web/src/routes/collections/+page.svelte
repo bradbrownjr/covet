@@ -4,6 +4,26 @@
     import { _ } from 'svelte-i18n';
     import { api, type Category, type Collection } from '$lib/api';
     import { loadCategories, rootCategories } from '$lib/categories';
+    import Icon from '$lib/Icon.svelte';
+
+    const PRESET_ICON: Record<string, string> = {
+        art_decor:      'palette',
+        batteries:      'battery-charging',
+        books:          'book-open',
+        clothing:       'shirt',
+        collectibles:   'star',
+        fuel_chemicals: 'flask-conical',
+        home_equipment: 'home',
+        movies:         'film',
+        music:          'music',
+        other:          'grid-2x2',
+        spices:         'shopping-cart',
+        sports:         'activity',
+        tabletop:       'dice-5',
+        tools:          'wrench',
+        vehicles:       'car',
+        games:          'gamepad-2',
+    };
 
     let collections = $state<Collection[]>([]);
     let categories = $state<Category[]>([]);
@@ -89,17 +109,19 @@
 {:else if !chosen}
     <div class="card" style="margin-bottom: 1.5rem">
         <h3 style="margin-top:0">{$_('collections.wizard_heading')}</h3>
-        <p class="muted" style="margin-top:0">
+        <p class="muted" style="margin-top:0; margin-bottom:1rem">
             {$_('collections.wizard_subtitle')}
         </p>
         <div class="presets">
             {#each roots as r (r.id)}
                 <button type="button" class="preset" onclick={() => pickPreset(r)}>
+                    <span class="preset-icon"><Icon name={PRESET_ICON[r.id] ?? 'box'} size={24} /></span>
                     <strong>{r.name}</strong>
                     {#if r.description}<span class="muted">{r.description}</span>{/if}
                 </button>
             {/each}
             <button type="button" class="preset preset-custom" onclick={pickCustom}>
+                <span class="preset-icon"><Icon name="sparkles" size={24} /></span>
                 <strong>{$_('collections.custom_preset_title')}</strong>
                 <span class="muted">{$_('collections.custom_preset_subtitle')}</span>
             </button>
@@ -169,7 +191,7 @@
     }
     .presets {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
         gap: 0.5rem;
     }
     .preset {
@@ -178,12 +200,18 @@
         align-items: flex-start;
         gap: 0.25rem;
         padding: 0.75rem;
+        min-height: 6rem;
         text-align: left;
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 6px;
         cursor: pointer;
         color: inherit;
+    }
+    .preset-icon {
+        color: var(--accent);
+        margin-bottom: 0.25rem;
+        line-height: 1;
     }
     .preset:hover {
         border-color: var(--accent);

@@ -124,8 +124,8 @@
   "collections": {
     "title": "Collections",
     "add_button": "+ New collection",
-    "wizard_heading": "What are you collecting?",
-    "wizard_subtitle": "Pick a starting point — you can rename, mix, and add other categories later.",
+    "wizard_heading": "Start a new collection",
+    "wizard_subtitle": "Pick a starting point — you can customize categories and rename it at any time.",
     "custom_preset_title": "Custom",
     "custom_preset_subtitle": "Name it whatever you want and pick categories per item.",
     "new_form_heading_preset": "New {name} collection",

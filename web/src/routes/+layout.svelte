@@ -1,7 +1,7 @@
 <script lang="ts">
     import '$lib/styles.css';
     import { onMount } from 'svelte';
-    import { goto } from '$app/navigation';
+    import { goto, afterNavigate } from '$app/navigation';
     import { page } from '$app/state';
     import { me, refreshMe, loadPublicConfig, logout, publicConfig } from '$lib/session';
     import { userLabel, api, type Collection } from '$lib/api';
@@ -128,6 +128,8 @@
             }
         }
     });
+
+    afterNavigate(() => { refreshNavCollections(); });
 
     async function doLogout() {
         await logout();
