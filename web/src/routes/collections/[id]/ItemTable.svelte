@@ -10,6 +10,7 @@
         items: Item[];
         canEdit: boolean;
         isFocused: boolean;
+        collectionIsConsumable: boolean;
         selectedItemIds: string[];
         collectionCreatorLabel: string | null;
         showCollectionSubtitle: boolean;
@@ -36,6 +37,7 @@
         items,
         canEdit,
         isFocused,
+        collectionIsConsumable,
         selectedItemIds,
         collectionCreatorLabel,
         showCollectionSubtitle,
@@ -82,12 +84,13 @@
             {/if}
             {#if !isFocused}<th>{$_('collection.col_category')}</th>{/if}
             {#if collectionCreatorLabel}<th>{collectionCreatorLabel}</th>{/if}
+            {#if collectionIsConsumable}<th>{$_('collection.col_brand')}</th>{/if}
             <th>{$_('collection.col_title')}</th>
-            <th>{$_('collection.col_brand')}</th>
+            {#if !collectionIsConsumable}<th>{$_('collection.col_brand')}</th>{/if}
             {#if showCollectionSubtitle}<th>{$_('collection.subtitle_placeholder')}</th>{/if}
             <th>{$_('collection.col_qty')}</th>
-            <th>{$_('collection.col_condition')}</th>
-            <th>{$_('collection.col_value')}</th>
+            {#if !collectionIsConsumable}<th>{$_('collection.col_condition')}</th>{/if}
+            {#if !collectionIsConsumable}<th>{$_('collection.col_value')}</th>{/if}
             {#if canEdit}<th></th>{/if}
         </tr>
     </thead>
@@ -123,6 +126,7 @@
                         {/if}
                     </td>
                 {/if}
+                {#if collectionIsConsumable}<td class="muted">{i.attrs?.brand ? String(i.attrs.brand) : ''}</td>{/if}
                 <td>
                     {i.title}
                     {#if !collectionCreatorLabel && !showCollectionSubtitle}
@@ -149,11 +153,11 @@
                         </div>
                     {/if}
                 </td>
-                <td class="muted">{i.attrs?.brand ? String(i.attrs.brand) : ''}</td>
+                {#if !collectionIsConsumable}<td class="muted">{i.attrs?.brand ? String(i.attrs.brand) : ''}</td>{/if}
                 {#if showCollectionSubtitle}<td class="muted">{i.subtitle ?? ''}</td>{/if}
                 <td>{i.quantity}</td>
-                <td>{i.condition ?? ''}</td>
-                <td class="muted">{formatValue(i)}</td>
+                {#if !collectionIsConsumable}<td>{i.condition ?? ''}</td>{/if}
+                {#if !collectionIsConsumable}<td class="muted">{formatValue(i)}</td>{/if}
                 {#if canEdit}
                     <td class="row-actions">
                         <button class="secondary" onclick={() => onEdit(i)}>{$_('collection.item_edit')}</button>

@@ -93,6 +93,10 @@
         return root === 'spices';
     }
 
+    const collectionIsConsumable = $derived(
+        isConsumable(collection?.default_category_slug ?? null)
+    );
+
     const QUICK_ACTIONS: Record<string, { label: () => string; choreName: (title: string) => string; intervalDays: number }> = {
         'home_equipment.hvac': {
             label: () => $_('collection.quick_action_filter_change'),
@@ -904,6 +908,7 @@
             {items}
             {canEdit}
             {isFocused}
+            {collectionIsConsumable}
             {selectedItemIds}
             {collectionCreatorLabel}
             {showCollectionSubtitle}

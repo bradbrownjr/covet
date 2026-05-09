@@ -27,6 +27,7 @@
     let editTitle = $state('');
     let editCreator = $state('');
     let editSubtitle = $state('');
+    let editBrand = $state('');
     let editCondition = $state('');
     let editQuantity = $state(1);
     let editPurchasedAt = $state('');
@@ -42,6 +43,7 @@
             editTitle = item.title;
             editCreator = String(item.attrs?.creator ?? '');
             editSubtitle = item.subtitle ?? '';
+            editBrand = String(item.attrs?.brand ?? '');
             editCondition = item.condition ?? '';
             editQuantity = item.quantity;
             editPurchasedAt = item.purchased_at ? new Date(item.purchased_at).toISOString().slice(0, 16) : '';
@@ -68,10 +70,11 @@
         saving = true;
         const attrsPayload: Record<string, string> = {};
         if (editCreator.trim()) attrsPayload.creator = editCreator.trim();
+        if (editBrand.trim()) attrsPayload.brand = editBrand.trim();
         const updatePayload: Record<string, unknown> = {
             title: editTitle.trim(),
             subtitle: editSubtitle.trim() || null,
-            condition: editCondition.trim() || null,
+            condition: isConsumable(item.category_slug) ? null : (editCondition.trim() || null),
             quantity: editQuantity,
             attrs: attrsPayload,
         };
@@ -133,6 +136,12 @@
                 </label>
             {/if}
 
+            <label class="field-label">
+                {$_('collection.col_brand')}
+                <input bind:value={editBrand} placeholder={$_('collection.col_brand')} class="edit-input" />
+            </label>
+
+            {#if !isConsumable(item.category_slug)}
             <div class="field-row">
                 <label class="field-label">
                     {$_('collection.col_condition')}
@@ -143,6 +152,12 @@
                     <input type="number" bind:value={editQuantity} min="0" placeholder={$_('collection.col_qty')} class="edit-input" />
                 </label>
             </div>
+            {:else}
+            <label class="field-label field-label--sm">
+                {$_('collection.col_qty')}
+                <input type="number" bind:value={editQuantity} min="0" placeholder={$_('collection.col_qty')} class="edit-input" />
+            </label>
+            {/if}
 
             {#if isConsumable(item.category_slug)}
                 <div class="field-section-label">{$_('collection.consumable_dates_label')}</div>
