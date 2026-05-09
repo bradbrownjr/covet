@@ -7,10 +7,10 @@
      (Named imports keep the build output small vs. `import * as lucide`.) -->
 <script lang="ts">
     import {
-        Activity, ArrowDown, ArrowUp, BatteryCharging, Bell, BookOpen, Box,
+        Activity, ArrowDown, ArrowUp, BatteryCharging, Bell, BookOpen, Box, Building,
         Car, Check, CheckCircle, ChevronDown, ChevronUp, CircleX,
         ChevronLeft, ChevronRight, CircleAlert, Clock, CornerDownRight,
-        DatabaseBackup, Dice5, Download, Eye, EyeOff, File, FileArchive, FileCog, FileSpreadsheet,
+        DatabaseBackup, Dice5, DoorOpen, Download, Eye, EyeOff, File, FileArchive, FileCog, FileSpreadsheet,
         Film, FlaskConical, Folder, Gamepad2, Grid2x2, Home, House, Image, Inbox, Info, Link2Off, List,
         Loader, MapPin, Menu, MoreHorizontal, Music,
         Nut, Package, PackageCheck, PackageX, PartyPopper,
@@ -21,12 +21,12 @@
 
     const ICON_MAP: Record<string, any> = {
         'activity': Activity, 'arrow-down': ArrowDown, 'arrow-up': ArrowUp,
-        'battery-charging': BatteryCharging, 'bell': Bell, 'book-open': BookOpen, 'box': Box,
+        'battery-charging': BatteryCharging, 'bell': Bell, 'book-open': BookOpen, 'box': Box, 'building': Building,
         'car': Car, 'check': Check,
         'check-circle': CheckCircle, 'chevron-down': ChevronDown, 'chevron-up': ChevronUp, 'circle-x': CircleX,
         'chevron-left': ChevronLeft, 'chevron-right': ChevronRight,
         'circle-alert': CircleAlert, 'clock': Clock, 'corner-down-right': CornerDownRight,
-        'database-backup': DatabaseBackup, 'dice-5': Dice5, 'download': Download,
+        'database-backup': DatabaseBackup, 'dice-5': Dice5, 'door-open': DoorOpen, 'download': Download,
         'eye': Eye, 'eye-off': EyeOff,
         'file': File, 'file-archive': FileArchive, 'file-cog': FileCog, 'file-spreadsheet': FileSpreadsheet,
         'film': Film, 'flask-conical': FlaskConical, 'folder': Folder,
