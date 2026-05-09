@@ -157,6 +157,7 @@
     "default_category_note": "Los nuevos artículos son por defecto {slug}.",
     "col_category": "Categoría",
     "col_title": "Título",
+    "col_brand": "Marca",
     "col_qty": "Cant.",
     "col_condition": "Estado",
     "col_value": "Valor",

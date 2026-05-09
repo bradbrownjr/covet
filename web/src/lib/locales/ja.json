@@ -157,6 +157,7 @@
     "default_category_note": "このコレクション内の新しいアイテムはデフォルトで {slug} になります。アイテムごとに異なるカテゴリを選択できます。",
     "col_category": "カテゴリ",
     "col_title": "タイトル",
+    "col_brand": "ブランド",
     "col_qty": "数量",
     "col_condition": "状態",
     "col_value": "値段",

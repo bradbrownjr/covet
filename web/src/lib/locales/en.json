@@ -203,6 +203,7 @@
     "default_category_note": "New items in this collection default to {slug}; you can pick a different category per item.",
     "col_category": "Category",
     "col_title": "Title",
+    "col_brand": "Brand",
     "col_qty": "Qty",
     "col_condition": "Condition",
     "col_value": "Value",

@@ -1,6 +1,5 @@
 <script lang="ts">
     import { onMount, tick, untrack } from 'svelte';
-    import { goto } from '$app/navigation';
     import { page } from '$app/state';
     import { _ } from 'svelte-i18n';
     import { api, type Category, type Collection, type Contact, type Item, type ItemTemplate, type LocationNode, type Tag } from '$lib/api';
@@ -44,7 +43,7 @@
     let editPanelItem = $state<Item | null>(null);
 
     // Item action dialog state
-    let confirmDialog = $state<'delete-item' | 'delete-collection' | 'flag-item' | 'mark-owned' | 'archive-item' | null>(null);
+    let confirmDialog = $state<'delete-item' | 'flag-item' | 'mark-owned' | 'archive-item' | null>(null);
     let pendingDeleteItemId = $state<string | null>(null);
     let pendingDeleteItemTitle = $state('');
     let pendingFlagItemId = $state<string | null>(null);
@@ -328,6 +327,29 @@
             tags = fetchedTags;
             contacts = fetchedContacts;
             locations = fetchedLocations;
+            // If no default_category_slug was set, seed the Add form from the
+            // most-used category among the collection's current items.
+            if (!didSeedDefaults && fetchedItems.length > 0) {
+                const freq: Record<string, number> = {};
+                for (const item of fetchedItems) {
+                    if (item.category_slug) freq[item.category_slug] = (freq[item.category_slug] ?? 0) + 1;
+                }
+                const topEntry = Object.entries(freq).sort((a, b) => b[1] - a[1])[0];
+                const topSlug = topEntry?.[0];
+                if (topSlug) {
+                    const cat = categories.find((c) => c.slug === topSlug);
+                    if (cat) {
+                        if (cat.parent_id === null) {
+                            newRoot = cat.slug;
+                        } else {
+                            const parent = categories.find((c) => c.id === cat.parent_id);
+                            if (parent) newRoot = parent.slug;
+                            newLeaf = cat.slug;
+                        }
+                    }
+                }
+                didSeedDefaults = true;
+            }
             await hydrateRelatedItemTitles(items);
         } catch (e) {
             if (snapGen === loadGen) error = (e as Error).message;
@@ -727,21 +749,6 @@
         }
     }
 
-    function requestDeleteCollection() {
-        confirmDialog = 'delete-collection';
-    }
-
-    async function deleteCollectionConfirmed() {
-        if (!collection) return;
-        try {
-            await api.delete(`/collections/${cid}`);
-            confirmDialog = null;
-            await goto('/');
-        } catch (e) {
-            error = (e as Error).message;
-        }
-    }
-
     onMount(() => {
         viewMode = (localStorage.getItem('tangible:viewMode') ?? 'list') as 'list' | 'grid';
         const onGlobalKeydown = (event: KeyboardEvent) => {
@@ -923,11 +930,7 @@
         />
     {/if}
 
-    {#if collection.my_role === 'owner'}
-        <div class="danger-zone">
-            <Button variant="danger" onclick={requestDeleteCollection}>{$_('collection.delete_collection')}</Button>
-        </div>
-    {/if}
+
 {:else if !loading}
     <p class="error">{$_('collection.not_found')}</p>
 {/if}
@@ -947,16 +950,6 @@
     itemTitle={pendingDeleteItemTitle}
     onconfirm={removeItemConfirmed}
     oncancel={() => { confirmDialog = null; }}
-/>
-
-<ConfirmDialog
-    open={confirmDialog === 'delete-collection'}
-    title={$_('collection.delete_collection_title')}
-    variant="danger"
-    confirmLabel={$_('collection.delete_collection_confirm')}
-    message={$_('collection.delete_collection_text', { values: { name: collection?.name ?? '' } })}
-    onconfirm={deleteCollectionConfirmed}
-    oncancel={() => (confirmDialog = null)}
 />
 
 <FlagItemDialog
@@ -981,10 +974,4 @@
     oncancel={() => { confirmDialog = null; }}
 />
 
-<style>
-    .danger-zone {
-        margin-top: 3rem;
-        padding-top: 1rem;
-        border-top: 1px solid var(--border);
-    }
-</style>
+<style></style>

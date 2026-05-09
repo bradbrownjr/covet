@@ -157,6 +157,7 @@
     "default_category_note": "Neue Artikel in dieser Sammlung sind standardmäßig {slug}.",
     "col_category": "Kategorie",
     "col_title": "Titel",
+    "col_brand": "Marke",
     "col_qty": "Menge",
     "col_condition": "Zustand",
     "col_value": "Wert",

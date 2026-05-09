@@ -157,6 +157,7 @@
     "default_category_note": "此收藏中新物品默认分类为 {slug}。",
     "col_category": "分类",
     "col_title": "标题",
+    "col_brand": "品牌",
     "col_qty": "数量",
     "col_condition": "成色",
     "col_value": "价值",

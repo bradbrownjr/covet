@@ -1,11 +1,13 @@
 <script lang="ts">
     import { page } from '$app/state';
+    import { goto } from '$app/navigation';
     import { setContext } from 'svelte';
     import { api, type Collection } from '$lib/api';
     import { me } from '$lib/session';
     import { _ } from 'svelte-i18n';
     import Icon from '$lib/Icon.svelte';
     import Modal from '$lib/components/Modal.svelte';
+    import { ConfirmDialog } from '$lib/components';
     import TemplatesPage from './templates/+page.svelte';
     import LocationsPage from './locations/+page.svelte';
     import BundlesPage from './bundles/+page.svelte';
@@ -41,6 +43,19 @@
 
     function open(s: Section) { openSection = s; }
     function closePanel() { openSection = null; }
+
+    let confirmDelete = $state(false);
+
+    async function deleteCollectionConfirmed() {
+        if (!collection) return;
+        try {
+            await api.delete(`/collections/${cid}`);
+            confirmDelete = false;
+            await goto('/');
+        } catch (e) {
+            // ignore — collection stays open
+        }
+    }
 
     const SECTIONS: Array<{ id: Section; icon: string; labelKey: string; width: string }> = [
         { id: 'templates', icon: 'file-cog',  labelKey: 'collection.tab_templates', width: '56rem' },
@@ -106,9 +121,32 @@
             <Icon name={s.icon} size={17} />
         </button>
     {/each}
+
+    {#if collection?.my_role === 'owner'}
+        <span class="toolbar-divider" aria-hidden="true"></span>
+        <button
+            type="button"
+            class="toolbar-btn toolbar-btn--danger"
+            title={$_('collection.delete_collection')}
+            aria-label={$_('collection.delete_collection')}
+            onclick={() => { confirmDelete = true; }}
+        >
+            <Icon name="trash-2" size={17} />
+        </button>
+    {/if}
 </div>
 
 {@render children()}
+
+<ConfirmDialog
+    open={confirmDelete}
+    title={$_('collection.delete_collection_title')}
+    variant="danger"
+    confirmLabel={$_('collection.delete_collection_confirm')}
+    message={$_('collection.delete_collection_text', { values: { name: collection?.name ?? '' } })}
+    onconfirm={deleteCollectionConfirmed}
+    oncancel={() => { confirmDelete = false; }}
+/>
 
 <!-- Section modals -->
 {#each SECTIONS as s (s.id)}
@@ -157,6 +195,12 @@
         color: var(--accent);
         border-color: var(--accent);
         background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+    }
+
+    .toolbar-btn--danger:hover {
+        color: var(--danger);
+        border-color: var(--danger);
+        background: color-mix(in srgb, var(--danger) 8%, var(--surface));
     }
 
     .toolbar-btn.active {

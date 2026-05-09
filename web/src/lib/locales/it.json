@@ -157,6 +157,7 @@
     "default_category_note": "I nuovi oggetti in questa collezione sono predefiniti come {slug}.",
     "col_category": "Categoria",
     "col_title": "Titolo",
+    "col_brand": "Marca",
     "col_qty": "Qtà",
     "col_condition": "Condizione",
     "col_value": "Valore",

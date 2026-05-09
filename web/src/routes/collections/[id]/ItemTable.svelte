@@ -83,6 +83,7 @@
             {#if !isFocused}<th>{$_('collection.col_category')}</th>{/if}
             {#if collectionCreatorLabel}<th>{collectionCreatorLabel}</th>{/if}
             <th>{$_('collection.col_title')}</th>
+            <th>{$_('collection.col_brand')}</th>
             {#if showCollectionSubtitle}<th>{$_('collection.subtitle_placeholder')}</th>{/if}
             <th>{$_('collection.col_qty')}</th>
             <th>{$_('collection.col_condition')}</th>
@@ -148,6 +149,7 @@
                         </div>
                     {/if}
                 </td>
+                <td class="muted">{i.attrs?.brand ? String(i.attrs.brand) : ''}</td>
                 {#if showCollectionSubtitle}<td class="muted">{i.subtitle ?? ''}</td>{/if}
                 <td>{i.quantity}</td>
                 <td>{i.condition ?? ''}</td>
