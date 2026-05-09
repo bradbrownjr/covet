@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+import asyncio
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy import distinct, or_, select
 from sqlalchemy.orm import Session as DBSession
@@ -396,3 +398,50 @@ def get_field_suggestions(
         .order_by(col)
     ).all()
     return [str(r) for r in rows if r]
+
+
+@router.get("/{collection_id}/events")
+async def collection_events(
+    collection_id: str,
+    request: Request,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> StreamingResponse:
+    """Server-Sent Events stream for a collection.
+
+    Pushes ``item-added``, ``item-updated``, ``item-deleted``, and
+    ``comment-added`` events as JSON payloads.  The client should reconnect
+    on disconnect; the ``retry`` field in the stream header guides the
+    browser's built-in reconnect timer.
+    """
+    if collection_role(db, auth.user, collection_id) is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    from tangible.events import subscribe, unsubscribe
+
+    queue = subscribe(collection_id)
+
+    async def event_generator():
+        # Announce retry interval (5 s) and a comment to keep proxy connections alive.
+        yield "retry: 5000\n\n"
+        try:
+            while True:
+                if await request.is_disconnected():
+                    break
+                try:
+                    payload = await asyncio.wait_for(queue.get(), timeout=25)
+                    yield f"data: {payload}\n\n"
+                except asyncio.TimeoutError:
+                    # Send a keep-alive comment so proxies don't close the connection.
+                    yield ": keep-alive\n\n"
+        finally:
+            unsubscribe(collection_id, queue)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )

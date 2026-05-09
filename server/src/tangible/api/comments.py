@@ -184,6 +184,8 @@ def create_comment(
     db.add(comment)
     db.commit()
     db.refresh(comment)
+    from tangible.events import publish_event
+    publish_event(item.collection_id, "comment-added", {"item_id": item_id, "comment_id": comment.id})
     return _comment_to_read(comment, db)
 
 

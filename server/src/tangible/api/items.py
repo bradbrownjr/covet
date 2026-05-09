@@ -726,7 +726,10 @@ def create_item(
     )
     db.commit()
     db.refresh(item)
-    return ItemRead.model_validate(item)
+    dto = ItemRead.model_validate(item)
+    from tangible.events import publish_event
+    publish_event(item.collection_id, "item-added", {"id": item.id, "title": item.title})
+    return dto
 
 
 @router.post("/bulk-patch", response_model=list[ItemRead])
@@ -1155,7 +1158,10 @@ def update_item(
     )
     db.commit()
     db.refresh(item)
-    return ItemRead.model_validate(item)
+    dto = ItemRead.model_validate(item)
+    from tangible.events import publish_event
+    publish_event(item.collection_id, "item-updated", {"id": item.id, "title": item.title})
+    return dto
 
 
 @router.post("/{item_id}/flag", response_model=ItemRead)
@@ -1308,8 +1314,13 @@ def delete_item(
         target_id=item.id,
         payload={"title": item.title},
     )
+    collection_id = item.collection_id
+    item_id_val = item.id
+    item_title = item.title
     db.delete(item)
     db.commit()
+    from tangible.events import publish_event
+    publish_event(collection_id, "item-deleted", {"id": item_id_val, "title": item_title})
 
 
 @router.get("/{item_id}/children", response_model=list[ItemRead])

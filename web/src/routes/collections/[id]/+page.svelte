@@ -805,6 +805,36 @@
     $effect(() => {
         localStorage.setItem('tangible:viewMode', viewMode);
     });
+
+    // SSE real-time updates: reconcile item list without a full reload.
+    $effect(() => {
+        if (!cid) return;
+        const evtSource = new EventSource(`/api/collections/${cid}/events`, { withCredentials: true });
+        evtSource.onmessage = (e: MessageEvent) => {
+            try {
+                const evt = JSON.parse(e.data) as { type: string; id?: string; title?: string };
+                if (evt.type === 'item-added') {
+                    // Reload to get the full item with all fields.
+                    void load();
+                } else if (evt.type === 'item-updated' && evt.id) {
+                    // Fetch just the updated item and patch it in-place.
+                    api.get<Item>(`/items/${evt.id}`).then((updated) => {
+                        const idx = items.findIndex((i) => i.id === updated.id);
+                        if (idx !== -1) items[idx] = updated;
+                    }).catch(() => { /* silent */ });
+                } else if (evt.type === 'item-deleted' && evt.id) {
+                    items = items.filter((i) => i.id !== evt.id);
+                }
+                // comment-added: no item-list change needed
+            } catch {
+                // Malformed event — ignore.
+            }
+        };
+        evtSource.onerror = () => {
+            // Browser will auto-reconnect after the retry interval set by server.
+        };
+        return () => evtSource.close();
+    });
 </script>
 
 {#if collection}
