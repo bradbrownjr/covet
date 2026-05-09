@@ -142,6 +142,7 @@ export interface Collection {
     is_public: boolean;
     owner_id: string;
     default_category_slug: string | null;
+    theme: string | null;
     my_role: Role | null;
 }
 

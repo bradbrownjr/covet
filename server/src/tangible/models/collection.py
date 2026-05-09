@@ -30,6 +30,9 @@ class Collection(ULIDPrimaryKey, TimestampMixin, Base):
     # Slug of a category (root or leaf) the create-item form should default
     # to. Purely a UX hint; items can still belong to any category.
     default_category_slug: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Optional visual theme for the collection detail view.
+    # Values: None (default) | 'bookshelf' | 'game_room' | 'movie_room'
+    theme: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
     owner: Mapped[User] = relationship(foreign_keys=[owner_id])
     items: Mapped[list[Item]] = relationship(

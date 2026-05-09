@@ -46,6 +46,43 @@
 
     let confirmDelete = $state(false);
 
+    // Collection settings editing
+    let settingsOpen = $state(false);
+    let editName = $state('');
+    let editDesc = $state('');
+    let editTheme = $state<string>('');
+    let settingsSaving = $state(false);
+    let settingsError = $state('');
+
+    function openSettings() {
+        if (!collection) return;
+        editName = collection.name;
+        editDesc = collection.description ?? '';
+        editTheme = collection.theme ?? '';
+        settingsError = '';
+        settingsOpen = true;
+    }
+
+    async function saveSettings(e: Event) {
+        e.preventDefault();
+        if (!collection) return;
+        settingsSaving = true;
+        settingsError = '';
+        try {
+            const updated = await api.patch<Collection>(`/collections/${cid}`, {
+                name: editName.trim() || collection.name,
+                description: editDesc.trim() || null,
+                theme: editTheme || null,
+            });
+            collection = updated;
+            settingsOpen = false;
+        } catch (err) {
+            settingsError = (err as Error).message;
+        } finally {
+            settingsSaving = false;
+        }
+    }
+
     async function deleteCollectionConfirmed() {
         if (!collection) return;
         try {
@@ -69,6 +106,11 @@
 <svelte:head>
     <title>Tangible · {collection?.name ?? $_('common.loading')}</title>
 </svelte:head>
+
+<div
+    class="collection-view"
+    data-collection-theme={collection?.theme ?? undefined}
+>
 
 {#if collection?.description}<p class="muted">{collection.description}</p>{/if}
 
@@ -126,6 +168,16 @@
         <span class="toolbar-divider" aria-hidden="true"></span>
         <button
             type="button"
+            class="toolbar-btn"
+            class:active={settingsOpen}
+            title={$_('collection.settings')}
+            aria-label={$_('collection.settings')}
+            onclick={openSettings}
+        >
+            <Icon name="pencil" size={17} />
+        </button>
+        <button
+            type="button"
             class="toolbar-btn toolbar-btn--danger"
             title={$_('collection.delete_collection')}
             aria-label={$_('collection.delete_collection')}
@@ -138,6 +190,8 @@
 
 {@render children()}
 
+</div>
+
 <ConfirmDialog
     open={confirmDelete}
     title={$_('collection.delete_collection_title')}
@@ -147,6 +201,44 @@
     onconfirm={deleteCollectionConfirmed}
     oncancel={() => { confirmDelete = false; }}
 />
+
+<!-- Collection settings modal -->
+<Modal
+    open={settingsOpen}
+    title={$_('collection.settings')}
+    width="34rem"
+    onclose={() => { settingsOpen = false; }}
+>
+    {#snippet children()}
+        <form id="collection-settings-form" onsubmit={saveSettings}>
+            <div class="settings-field">
+                <label for="edit-col-name">{$_('collection.settings_name')}</label>
+                <input id="edit-col-name" type="text" bind:value={editName} required maxlength="128" />
+            </div>
+            <div class="settings-field">
+                <label for="edit-col-desc">{$_('collection.settings_description')}</label>
+                <textarea id="edit-col-desc" bind:value={editDesc} rows="3" maxlength="512"></textarea>
+            </div>
+            <div class="settings-field">
+                <label for="edit-col-theme">{$_('collection.settings_theme')}</label>
+                <select id="edit-col-theme" bind:value={editTheme}>
+                    <option value="">{$_('collection.theme_none')}</option>
+                    <option value="bookshelf">{$_('collection.theme_bookshelf')}</option>
+                    <option value="game_room">{$_('collection.theme_game_room')}</option>
+                    <option value="movie_room">{$_('collection.theme_movie_room')}</option>
+                </select>
+                <p class="settings-hint">{$_('collection.theme_hint')}</p>
+            </div>
+            {#if settingsError}<p class="settings-error">{settingsError}</p>{/if}
+        </form>
+    {/snippet}
+    {#snippet footer()}
+        <button type="button" onclick={() => { settingsOpen = false; }}>{$_('common.cancel')}</button>
+        <button type="submit" form="collection-settings-form" disabled={settingsSaving}>
+            {settingsSaving ? $_('common.saving') : $_('common.save')}
+        </button>
+    {/snippet}
+</Modal>
 
 <!-- Section modals -->
 {#each SECTIONS as s (s.id)}
@@ -264,6 +356,94 @@
             width: 2rem;
             height: 2rem;
         }
+    }
+
+    /* ── Collection themes ──────────────────────────────────────────────── */
+    /* Bookshelf: warm walnut tones */
+    .collection-view[data-collection-theme="bookshelf"] {
+        --surface: #f5ede0;
+        --bg: #ede0cc;
+        --border: #c8a97a;
+        --accent: #7c4f1f;
+        --text: #2e1a06;
+        --text-muted: #6b4b2a;
+    }
+    @media (prefers-color-scheme: dark) {
+        .collection-view[data-collection-theme="bookshelf"] {
+            --surface: #2e1a06;
+            --bg: #1e0f00;
+            --border: #6b4b2a;
+            --accent: #e0a86c;
+            --text: #f5ede0;
+            --text-muted: #c8a97a;
+        }
+    }
+
+    /* Game room: dark ambient with neon accents */
+    .collection-view[data-collection-theme="game_room"] {
+        --surface: #1a1a2e;
+        --bg: #0f0f1a;
+        --border: #3a3a5c;
+        --accent: #00d4ff;
+        --text: #e0e0ff;
+        --text-muted: #8080b0;
+    }
+    @media (prefers-color-scheme: dark) {
+        .collection-view[data-collection-theme="game_room"] {
+            --surface: #1a1a2e;
+            --bg: #0f0f1a;
+            --border: #3a3a5c;
+            --accent: #00d4ff;
+            --text: #e0e0ff;
+            --text-muted: #8080b0;
+        }
+    }
+
+    /* Movie room: cinematic deep navy */
+    .collection-view[data-collection-theme="movie_room"] {
+        --surface: #1c1c2e;
+        --bg: #12121e;
+        --border: #3c3c5e;
+        --accent: #f5c518;
+        --text: #f0f0f5;
+        --text-muted: #9090b0;
+    }
+    @media (prefers-color-scheme: dark) {
+        .collection-view[data-collection-theme="movie_room"] {
+            --surface: #1c1c2e;
+            --bg: #12121e;
+            --border: #3c3c5e;
+            --accent: #f5c518;
+            --text: #f0f0f5;
+            --text-muted: #9090b0;
+        }
+    }
+
+    /* ── Settings modal ─────────────────────────────────────────────────── */
+    .settings-field {
+        margin-bottom: 1rem;
+    }
+    .settings-field label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+    }
+    .settings-field input,
+    .settings-field textarea,
+    .settings-field select {
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .settings-hint {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin: 0.3rem 0 0;
+    }
+    .settings-error {
+        color: var(--danger, #c0392b);
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
     }
 </style>
 

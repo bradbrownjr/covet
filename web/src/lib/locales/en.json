@@ -283,7 +283,16 @@
     "bulk_group_location": "Location",
     "bulk_group_lend": "Lend",
     "advanced_filters": "Filters",
-    "edit_panel_title": "Edit item"
+    "edit_panel_title": "Edit item",
+    "settings": "Collection Settings",
+    "settings_name": "Name",
+    "settings_description": "Description",
+    "settings_theme": "Visual Theme",
+    "theme_none": "Default (no theme)",
+    "theme_bookshelf": "Bookshelf — warm walnut",
+    "theme_game_room": "Game Room — dark neon",
+    "theme_movie_room": "Movie Room — cinematic",
+    "theme_hint": "Themes change the color palette for this collection's detail view."
   },
   "members": {
     "add_placeholder": "Username or email",
