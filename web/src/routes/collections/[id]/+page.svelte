@@ -807,9 +807,6 @@
     {#if canEdit}
         <AddItemCard
             bind:this={addCardRef}
-            {isFocused}
-            {roots}
-            {leaves}
             {creatorLabel}
             {subtitleLabel}
             bind:newRoot

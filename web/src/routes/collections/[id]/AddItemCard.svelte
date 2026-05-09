@@ -1,11 +1,7 @@
 <script lang="ts">
     import { _ } from 'svelte-i18n';
-    import type { Category } from '$lib/api';
 
     interface Props {
-        isFocused: boolean;
-        roots: Category[];
-        leaves: Category[];
         creatorLabel: string | null;
         subtitleLabel: string | null;
         newRoot: string;
@@ -22,9 +18,6 @@
     }
 
     let {
-        isFocused,
-        roots,
-        leaves,
         creatorLabel,
         subtitleLabel,
         newRoot = $bindable(),
@@ -64,18 +57,6 @@
         onchange={onBarcodeChange}
     />
     <div class="add-row">
-        {#if !isFocused}
-            <select bind:value={newRoot} title="Category root">
-                {#each roots as r (r.id)}
-                    <option value={r.slug}>{r.name}</option>
-                {/each}
-            </select>
-        {/if}
-        <select bind:value={newLeaf} title="Category">
-            {#each leaves as l (l.id)}
-                <option value={l.slug}>{l.name}</option>
-            {/each}
-        </select>
         <input
             id="addq"
             bind:this={titleInput}
@@ -141,11 +122,6 @@
         gap: 0.5rem;
         align-items: center;
         flex-wrap: wrap;
-    }
-    .add-row select {
-        flex: 0 0 auto;
-        min-width: 130px;
-        max-width: 180px;
     }
     .creator-field {
         flex: 1 1 150px;
