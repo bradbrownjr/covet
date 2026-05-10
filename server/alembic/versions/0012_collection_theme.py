@@ -17,10 +17,14 @@ depends_on = None
 
 
 def upgrade() -> None:
-    with op.batch_alter_table("collections") as batch_op:
-        batch_op.add_column(
-            sa.Column("theme", sa.String(32), nullable=True)
-        )
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    existing_cols = {c["name"] for c in inspector.get_columns("collections")}
+    if "theme" not in existing_cols:
+        with op.batch_alter_table("collections") as batch_op:
+            batch_op.add_column(
+                sa.Column("theme", sa.String(32), nullable=True)
+            )
 
 
 def downgrade() -> None:

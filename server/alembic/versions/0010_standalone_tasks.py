@@ -22,62 +22,71 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.create_table(
-        "standalone_tasks",
-        sa.Column("id", sa.String(26), primary_key=True),
-        sa.Column(
-            "collection_id",
-            sa.String(26),
-            sa.ForeignKey("collections.id", ondelete="CASCADE"),
-            nullable=False,
-            index=True,
-        ),
-        sa.Column(
-            "item_id",
-            sa.String(26),
-            sa.ForeignKey("items.id", ondelete="SET NULL"),
-            nullable=True,
-            index=True,
-        ),
-        sa.Column("title", sa.String(128), nullable=False),
-        sa.Column("notes", sa.Text, nullable=True),
-        sa.Column("due_at", sa.DateTime(timezone=True), nullable=True, index=True),
-        sa.Column("completed_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column(
-            "completed_by_user_id",
-            sa.String(26),
-            sa.ForeignKey("users.id", ondelete="SET NULL"),
-            nullable=True,
-        ),
-        sa.Column(
-            "created_by_user_id",
-            sa.String(26),
-            sa.ForeignKey("users.id", ondelete="SET NULL"),
-            nullable=True,
-        ),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
-    )
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    existing_tables = inspector.get_table_names()
 
-    with op.batch_alter_table("chore_completions") as batch_op:
-        batch_op.add_column(
+    if "standalone_tasks" not in existing_tables:
+        op.create_table(
+            "standalone_tasks",
+            sa.Column("id", sa.String(26), primary_key=True),
+            sa.Column(
+                "collection_id",
+                sa.String(26),
+                sa.ForeignKey("collections.id", ondelete="CASCADE"),
+                nullable=False,
+                index=True,
+            ),
+            sa.Column(
+                "item_id",
+                sa.String(26),
+                sa.ForeignKey("items.id", ondelete="SET NULL"),
+                nullable=True,
+                index=True,
+            ),
+            sa.Column("title", sa.String(128), nullable=False),
+            sa.Column("notes", sa.Text, nullable=True),
+            sa.Column("due_at", sa.DateTime(timezone=True), nullable=True, index=True),
+            sa.Column("completed_at", sa.DateTime(timezone=True), nullable=True),
             sa.Column(
                 "completed_by_user_id",
                 sa.String(26),
                 sa.ForeignKey("users.id", ondelete="SET NULL"),
                 nullable=True,
-            )
-        )
-
-    with op.batch_alter_table("maintenance_completions") as batch_op:
-        batch_op.add_column(
+            ),
             sa.Column(
-                "completed_by_user_id",
+                "created_by_user_id",
                 sa.String(26),
                 sa.ForeignKey("users.id", ondelete="SET NULL"),
                 nullable=True,
-            )
+            ),
+            sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+            sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False),
         )
+
+    existing_cols = {c["name"] for c in inspector.get_columns("chore_completions")}
+    if "completed_by_user_id" not in existing_cols:
+        with op.batch_alter_table("chore_completions") as batch_op:
+            batch_op.add_column(
+                sa.Column(
+                    "completed_by_user_id",
+                    sa.String(26),
+                    sa.ForeignKey("users.id", ondelete="SET NULL"),
+                    nullable=True,
+                )
+            )
+
+    existing_cols = {c["name"] for c in inspector.get_columns("maintenance_completions")}
+    if "completed_by_user_id" not in existing_cols:
+        with op.batch_alter_table("maintenance_completions") as batch_op:
+            batch_op.add_column(
+                sa.Column(
+                    "completed_by_user_id",
+                    sa.String(26),
+                    sa.ForeignKey("users.id", ondelete="SET NULL"),
+                    nullable=True,
+                )
+            )
 
 
 def downgrade() -> None:

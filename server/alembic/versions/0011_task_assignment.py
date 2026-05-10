@@ -17,15 +17,19 @@ depends_on = None
 
 
 def upgrade() -> None:
-    with op.batch_alter_table("standalone_tasks") as batch_op:
-        batch_op.add_column(
-            sa.Column(
-                "assigned_to_user_id",
-                sa.String(26),
-                sa.ForeignKey("users.id", ondelete="SET NULL"),
-                nullable=True,
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    existing_cols = {c["name"] for c in inspector.get_columns("standalone_tasks")}
+    if "assigned_to_user_id" not in existing_cols:
+        with op.batch_alter_table("standalone_tasks") as batch_op:
+            batch_op.add_column(
+                sa.Column(
+                    "assigned_to_user_id",
+                    sa.String(26),
+                    sa.ForeignKey("users.id", ondelete="SET NULL"),
+                    nullable=True,
+                )
             )
-        )
 
 
 def downgrade() -> None:
