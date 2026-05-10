@@ -61,6 +61,20 @@
     }: Props = $props();
 
     let openMenuId = $state<string | null>(null);
+    let menuAnchor = $state<{ top: number; right: number } | null>(null);
+
+    function toggleMenu(e: MouseEvent, id: string) {
+        e.stopPropagation();
+        if (openMenuId === id) {
+            openMenuId = null;
+            menuAnchor = null;
+        } else {
+            const btn = e.currentTarget as HTMLElement;
+            const r = btn.getBoundingClientRect();
+            menuAnchor = { top: r.bottom + 4, right: window.innerWidth - r.right };
+            openMenuId = id;
+        }
+    }
 
     $effect(() => {
         const close = () => { openMenuId = null; };
@@ -168,10 +182,14 @@
                                 name="more-horizontal"
                                 label={$_('collection.more_actions')}
                                 btnSize="sm"
-                                onclick={(e) => { e.stopPropagation(); openMenuId = openMenuId === i.id ? null : i.id; }}
+                                onclick={(e) => toggleMenu(e, i.id)}
                             />
-                            {#if openMenuId === i.id}
-                                <div class="more-dropdown" role="menu">
+                            {#if openMenuId === i.id && menuAnchor}
+                                <div
+                                    class="more-dropdown"
+                                    role="menu"
+                                    style="top:{menuAnchor.top}px;right:{menuAnchor.right}px"
+                                >
                                     {#if quickActionLabel(i.category_slug)}
                                         <button type="button" role="menuitem" onclick={() => { onQuickAction(i); openMenuId = null; }} disabled={i.archived_at != null}>{quickActionLabel(i.category_slug)!()}</button>
                                     {/if}
@@ -224,9 +242,7 @@
         display: inline-flex;
     }
     .more-dropdown {
-        position: absolute;
-        top: calc(100% + 4px);
-        right: 0;
+        position: fixed;
         min-width: 160px;
         background: var(--surface);
         border: 1px solid var(--border);
