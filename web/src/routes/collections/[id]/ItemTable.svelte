@@ -84,9 +84,8 @@
             {/if}
             {#if !isFocused}<th>{$_('collection.col_category')}</th>{/if}
             {#if collectionCreatorLabel}<th>{collectionCreatorLabel}</th>{/if}
-            {#if collectionIsConsumable}<th>{$_('collection.col_brand')}</th>{/if}
+            <th>{$_('collection.col_brand')}</th>
             <th>{$_('collection.col_title')}</th>
-            {#if !collectionIsConsumable}<th>{$_('collection.col_brand')}</th>{/if}
             {#if showCollectionSubtitle}<th>{$_('collection.subtitle_placeholder')}</th>{/if}
             <th>{$_('collection.col_qty')}</th>
             {#if !collectionIsConsumable}<th>{$_('collection.col_condition')}</th>{/if}
@@ -126,7 +125,7 @@
                         {/if}
                     </td>
                 {/if}
-                {#if collectionIsConsumable}<td class="muted">{i.attrs?.brand ? String(i.attrs.brand) : ''}</td>{/if}
+                <td class="muted">{i.attrs?.brand ? String(i.attrs.brand) : ''}</td>
                 <td>
                     {i.title}
                     {#if !collectionCreatorLabel && !showCollectionSubtitle}
@@ -153,7 +152,6 @@
                         </div>
                     {/if}
                 </td>
-                {#if !collectionIsConsumable}<td class="muted">{i.attrs?.brand ? String(i.attrs.brand) : ''}</td>{/if}
                 {#if showCollectionSubtitle}<td class="muted">{i.subtitle ?? ''}</td>{/if}
                 <td>{i.quantity}</td>
                 {#if !collectionIsConsumable}<td>{i.condition ?? ''}</td>{/if}

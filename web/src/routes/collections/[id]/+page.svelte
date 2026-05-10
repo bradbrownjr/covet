@@ -90,7 +90,7 @@
     function isConsumable(slug: string | null): boolean {
         if (!slug) return false;
         const root = slug.split('.')[0];
-        return root === 'spices';
+        return ['spices', 'fuel_chemicals', 'batteries'].includes(root);
     }
 
     const collectionIsConsumable = $derived(
@@ -973,6 +973,7 @@
     {collectionCreatorLabel}
     {showCollectionSubtitle}
     {isConsumable}
+    {categories}
     onSave={saveEditFromPanel}
     onClose={() => { editPanelItem = null; }}
 />

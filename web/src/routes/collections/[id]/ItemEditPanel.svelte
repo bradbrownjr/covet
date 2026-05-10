@@ -1,7 +1,7 @@
 <script lang="ts">
     import { _ } from 'svelte-i18n';
     import { api } from '$lib/api';
-    import type { Item } from '$lib/api';
+    import type { Category, Item } from '$lib/api';
     import Icon from '$lib/Icon.svelte';
 
     interface Props {
@@ -10,6 +10,7 @@
         collectionCreatorLabel: string | null;
         showCollectionSubtitle: boolean;
         isConsumable: (slug: string | null) => boolean;
+        categories: Category[];
         onSave: (id: string, payload: Record<string, unknown>) => Promise<void>;
         onClose: () => void;
     }
@@ -20,6 +21,7 @@
         collectionCreatorLabel,
         showCollectionSubtitle,
         isConsumable,
+        categories,
         onSave,
         onClose,
     }: Props = $props();
@@ -28,6 +30,7 @@
     let editCreator = $state('');
     let editSubtitle = $state('');
     let editBrand = $state('');
+    let editCategorySlug = $state<string | null>(null);
     let editCondition = $state('');
     let editQuantity = $state(1);
     let editPurchasedAt = $state('');
@@ -44,6 +47,7 @@
             editCreator = String(item.attrs?.creator ?? '');
             editSubtitle = item.subtitle ?? '';
             editBrand = String(item.attrs?.brand ?? '');
+            editCategorySlug = item.category_slug ?? null;
             editCondition = item.condition ?? '';
             editQuantity = item.quantity;
             editPurchasedAt = item.purchased_at ? new Date(item.purchased_at).toISOString().slice(0, 16) : '';
@@ -74,6 +78,7 @@
         const updatePayload: Record<string, unknown> = {
             title: editTitle.trim(),
             subtitle: editSubtitle.trim() || null,
+            category_slug: editCategorySlug || null,
             condition: isConsumable(item.category_slug) ? null : (editCondition.trim() || null),
             quantity: editQuantity,
             attrs: attrsPayload,
@@ -140,6 +145,27 @@
                 {$_('collection.col_brand')}
                 <input bind:value={editBrand} placeholder={$_('collection.col_brand')} class="edit-input" />
             </label>
+
+            {#if categories.length > 0}
+            <label class="field-label">
+                {$_('collection.col_category')}
+                <select bind:value={editCategorySlug} class="edit-input">
+                    <option value={null}>—</option>
+                    {#each categories.filter(c => c.parent_id === null) as root (root.id)}
+                        {@const children = categories.filter(c => c.parent_id === root.id)}
+                        {#if children.length > 0}
+                            <optgroup label={root.name}>
+                                {#each children as child (child.id)}
+                                    <option value={child.slug}>{child.name}</option>
+                                {/each}
+                            </optgroup>
+                        {:else}
+                            <option value={root.slug}>{root.name}</option>
+                        {/if}
+                    {/each}
+                </select>
+            </label>
+            {/if}
 
             {#if !isConsumable(item.category_slug)}
             <div class="field-row">

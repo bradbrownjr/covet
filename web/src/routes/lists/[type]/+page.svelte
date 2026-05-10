@@ -690,13 +690,12 @@
 
 <style>
     /* --- column sizing and truncation for the DataTable --- */
-    /* table-layout: fixed honors width caps; without it, td max-width is ignored. */
-    :global(.lists-table .dt-table) { table-layout: fixed; }
-    :global(.col-brand) { width: 9ch; }
-    :global(.col-name)  { width: auto; min-width: 0; }
-    :global(.col-cat)   { width: 10ch; }
-    :global(.col-qty)   { width: 5ch; }
-    :global(.col-notes) { width: 18ch; }
+    :global(.lists-table .dt-table) { table-layout: auto; }
+    :global(.col-brand) { white-space: nowrap; max-width: 14ch; overflow: hidden; text-overflow: ellipsis; }
+    :global(.col-name)  { min-width: 8rem; }
+    :global(.col-cat)   { white-space: nowrap; }
+    :global(.col-qty)   { white-space: nowrap; width: 5ch; }
+    :global(.col-notes) { min-width: 8rem; }
     /* actions column width: enough for two icon-buttons + gap */
     :global(.lists-table .dt-th--actions),
     :global(.lists-table .dt-td--actions) { width: 6rem; }
