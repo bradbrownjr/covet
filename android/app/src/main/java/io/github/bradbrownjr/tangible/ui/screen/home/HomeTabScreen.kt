@@ -187,7 +187,7 @@ class HomeTabViewModel @Inject constructor(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTabScreen(
-    onOpenItem: (String) -> Unit,
+    onItemEdit: (String) -> Unit,
     onJumpTo: (Int) -> Unit = {},
     vm: HomeTabViewModel = hiltViewModel(),
 ) {
@@ -316,7 +316,7 @@ fun HomeTabScreen(
                                 collections = s.collections,
                                 onClick = {
                                     if (item.list_type != null) onJumpTo(2)
-                                    else onOpenItem(item.id)
+                                    else onItemEdit(item.id)
                                 },
                             )
                         }
@@ -375,7 +375,7 @@ fun HomeTabScreen(
                         scope.launch {
                             val created = vm.quickAdd(addCollectionId, addAsWishlist)
                             addOpen = false
-                            if (created != null) onOpenItem(created.id)
+                            if (created != null) onItemEdit(created.id)
                         }
                     },
                     enabled = addCollectionId.isNotBlank(),

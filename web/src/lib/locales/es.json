@@ -739,6 +739,7 @@
     "cat_hg_storage": "Almacenamiento"
   },
   "lists": {
+    "tab_all": "Todos",
     "type": {
       "groceries": "Comestibles",
       "hardware": "Ferretera",

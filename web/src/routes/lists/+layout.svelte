@@ -8,6 +8,7 @@
     let { children }: Props = $props();
 
     const TABS = [
+        { id: 'all',        labelKey: 'lists.tab_all' },
         { id: 'groceries',  labelKey: 'lists.type.groceries' },
         { id: 'hardware',   labelKey: 'lists.type.hardware' },
         { id: 'home_goods', labelKey: 'lists.type.home_goods' },
@@ -18,7 +19,7 @@
 
     const activeType = $derived.by(() => {
         const m = page.url.pathname.match(/^\/lists\/([^/]+)/);
-        return m ? m[1] : null;
+        return m ? m[1] : 'all';
     });
 
     // Scroll active tab into view
@@ -42,7 +43,6 @@
     function onPointerUp(e: PointerEvent) {
         if (!swiping) return;
         swiping = false;
-        if (!activeType) return;
         const dx = e.clientX - swipeStartX;
         const dy = e.clientY - swipeStartY;
         if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx) * 0.7) return;
@@ -52,25 +52,27 @@
         if (idx === -1) return;
 
         if (dx < 0 && idx < allIds.length - 1) {
-            goto(`/lists/${allIds[idx + 1]}`);
+            const next = allIds[idx + 1];
+            goto(next === 'all' ? '/lists' : `/lists/${next}`);
         } else if (dx > 0 && idx > 0) {
-            goto(`/lists/${allIds[idx - 1]}`);
+            const prev = allIds[idx - 1];
+            goto(prev === 'all' ? '/lists' : `/lists/${prev}`);
         }
     }
 
-    // Arrow key navigation
     function onKeydown(e: KeyboardEvent) {
         if (!tabsEl?.contains(e.target as Node)) return;
-        if (!activeType) return;
         const allIds = TABS.map((t) => t.id);
         const idx = allIds.indexOf(activeType as typeof allIds[number]);
         if (idx === -1) return;
         if (e.key === 'ArrowRight' && idx < allIds.length - 1) {
             e.preventDefault();
-            goto(`/lists/${allIds[idx + 1]}`);
+            const next = allIds[idx + 1];
+            goto(next === 'all' ? '/lists' : `/lists/${next}`);
         } else if (e.key === 'ArrowLeft' && idx > 0) {
             e.preventDefault();
-            goto(`/lists/${allIds[idx - 1]}`);
+            const prev = allIds[idx - 1];
+            goto(prev === 'all' ? '/lists' : `/lists/${prev}`);
         }
     }
 
@@ -83,50 +85,37 @@
 
     onMount(() => {
         window.addEventListener('keydown', onKeydown);
-
-        // On hydrate: if on /lists (no type), redirect to last-viewed type
-        if (!activeType) {
-            const last = localStorage.getItem(LS_KEY);
-            const valid = TABS.map((t) => t.id) as string[];
-            const target = last && valid.includes(last) ? last : 'groceries';
-            goto(`/lists/${target}`, { replaceState: true });
-        }
-
         return () => window.removeEventListener('keydown', onKeydown);
     });
 </script>
 
 <div class="lists-tabs-layout">
-    {#if activeType}
-        <div class="tab-strip-wrap" bind:this={tabsEl} role="tablist" aria-label={$_('nav.lists')}>
-            {#each TABS as t (t.id)}
-                <button
-                    type="button"
-                    role="tab"
-                    class="tab"
-                    class:tab--active={activeType === t.id}
-                    aria-selected={activeType === t.id}
-                    data-id={t.id}
-                    onclick={() => goto(`/lists/${t.id}`)}
-                >
-                    {$_(t.labelKey)}
-                </button>
-            {/each}
-        </div>
+    <div class="tab-strip-wrap" bind:this={tabsEl} role="tablist" aria-label={$_('nav.lists')}>
+        {#each TABS as t (t.id)}
+            <button
+                type="button"
+                role="tab"
+                class="tab"
+                class:tab--active={activeType === t.id}
+                aria-selected={activeType === t.id}
+                data-id={t.id}
+                onclick={() => goto(t.id === 'all' ? '/lists' : `/lists/${t.id}`)}
+            >
+                {$_(t.labelKey)}
+            </button>
+        {/each}
+    </div>
 
-        <div
-            class="tab-content"
-            onpointerdown={onPointerDown}
-            onpointerup={onPointerUp}
-            role="tabpanel"
-            tabindex="0"
-            aria-label={$_(TABS.find((t) => t.id === activeType)?.labelKey ?? 'nav.lists')}
-        >
-            {@render children()}
-        </div>
-    {:else}
+    <div
+        class="tab-content"
+        onpointerdown={onPointerDown}
+        onpointerup={onPointerUp}
+        role="tabpanel"
+        tabindex="0"
+        aria-label={$_(TABS.find((t) => t.id === activeType)?.labelKey ?? 'lists.tab_all')}
+    >
         {@render children()}
-    {/if}
+    </div>
 </div>
 
 <style>

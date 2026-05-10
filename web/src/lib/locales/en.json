@@ -793,6 +793,7 @@
     "sort_category": "Category"
   },
   "lists": {
+    "tab_all": "All",
     "type": {
       "groceries": "Groceries",
       "hardware": "Hardware",

@@ -164,6 +164,7 @@
     <div class="grid">
         {#each collections as c (c.id)}
             <a href={`/collections/${c.id}`} class="card collection">
+                <Icon name={PRESET_ICON[c.default_category_slug ?? ''] ?? 'grid-2x2'} size={24} class="collection-icon" />
                 <h3>{c.name}</h3>
                 {#if c.description}<p class="muted">{c.description}</p>{/if}
                 {#if c.default_category_slug}
@@ -176,8 +177,13 @@
 
 <style>
     .collection {
-        display: block;
+        display: flex;
+        flex-direction: column;
         color: inherit;
+    }
+    :global(.collection-icon) {
+        color: var(--accent);
+        margin-bottom: 0.25rem;
     }
     .collection:hover {
         border-color: var(--accent);

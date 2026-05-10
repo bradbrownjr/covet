@@ -534,6 +534,7 @@
     {#snippet nameCell(entry: FeedEntry)}
         <strong class="cell-name">{entry.name}</strong>
         {#if entry.subtitle}<span class="muted"> · {entry.subtitle}</span>{/if}
+        {#if entry.notes}<span class="cell-notes">{entry.notes}</span>{/if}
         {#if entry.source.kind === 'depleted_item'}
             <span class="badge-depleted">{$_('grocery.source_depleted')}</span>
         {/if}
@@ -601,7 +602,6 @@
                 { key: 'name',          label: $_('grocery.col_item'),        cell: nameCell,     tdClass: 'col-name' },
                 { key: 'category_slug', label: $_('grocery.col_category'),    cell: categoryCell, tdClass: 'col-cat' },
                 { key: 'quantity',      label: $_('grocery.col_qty'),         cell: qtyCell,      tdClass: 'col-qty', align: 'right' },
-                { key: 'notes',         label: $_('grocery.col_notes'),       cell: notesCell,    tdClass: 'col-notes' },
               ] satisfies Column<FeedEntry>[])
             : ([
                 { key: 'name',          label: $_('grocery.col_item'),        cell: nameCell,     tdClass: 'col-name' },
@@ -691,14 +691,10 @@
 <style>
     /* --- column sizing and truncation for the DataTable --- */
     :global(.lists-table .dt-table) { table-layout: auto; }
-    :global(.col-brand) { white-space: nowrap; max-width: 14ch; overflow: hidden; text-overflow: ellipsis; }
+    :global(.col-brand) { white-space: nowrap; max-width: 10ch; overflow: hidden; text-overflow: ellipsis; }
     :global(.col-name)  { min-width: 8rem; }
     :global(.col-cat)   { white-space: nowrap; }
     :global(.col-qty)   { white-space: nowrap; width: 5ch; }
-    :global(.col-notes) { min-width: 8rem; }
-    /* actions column width: enough for two icon-buttons + gap */
-    :global(.lists-table .dt-th--actions),
-    :global(.lists-table .dt-td--actions) { width: 6rem; }
 
     /* --- filter controls inside FiltersPanel --- */
     .list-search-input {

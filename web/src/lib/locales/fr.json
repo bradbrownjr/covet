@@ -739,6 +739,7 @@
     "cat_hg_storage": "Rangement"
   },
   "lists": {
+    "tab_all": "Tous",
     "type": {
       "groceries": "Courses",
       "hardware": "Quincaillerie",

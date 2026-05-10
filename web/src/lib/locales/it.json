@@ -739,6 +739,7 @@
     "cat_hg_storage": "Contenitori"
   },
   "lists": {
+    "tab_all": "Tutti",
     "type": {
       "groceries": "Spesa",
       "hardware": "Ferramenta",

@@ -2,7 +2,6 @@ package io.github.bradbrownjr.tangible.ui.screen.collections
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
@@ -53,7 +52,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -376,10 +374,9 @@ class CollectionsTabsViewModel @Inject constructor(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CollectionsTabsScreen(
-    onOpenItem: (String) -> Unit = {},
     onItemEdit: (String) -> Unit = {},
     onNavigateToScanner: () -> Unit = {},
     onNavigateToChores: (collectionId: String, collectionName: String) -> Unit = { _, _ -> },
@@ -649,7 +646,6 @@ fun CollectionsTabsScreen(
                                             ItemRow(
                                                 item = item,
                                                 onClick = { onItemEdit(item.id) },
-                                                onLongClick = { onOpenItem(item.id) },
                                                 onEdit = { onItemEdit(item.id) },
                                                 onAddToList = { vm.confirmAddToList(item) },
                                                 onDelete = { vm.confirmDelete(item) },
@@ -728,12 +724,11 @@ private fun NoSearchResults() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ItemRow(
     item: ItemDto,
     onClick: () -> Unit,
-    onLongClick: () -> Unit = {},
     onEdit: () -> Unit = {},
     onAddToList: () -> Unit = {},
     onDelete: () -> Unit = {},
@@ -758,6 +753,13 @@ private fun ItemRow(
                     Text("\u00D7${item.quantity}", style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.width(4.dp))
                 }
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.cd_delete),
+                        tint = MaterialTheme.colorScheme.error,
+                    )
+                }
                 IconButton(onClick = onEdit) {
                     Icon(
                         Icons.Default.Edit,
@@ -772,19 +774,9 @@ private fun ItemRow(
                         tint = MaterialTheme.colorScheme.secondary,
                     )
                 }
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = stringResource(R.string.cd_delete),
-                        tint = MaterialTheme.colorScheme.error,
-                    )
-                }
             }
         },
-        modifier = Modifier.combinedClickable(
-            onClick = onClick,
-            onLongClick = onLongClick,
-        ),
+        modifier = Modifier.clickable(onClick = onClick),
     )
 }
 

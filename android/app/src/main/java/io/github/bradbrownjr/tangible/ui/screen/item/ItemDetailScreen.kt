@@ -19,7 +19,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -91,7 +90,6 @@ class ItemDetailViewModel @Inject constructor(
     savedState: SavedStateHandle,
 ) : ViewModel() {
     private val itemId: String = savedState.get<String>("itemId").orEmpty()
-    private val startInEdit: Boolean = savedState.get<Boolean>("edit") ?: false
     private val _state = MutableStateFlow(ItemDetailUi())
     val state: StateFlow<ItemDetailUi> = _state.asStateFlow()
 
@@ -103,7 +101,7 @@ class ItemDetailViewModel @Inject constructor(
             try {
                 val item = items.get(itemId)
                 _state.value = _state.value.copy(item = item, loading = false)
-                if (startInEdit) startEditing()
+                startEditing()
                 loadPhotos()
                 loadBundles()
             } catch (t: Throwable) {
@@ -254,13 +252,6 @@ fun ItemDetailScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                     }
                 },
-                actions = {
-                    if (!s.loading && s.item != null && !s.editing) {
-                        IconButton(onClick = vm::startEditing) {
-                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit))
-                        }
-                    }
-                },
             )
         },
     ) { padding ->
@@ -307,11 +298,11 @@ fun ItemDetailScreen(
         }
     }
 
-    // Edit bottom sheet — shown as a slideout over the detail view
+    // Edit bottom sheet — always shown once item is loaded
     if (s.editing) {
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         val scope = rememberCoroutineScope()
-        EditItemSheet(s, vm, sheetState, scope)
+        EditItemSheet(s, vm, sheetState, scope, onBack)
     }
 }
 
@@ -545,6 +536,7 @@ private fun EditItemSheet(
     vm: ItemDetailViewModel,
     sheetState: SheetState,
     scope: CoroutineScope,
+    onBack: () -> Unit,
 ) {
     var locationMenuOpen by remember { mutableStateOf(false) }
     val flat = remember(s.locations) {
@@ -560,7 +552,7 @@ private fun EditItemSheet(
     val selectedName = flat.firstOrNull { it.second.id == s.locationId }?.second?.name ?: noLocation
 
     ModalBottomSheet(
-        onDismissRequest = vm::cancelEditing,
+        onDismissRequest = onBack,
         sheetState = sheetState,
     ) {
         Column(
@@ -690,9 +682,7 @@ private fun EditItemSheet(
                     }
                 }
                 OutlinedButton(
-                    onClick = {
-                        scope.launch { sheetState.hide() }.invokeOnCompletion { vm.cancelEditing() }
-                    },
+                    onClick = onBack,
                     modifier = Modifier.weight(1f),
                 ) {
                     Text(stringResource(R.string.cancel))

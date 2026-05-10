@@ -739,6 +739,7 @@
     "cat_hg_storage": "收納"
   },
   "lists": {
+    "tab_all": "すべて",
     "type": {
       "groceries": "食料品",
       "hardware": "ホームセンター",

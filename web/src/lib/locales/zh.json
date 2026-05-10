@@ -739,6 +739,7 @@
     "cat_hg_storage": "收纳"
   },
   "lists": {
+    "tab_all": "全部",
     "type": {
       "groceries": "食材",
       "hardware": "五金建材",

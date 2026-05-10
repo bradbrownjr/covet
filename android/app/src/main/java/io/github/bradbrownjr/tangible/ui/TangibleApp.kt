@@ -29,9 +29,8 @@ object Routes {
     const val GROCERY_STORES = "grocery-stores"
     const val GROCERY_STORE_AISLES = "grocery-stores/{storeId}"
     fun groceryStoreAisles(storeId: String) = "grocery-stores/$storeId"
-    const val ITEM_DETAIL = "item/{itemId}?edit={edit}"
-    fun itemDetail(id: String) = "item/$id"
-    fun itemDetailEdit(id: String) = "item/$id?edit=true"
+    const val ITEM_DETAIL = "item/{itemId}"
+    fun itemDetailEdit(id: String) = "item/$id"
     const val SCANNER = "scanner"
     const val COLLECTION_CHORES = "collections/{collectionId}/chores?name={collectionName}"
     fun collectionChores(collectionId: String, collectionName: String = "") =
@@ -49,7 +48,7 @@ fun TangibleApp() {
     LaunchedEffect(nfcItemId) {
         val id = nfcItemId ?: return@LaunchedEffect
         NfcManager.pendingNavigationItemId.value = null
-        nav.navigate(Routes.itemDetail(id))
+        nav.navigate(Routes.itemDetailEdit(id))
     }
 
     Scaffold { padding ->
@@ -75,7 +74,6 @@ fun TangibleApp() {
                     .getStateFlow<String?>("barcode", null)
                     .collectAsState()
                 HomeScreen(
-                    onOpenItem = { nav.navigate(Routes.itemDetail(it)) },
                     onItemEdit = { nav.navigate(Routes.itemDetailEdit(it)) },
                     onManageStores = { nav.navigate(Routes.GROCERY_STORES) },
                     onNavigateToScanner = { nav.navigate(Routes.SCANNER) },
@@ -103,7 +101,6 @@ fun TangibleApp() {
                 Routes.ITEM_DETAIL,
                 arguments = listOf(
                     navArgument("itemId") { type = NavType.StringType },
-                    navArgument("edit") { type = NavType.BoolType; defaultValue = false },
                 ),
             ) {
                 ItemDetailScreen(onBack = { nav.popBackStack() })
@@ -114,7 +111,7 @@ fun TangibleApp() {
                     if (code.startsWith("tangible://item/")) {
                         val itemId = code.removePrefix("tangible://item/").trim('/')
                         if (itemId.isNotBlank()) {
-                            nav.navigate(Routes.itemDetail(itemId)) {
+                            nav.navigate(Routes.itemDetailEdit(itemId)) {
                                 popUpTo(Routes.SCANNER) { inclusive = true }
                             }
                             return@ScannerScreen

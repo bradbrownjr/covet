@@ -739,6 +739,7 @@
     "cat_hg_storage": "Aufbewahrung"
   },
   "lists": {
+    "tab_all": "Alle",
     "type": {
       "groceries": "Lebensmittel",
       "hardware": "Baumarkt",
