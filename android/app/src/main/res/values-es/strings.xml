@@ -53,6 +53,9 @@
     <string name="new_pair_title">Nueva lista</string>
     <string name="new_pair_subtitle">Elige una categoría para crear una lista de compras y colección vinculadas.</string>
     <string name="pair_created_success">Lista y colección creadas.</string>
+    <string name="tab_all">Todo</string>
+    <string name="create_list_type_title">Nuevo tipo de lista</string>
+    <string name="create_list_type_hint">Nombre (p. ej. Repuestos)</string>
     <string name="collection_name">Nombre</string>
     <string name="collection_description_optional">Descripción (opcional)</string>
 

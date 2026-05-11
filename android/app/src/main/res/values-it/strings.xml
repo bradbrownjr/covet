@@ -53,6 +53,9 @@
     <string name="new_pair_title">Nuova lista</string>
     <string name="new_pair_subtitle">Scegli una categoria per creare una lista della spesa e una collezione collegate.</string>
     <string name="pair_created_success">Lista e collezione create.</string>
+    <string name="tab_all">Tutto</string>
+    <string name="create_list_type_title">Nuovo tipo di lista</string>
+    <string name="create_list_type_hint">Nome (es. Ricambi auto)</string>
     <string name="collection_name">Nome</string>
     <string name="collection_description_optional">Descrizione (opzionale)</string>
 

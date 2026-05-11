@@ -53,6 +53,9 @@
     <string name="new_pair_title">Nouvelle liste</string>
     <string name="new_pair_subtitle">Choisissez une catégorie pour créer une liste de courses et une collection associées.</string>
     <string name="pair_created_success">Liste et collection créées.</string>
+    <string name="tab_all">Tout</string>
+    <string name="create_list_type_title">Nouveau type de liste</string>
+    <string name="create_list_type_hint">Nom (ex. : Pièces auto)</string>
     <string name="collection_name">Nom</string>
     <string name="collection_description_optional">Description (facultatif)</string>
 

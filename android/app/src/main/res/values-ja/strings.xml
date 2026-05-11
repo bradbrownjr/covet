@@ -53,6 +53,9 @@
     <string name="new_pair_title">新しいリスト</string>
     <string name="new_pair_subtitle">カテゴリを選択して、ショッピングリストとコレクションをペアで作成します。</string>
     <string name="pair_created_success">リストとコレクションを作成しました。</string>
+    <string name="tab_all">すべて</string>
+    <string name="create_list_type_title">新しいリストの種類</string>
+    <string name="create_list_type_hint">名前（例：自動車部品）</string>
     <string name="collection_name">名前</string>
     <string name="collection_description_optional">説明（任意）</string>
 

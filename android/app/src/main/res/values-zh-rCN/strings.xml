@@ -53,6 +53,9 @@
     <string name="new_pair_title">新建清单</string>
     <string name="new_pair_subtitle">选择一个类别，同时创建购物清单和藏品集。</string>
     <string name="pair_created_success">清单和藏品集已创建。</string>
+    <string name="tab_all">全部</string>
+    <string name="create_list_type_title">新建清单类型</string>
+    <string name="create_list_type_hint">名称（例：车配件）</string>
     <string name="collection_name">名称</string>
     <string name="collection_description_optional">描述（可选）</string>
 

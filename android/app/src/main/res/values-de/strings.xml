@@ -53,6 +53,9 @@
     <string name="new_pair_title">Neue Liste</string>
     <string name="new_pair_subtitle">Wähle eine Kategorie, um eine verknüpfte Einkaufsliste und Sammlung zu erstellen.</string>
     <string name="pair_created_success">Liste und Sammlung erstellt.</string>
+    <string name="tab_all">Alle</string>
+    <string name="create_list_type_title">Neuer Listentyp</string>
+    <string name="create_list_type_hint">Name (z. B. Autoteile)</string>
     <string name="collection_name">Name</string>
     <string name="collection_description_optional">Beschreibung (optional)</string>
 
