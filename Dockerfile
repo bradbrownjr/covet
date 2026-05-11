@@ -97,7 +97,7 @@ VOLUME ["/data", "/config"]
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD curl -fsS http://127.0.0.1:${TANGIBLE_PORT}/healthz || exit 1
+    CMD curl -fsS http://127.0.0.1:${TANGIBLE_PORT}/api/healthz || exit 1
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/tangible-entrypoint"]
 CMD ["serve"]
