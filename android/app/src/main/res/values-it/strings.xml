@@ -49,6 +49,10 @@
     <string name="no_collections">Nessuna collezione. Premi + per crearne una.</string>
     <string name="what_are_you_collecting">Cosa stai collezionando?</string>
     <string name="new_collection">Nuova collezione</string>
+    <string name="new_list">Nuova lista</string>
+    <string name="new_pair_title">Nuova lista</string>
+    <string name="new_pair_subtitle">Scegli una categoria per creare una lista della spesa e una collezione collegate.</string>
+    <string name="pair_created_success">Lista e collezione create.</string>
     <string name="collection_name">Nome</string>
     <string name="collection_description_optional">Descrizione (opzionale)</string>
 

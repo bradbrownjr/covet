@@ -49,6 +49,10 @@
     <string name="no_collections">暂无藏品，点击 + 创建一个。</string>
     <string name="what_are_you_collecting">你在收藏什么？</string>
     <string name="new_collection">新建藏品</string>
+    <string name="new_list">新建清单</string>
+    <string name="new_pair_title">新建清单</string>
+    <string name="new_pair_subtitle">选择一个类别，同时创建购物清单和藏品集。</string>
+    <string name="pair_created_success">清单和藏品集已创建。</string>
     <string name="collection_name">名称</string>
     <string name="collection_description_optional">描述（可选）</string>
 

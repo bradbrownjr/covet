@@ -49,6 +49,10 @@
     <string name="no_collections">コレクションがありません。+をタップして作成してください。</string>
     <string name="what_are_you_collecting">何を集めていますか？</string>
     <string name="new_collection">新しいコレクション</string>
+    <string name="new_list">新しいリスト</string>
+    <string name="new_pair_title">新しいリスト</string>
+    <string name="new_pair_subtitle">カテゴリを選択して、ショッピングリストとコレクションをペアで作成します。</string>
+    <string name="pair_created_success">リストとコレクションを作成しました。</string>
     <string name="collection_name">名前</string>
     <string name="collection_description_optional">説明（任意）</string>
 

@@ -49,6 +49,10 @@
     <string name="no_collections">Noch keine Sammlungen. Tippen Sie auf +, um eine zu erstellen.</string>
     <string name="what_are_you_collecting">Was sammeln Sie?</string>
     <string name="new_collection">Neue Sammlung</string>
+    <string name="new_list">Neue Liste</string>
+    <string name="new_pair_title">Neue Liste</string>
+    <string name="new_pair_subtitle">Wähle eine Kategorie, um eine verknüpfte Einkaufsliste und Sammlung zu erstellen.</string>
+    <string name="pair_created_success">Liste und Sammlung erstellt.</string>
     <string name="collection_name">Name</string>
     <string name="collection_description_optional">Beschreibung (optional)</string>
 
