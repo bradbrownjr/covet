@@ -552,6 +552,25 @@ Update this table whenever a new feature lands or an existing feature moves.
 Tracked ideas and planned features that are **not yet built**. Update when
 work begins or the idea is abandoned.
 
+### Android parity screens (Bundles, Locations, Members, Templates, Tasks)
+
+Five web routes have no Android screen equivalent yet. Each is marked
+`(TODO: roadmap)` in the `docs/DESIGN.md` parity table.
+
+- `collections/[id]/bundles` → Android `BundlesScreen.kt` pending
+- `collections/[id]/locations` → Android `LocationsScreen.kt` pending
+- `collections/[id]/members` → Android `MembersScreen.kt` pending
+- `collections/[id]/templates` → Android `TemplatesScreen.kt` pending
+- `tasks` → Android `TasksScreen.kt` pending
+
+Implementation order: Members first (most user-visible on shared
+collections), then Templates (enables richer item metadata), then
+Locations, Bundles, Tasks.
+
+When implementing any of these: create the screen file, add a
+`NavDestination`, wire it into the navigation graph, add string resources,
+and update the parity table row in `docs/DESIGN.md`.
+
 ### Template editing & cloning
 - Server has `ItemTemplate` model + CRUD API (`api/item_templates.py`); items
   have an optional `template_id` foreign key.

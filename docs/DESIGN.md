@@ -173,14 +173,14 @@ tracked TODO with the file path).
 | Scanner | (none — Android only) | `screen/scan/ScannerScreen.kt` | Android-only |
 | Settings | `/settings` | `screen/settings/SettingsScreen.kt` | |
 | About | (in `/settings`) | `screen/about/AboutScreen.kt` | |
-| Bundles | `/collections/[id]/bundles` | (TODO) | Web-first; Android pending |
-| Locations | `/collections/[id]/locations` | (TODO) | Web-first; Android pending |
-| Members | `/collections/[id]/members` | (TODO) | Web-first; Android pending |
-| Templates | `/collections/[id]/templates` | (TODO) | Web-first; Android pending |
+| Bundles | `/collections/[id]/bundles` | (TODO: roadmap) | Bundles are a power-user feature; Android screen pending. Web is the primary surface. |
+| Locations | `/collections/[id]/locations` | (TODO: roadmap) | Hierarchical location tree; Android screen pending. |
+| Members | `/collections/[id]/members` | (TODO: roadmap) | Member management; Android screen pending. Invite flow uses deep link to login. |
+| Templates | `/collections/[id]/templates` | (TODO: roadmap) | Custom field templates; Android screen pending. |
 | Import | `/import` | (web-only) | Operator/admin tool |
 | Profile | `/profile` | (in Settings) | |
 | Invite accept | `/invite/[token]` | (deep link to login) | |
-| Tasks | `/tasks` | (TODO) | Web-first; Android pending |
+| Tasks | `/tasks` | (TODO: roadmap) | Web-first; Android screen pending. |
 | Share view | `/share/[slug]` | (web-only) | Public read-only link |
 
 Update this table whenever a route or screen is added, removed, or moved.
