@@ -44,6 +44,31 @@ large refactors don't silently regress them.
 - Match the patterns already established in the codebase.
 - Progressive cleanup — remove dead imports / commented blocks as you go.
 
+## UI/UX Standards
+
+The full design contract lives in `docs/DESIGN.md`. Read it before any UI
+work. The rules below are the enforcement layer; the doc is the spec.
+
+- **ALWAYS** read `docs/DESIGN.md` before adding or restructuring any
+  page, component, or screen (web or Android).
+- **ALWAYS** pair web UI changes with the equivalent Android change per
+  the parity table in `docs/DESIGN.md`. If the Android change is out of
+  scope for the current PR, open a TODO in `docs/DESIGN.md` (parity
+  table row) with the file path that needs follow-up.
+- **NEVER** introduce a visual pattern, component variant, or affordance
+  that is not documented in `docs/DESIGN.md`. Extend the doc in the same
+  PR — if it's not in the spec, it's not in the product.
+- **NEVER** hardcode colors, spacing, radii, font sizes, or icon glyphs.
+  Use the design tokens (`web/src/lib/styles.css`,
+  `MaterialTheme.colorScheme.*`).
+- **NEVER** mix design languages. Tangible is Material 3 only — no
+  Bootstrap classes, no iOS HIG patterns, no inline ad-hoc styles
+  pretending to be a component.
+- **AFTER** any UI change, compare visually against the canonical
+  reference for that page type (Collections home for index pages,
+  Collection detail for detail pages). If they no longer look like
+  siblings, fix it before committing.
+
 ## Implementation Discipline
 
 - Only make changes that are directly requested or clearly necessary.
