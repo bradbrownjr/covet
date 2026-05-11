@@ -48,6 +48,8 @@ import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -103,6 +105,8 @@ data class ShoppingListUi(
     val editingEntry: ShoppingFeedEntryDto? = null,
     val isOnline: Boolean = true,
     val viewMode: ShoppingViewMode = ShoppingViewMode.LIST,
+    val allItems: List<ShoppingFeedEntryDto> = emptyList(),
+    val allItemsLoading: Boolean = false,
 )
 
 enum class ShoppingViewMode { LIST, GRID }
@@ -193,6 +197,21 @@ class ShoppingListViewModel @Inject constructor(
         if (_state.value.listType == type) return
         _state.value = _state.value.copy(listType = type, items = emptyList())
         load(isRefresh = false)
+    }
+
+    fun loadAllItems() {
+        if (_state.value.allItemsLoading) return
+        _state.value = _state.value.copy(allItemsLoading = true)
+        viewModelScope.launch {
+            try {
+                val results = LIST_TYPES.map { type ->
+                    async { shoppingRepo.feed(type) }
+                }.awaitAll().flatten()
+                _state.value = _state.value.copy(allItems = results, allItemsLoading = false)
+            } catch (_: Throwable) {
+                _state.value = _state.value.copy(allItemsLoading = false)
+            }
+        }
     }
 
     /** Returns the ID of the implied collection for [listType], creating it if needed. */
@@ -554,17 +573,21 @@ fun ShoppingListScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
-        val pagerState = rememberPagerState(pageCount = { LIST_TYPES.size })
-        // Sync pager → ViewModel when user swipes
+        val pagerState = rememberPagerState(pageCount = { LIST_TYPES.size + 1 })
+        // Sync pager → ViewModel when user swipes (skip page 0 which is "All")
         LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) {
             if (!pagerState.isScrollInProgress) {
-                viewModel.setListType(LIST_TYPES[pagerState.currentPage])
+                if (pagerState.currentPage == 0) {
+                    viewModel.loadAllItems()
+                } else {
+                    viewModel.setListType(LIST_TYPES[pagerState.currentPage - 1])
+                }
             }
         }
-        // Sync ViewModel → pager when tab is tapped
+        // Sync ViewModel → pager when tab is tapped (type tabs are offset by 1)
         LaunchedEffect(ui.listType) {
-            val targetPage = LIST_TYPES.indexOf(ui.listType).coerceAtLeast(0)
-            if (pagerState.currentPage != targetPage) {
+            val targetPage = LIST_TYPES.indexOf(ui.listType).coerceAtLeast(0) + 1
+            if (pagerState.currentPage != 0 && pagerState.currentPage != targetPage) {
                 pagerState.animateScrollToPage(targetPage)
             }
         }
@@ -593,10 +616,21 @@ fun ShoppingListScreen(
                 "home_goods" to stringResource(R.string.list_type_home_goods),
                 "wish_list"  to stringResource(R.string.list_type_wish_list),
             )
+            Tab(
+                selected = pagerState.currentPage == 0,
+                onClick = {
+                    viewModel.loadAllItems()
+                    coroutineScope.launch { pagerState.animateScrollToPage(0) }
+                },
+                text = { Text(stringResource(R.string.tab_all)) },
+            )
             LIST_TYPES.forEachIndexed { index, type ->
                 Tab(
-                    selected = pagerState.currentPage == index,
-                    onClick = { viewModel.setListType(type) },
+                    selected = pagerState.currentPage == index + 1,
+                    onClick = {
+                        viewModel.setListType(type)
+                        coroutineScope.launch { pagerState.animateScrollToPage(index + 1) }
+                    },
                     text = { Text(tabLabels[type] ?: type) },
                 )
             }
@@ -605,12 +639,76 @@ fun ShoppingListScreen(
             state = pagerState,
             modifier = Modifier.weight(1f),
             beyondViewportPageCount = 0,
-        ) {
+        ) { page ->
         PullToRefreshBox(
-                isRefreshing = ui.refreshing,
-                onRefresh = { viewModel.pullRefresh() },
+                isRefreshing = if (page == 0) ui.allItemsLoading else ui.refreshing,
+                onRefresh = { if (page == 0) viewModel.loadAllItems() else viewModel.pullRefresh() },
                 modifier = Modifier.fillMaxSize(),
             ) {
+                if (page == 0) {
+                    // All lists combined, grouped by list type label.
+                    val tabLabels2 = mapOf(
+                        "groceries"  to stringResource(R.string.list_type_groceries),
+                        "hardware"   to stringResource(R.string.list_type_hardware),
+                        "home_goods" to stringResource(R.string.list_type_home_goods),
+                        "wish_list"  to stringResource(R.string.list_type_wish_list),
+                    )
+                    when {
+                        ui.allItemsLoading && ui.allItems.isEmpty() ->
+                            LazyColumn(Modifier.fillMaxSize()) {
+                                item {
+                                    Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                                        CircularProgressIndicator()
+                                    }
+                                }
+                            }
+                        ui.allItems.isEmpty() -> LazyColumn(Modifier.fillMaxSize()) {
+                            item {
+                                Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text(stringResource(R.string.all_stocked), style = MaterialTheme.typography.headlineSmall)
+                                }
+                            }
+                        }
+                        else -> {
+                            val grouped = remember(ui.allItems) {
+                                LIST_TYPES.mapNotNull { type ->
+                                    val typeItems = ui.allItems.filter { it.list_type == type }
+                                    if (typeItems.isEmpty()) null else type to typeItems
+                                }
+                            }
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(vertical = 8.dp),
+                            ) {
+                                grouped.forEach { (type, typeItems) ->
+                                    stickyHeader(key = "hdr_$type") {
+                                        Surface(
+                                            color = MaterialTheme.colorScheme.surfaceVariant,
+                                            modifier = Modifier.fillMaxWidth(),
+                                        ) {
+                                            Text(
+                                                text = tabLabels2[type] ?: type,
+                                                style = MaterialTheme.typography.labelLarge,
+                                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                                            )
+                                        }
+                                    }
+                                    items(typeItems, key = { "all_${it.id}" }) { entry ->
+                                        ShoppingEntryRow(
+                                            entry = entry,
+                                            collectionName = ui.collections[entry.collection_id]?.name ?: entry.collection_id,
+                                            isUpdating = entry.id in ui.updating,
+                                            onCheck = { viewModel.checkItem(entry.id) },
+                                            onDelete = { viewModel.deleteItem(entry.id) },
+                                            onEdit = { viewModel.startEdit(entry) },
+                                        )
+                                        HorizontalDivider()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
                 // Empty/loading branches must be inside a LazyColumn so PullToRefreshBox
                 // can receive the nested-scroll pull gesture (a plain Box does not dispatch it).
                 when {
@@ -714,6 +812,7 @@ fun ShoppingListScreen(
                         }
                     }
                 }
+                } // end else (non-All pages)
             } // end PullToRefreshBox
 
             if (ui.showStoreSelector) {

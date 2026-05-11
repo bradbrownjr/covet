@@ -48,6 +48,8 @@ import io.github.bradbrownjr.tangible.data.repo.CategoryRepository
 import io.github.bradbrownjr.tangible.data.repo.CollectionRepository
 import io.github.bradbrownjr.tangible.data.repo.ItemRepository
 import javax.inject.Inject
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -93,6 +95,7 @@ data class CollectionsTabsUi(
     val createItemForCollection: CollectionDto? = null,
     val newItemTitle: String = "",
     val viewMode: ViewMode = ViewMode.LIST,
+    val allItemsLoading: Boolean = false,
 )
 
 @HiltViewModel
@@ -156,6 +159,26 @@ class CollectionsTabsViewModel @Inject constructor(
                     loadingByCollection = s.loadingByCollection - collectionId,
                     error = t.message,
                 )
+            }
+        }
+    }
+
+    fun loadAllItems() {
+        if (_state.value.allItemsLoading) return
+        _state.value = _state.value.copy(allItemsLoading = true)
+        viewModelScope.launch {
+            try {
+                val collections = _state.value.collections
+                val results = collections.map { coll ->
+                    async { coll.id to itemsRepo.list(collectionId = coll.id) }
+                }.awaitAll().toMap()
+                val s = _state.value
+                _state.value = s.copy(
+                    itemsByCollection = s.itemsByCollection + results,
+                    allItemsLoading = false,
+                )
+            } catch (_: Throwable) {
+                _state.value = _state.value.copy(allItemsLoading = false)
             }
         }
     }
@@ -444,9 +467,11 @@ fun CollectionsTabsScreen(
         return
     }
 
-    val pagerState = rememberPagerState(pageCount = { s.collections.size })
-    val currentColl = s.collections.getOrNull(pagerState.currentPage)
-    val currentPageLoading = currentColl?.let { s.loadingByCollection[it.id] == true } ?: false
+    // Page 0 = "All", pages 1..N = individual collections.
+    val pagerState = rememberPagerState(pageCount = { s.collections.size + 1 })
+    val isAllPage = pagerState.currentPage == 0
+    val currentColl = if (isAllPage) null else s.collections.getOrNull(pagerState.currentPage - 1)
+    val currentPageLoading = currentColl?.let { s.loadingByCollection[it.id] == true } ?: s.allItemsLoading
 
     // ML Kit barcode decoder for the photo-as-barcode picker. Closed in onDispose.
     val context = LocalContext.current
@@ -484,7 +509,11 @@ fun CollectionsTabsScreen(
 
     // Lazily load items for the current tab.
     LaunchedEffect(pagerState.currentPage, s.collections) {
-        s.collections.getOrNull(pagerState.currentPage)?.let { vm.loadItems(it.id) }
+        if (pagerState.currentPage == 0) {
+            vm.loadAllItems()
+        } else {
+            s.collections.getOrNull(pagerState.currentPage - 1)?.let { vm.loadItems(it.id) }
+        }
     }
 
     Scaffold(
@@ -504,7 +533,10 @@ fun CollectionsTabsScreen(
                 }
             ) {
                 TopAppBar(
-                    title = { Text(currentColl?.name ?: stringResource(R.string.collections)) },
+                    title = {
+                        Text(if (isAllPage) stringResource(R.string.tab_all)
+                             else currentColl?.name ?: stringResource(R.string.collections))
+                    },
                     actions = {
                         currentColl?.let { coll ->
                             if (coll.my_role == "owner" || coll.my_role == "editor") {
@@ -573,13 +605,18 @@ fun CollectionsTabsScreen(
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             ScrollableTabRow(
-                selectedTabIndex = pagerState.currentPage.coerceAtMost(s.collections.size - 1),
+                selectedTabIndex = pagerState.currentPage.coerceAtMost(s.collections.size),
                 edgePadding = 0.dp,
             ) {
+                Tab(
+                    selected = pagerState.currentPage == 0,
+                    onClick = { scope.launch { pagerState.animateScrollToPage(0) } },
+                    text = { Text(stringResource(R.string.tab_all)) },
+                )
                 s.collections.forEachIndexed { index, c ->
                     Tab(
-                        selected = pagerState.currentPage == index,
-                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
+                        selected = pagerState.currentPage == index + 1,
+                        onClick = { scope.launch { pagerState.animateScrollToPage(index + 1) } },
                         text = { Text(c.name) },
                     )
                 }
@@ -589,8 +626,13 @@ fun CollectionsTabsScreen(
             PullToRefreshBox(
                 isRefreshing = s.refreshing || currentPageLoading,
                 onRefresh = {
-                    vm.pullRefresh()
-                    currentColl?.let { vm.loadItems(it.id, force = true) }
+                    if (isAllPage) {
+                        vm.pullRefresh()
+                        vm.loadAllItems()
+                    } else {
+                        vm.pullRefresh()
+                        currentColl?.let { vm.loadItems(it.id, force = true) }
+                    }
                 },
                 modifier = Modifier.weight(1f),
             ) {
@@ -599,50 +641,49 @@ fun CollectionsTabsScreen(
                     modifier = Modifier.fillMaxSize(),
                     beyondViewportPageCount = 0,
                 ) { page ->
-                    val coll = s.collections[page]
-                    val items = s.itemsByCollection[coll.id] ?: emptyList()
-                    val pageLoading = s.loadingByCollection[coll.id] == true
-                    // Always use a LazyColumn (even for empty/loading) so the outer
-                    // PullToRefreshBox receives the nested-scroll pull gesture.
-                    when {
-                        pageLoading && items.isEmpty() ->
-                            LazyColumn(Modifier.fillMaxSize()) {
-                                item {
-                                    Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                                        CircularProgressIndicator()
-                                    }
-                                }
-                            }
-                        items.isEmpty() -> LazyColumn(Modifier.fillMaxSize()) {
-                            item {
-                                Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                                    ) {
-                                        Text(stringResource(R.string.no_items))
-                                        OutlinedButton(onClick = { vm.showCreateItem(coll) }) {
-                                            Text(stringResource(R.string.add_item))
+                    if (page == 0) {
+                        // All items across all collections, grouped by collection name.
+                        val allItems = remember(s.collections, s.itemsByCollection) {
+                            s.collections.flatMap { coll ->
+                                (s.itemsByCollection[coll.id] ?: emptyList()).map { coll to it }
+                            }.sortedWith(compareBy({ it.first.name }, { it.second.title }))
+                        }
+                        when {
+                            s.allItemsLoading && allItems.isEmpty() ->
+                                LazyColumn(Modifier.fillMaxSize()) {
+                                    item {
+                                        Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                                            CircularProgressIndicator()
                                         }
                                     }
                                 }
-                            }
-                        }
-                        else -> {
-                            val searchQuery = s.searchByCollection[coll.id].orEmpty()
-                            val displayItems = remember(items, searchQuery) {
-                                if (searchQuery.isBlank()) items
-                                else items.filter { it.title.contains(searchQuery, ignoreCase = true) }
-                            }
-                            if (s.viewMode == ViewMode.LIST) {
-                                LazyColumn(Modifier.fillMaxSize()) {
-                                    item(key = "search") {
-                                        SearchBar(searchQuery) { vm.setSearch(coll.id, it) }
+                            allItems.isEmpty() -> LazyColumn(Modifier.fillMaxSize()) {
+                                item {
+                                    Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                                        Text(stringResource(R.string.no_items))
                                     }
-                                    if (displayItems.isEmpty()) {
-                                        item(key = "no_results") { NoSearchResults() }
-                                    } else {
-                                        items(displayItems, key = { it.id }) { item ->
+                                }
+                            }
+                            else -> {
+                                LazyColumn(Modifier.fillMaxSize()) {
+                                    var renderedCollId: String? = null
+                                    allItems.forEach { (coll, item) ->
+                                        if (coll.id != renderedCollId) {
+                                            renderedCollId = coll.id
+                                            stickyHeader(key = "header_${coll.id}") {
+                                                Surface(
+                                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                ) {
+                                                    Text(
+                                                        text = coll.name,
+                                                        style = MaterialTheme.typography.labelLarge,
+                                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                                                    )
+                                                }
+                                            }
+                                        }
+                                        item(key = "all_${item.id}") {
                                             ItemRow(
                                                 item = item,
                                                 onClick = { onItemEdit(item.id) },
@@ -654,28 +695,87 @@ fun CollectionsTabsScreen(
                                         }
                                     }
                                 }
-                            } else {
-                                LazyVerticalGrid(
-                                    columns = GridCells.Fixed(2),
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentPadding = PaddingValues(8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                ) {
-                                    item(span = { GridItemSpan(maxLineSpan) }) {
-                                        SearchBar(searchQuery) { vm.setSearch(coll.id, it) }
+                            }
+                        }
+                    } else {
+                        val coll = s.collections[page - 1]
+                        val items = s.itemsByCollection[coll.id] ?: emptyList()
+                        val pageLoading = s.loadingByCollection[coll.id] == true
+                        // Always use a LazyColumn (even for empty/loading) so the outer
+                        // PullToRefreshBox receives the nested-scroll pull gesture.
+                        when {
+                            pageLoading && items.isEmpty() ->
+                                LazyColumn(Modifier.fillMaxSize()) {
+                                    item {
+                                        Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                                            CircularProgressIndicator()
+                                        }
                                     }
-                                    if (displayItems.isEmpty()) {
-                                        item(span = { GridItemSpan(maxLineSpan) }) { NoSearchResults() }
-                                    } else {
-                                        gridItems(displayItems, key = { it.id }) { item ->
-                                            ItemCard(
-                                                item = item,
-                                                onClick = { onItemEdit(item.id) },
-                                                onEdit = { onItemEdit(item.id) },
-                                                onAddToList = { vm.confirmAddToList(item) },
-                                                onDelete = { vm.confirmDelete(item) },
-                                            )
+                                }
+                            items.isEmpty() -> LazyColumn(Modifier.fillMaxSize()) {
+                                item {
+                                    Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                                        ) {
+                                            Text(stringResource(R.string.no_items))
+                                            OutlinedButton(onClick = { vm.showCreateItem(coll) }) {
+                                                Text(stringResource(R.string.add_item))
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            else -> {
+                                val searchQuery = s.searchByCollection[coll.id].orEmpty()
+                                val displayItems = remember(items, searchQuery) {
+                                    if (searchQuery.isBlank()) items
+                                    else items.filter { it.title.contains(searchQuery, ignoreCase = true) }
+                                }
+                                if (s.viewMode == ViewMode.LIST) {
+                                    LazyColumn(Modifier.fillMaxSize()) {
+                                        item(key = "search") {
+                                            SearchBar(searchQuery) { vm.setSearch(coll.id, it) }
+                                        }
+                                        if (displayItems.isEmpty()) {
+                                            item(key = "no_results") { NoSearchResults() }
+                                        } else {
+                                            items(displayItems, key = { it.id }) { item ->
+                                                ItemRow(
+                                                    item = item,
+                                                    onClick = { onItemEdit(item.id) },
+                                                    onEdit = { onItemEdit(item.id) },
+                                                    onAddToList = { vm.confirmAddToList(item) },
+                                                    onDelete = { vm.confirmDelete(item) },
+                                                )
+                                                HorizontalDivider()
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    LazyVerticalGrid(
+                                        columns = GridCells.Fixed(2),
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentPadding = PaddingValues(8.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    ) {
+                                        item(span = { GridItemSpan(maxLineSpan) }) {
+                                            SearchBar(searchQuery) { vm.setSearch(coll.id, it) }
+                                        }
+                                        if (displayItems.isEmpty()) {
+                                            item(span = { GridItemSpan(maxLineSpan) }) { NoSearchResults() }
+                                        } else {
+                                            gridItems(displayItems, key = { it.id }) { item ->
+                                                ItemCard(
+                                                    item = item,
+                                                    onClick = { onItemEdit(item.id) },
+                                                    onEdit = { onItemEdit(item.id) },
+                                                    onAddToList = { vm.confirmAddToList(item) },
+                                                    onDelete = { vm.confirmDelete(item) },
+                                                )
+                                            }
                                         }
                                     }
                                 }

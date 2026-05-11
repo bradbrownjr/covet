@@ -330,6 +330,7 @@
     <string name="cat_hg_rugs_mats">Rugs &amp; Mats</string>
     <string name="cat_hg_small_appliances">Small Appliances</string>
     <string name="cat_hg_storage">Storage</string>
+    <string name="tab_all">All</string>
     <!-- List types -->
     <string name="list_type_groceries">Groceries</string>
     <string name="list_type_hardware">Hardware</string>
