@@ -764,7 +764,13 @@
     "col_url": "Lien",
     "col_priority": "Priorité",
     "view_link": "Voir",
-    "empty": "Rien sur la liste — tout est bon !"
+    "empty": "Rien sur la liste — tout est bon !",
+    "add_type_btn": "Nouveau type de liste",
+    "add_type_title": "Créer un type de liste",
+    "add_type_label_placeholder": "Nom (ex. Pièces auto)",
+    "add_type_label_label": "Nom",
+    "add_type_confirm": "Créer",
+    "add_type_delete_confirm": "Supprimer ce type de liste ? Les éléments existants conservent leur type."
   },
   "tasks": {
     "title": "Tasks & Alerts",

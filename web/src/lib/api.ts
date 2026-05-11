@@ -491,3 +491,13 @@ export interface ItemComment {
     author: CommentAuthor;
     reply_count: number;
 }
+
+export interface UserListType {
+    id: string;
+    user_id: string;
+    slug: string;
+    label: string;
+    icon: string | null;
+    sort_order: number;
+    created_at: string;
+}

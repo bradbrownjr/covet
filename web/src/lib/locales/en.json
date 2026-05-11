@@ -818,7 +818,13 @@
     "col_url": "Link",
     "col_priority": "Priority",
     "view_link": "View",
-    "empty": "Nothing on the list — all clear!"
+    "empty": "Nothing on the list — all clear!",
+    "add_type_btn": "New list type",
+    "add_type_title": "Create list type",
+    "add_type_label_placeholder": "Name (e.g. Car Parts)",
+    "add_type_label_label": "Name",
+    "add_type_confirm": "Create",
+    "add_type_delete_confirm": "Remove this list type? Existing items keep their type."
   },
   "tasks": {
     "title": "Tasks & Alerts",

@@ -14,6 +14,7 @@ so the shopping feed can be sorted aisle-by-aisle on the client.
 
 from __future__ import annotations
 
+import re
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -30,6 +31,7 @@ from tangible.models import (
     ShoppingItem,
     ShoppingStore,
     ShoppingStoreAisle,
+    UserListType,
 )
 from tangible.models.user import CollectionMembership
 from tangible.schemas import (
@@ -46,6 +48,9 @@ from tangible.schemas import (
     ShoppingStoreCreate,
     ShoppingStoreRead,
     ShoppingStoreUpdate,
+    UserListTypeCreate,
+    UserListTypeRead,
+    UserListTypeUpdate,
 )
 from tangible.services import audit
 from tangible.services.categories import resolve_slug
@@ -217,6 +222,115 @@ def shopping_count(
     if depleted:
         by_type["groceries"] = by_type.get("groceries", 0) + depleted
     return ShoppingCount(total=ad_hoc + depleted, ad_hoc=ad_hoc, depleted_items=depleted, by_type=by_type)
+
+
+# ---------------------------------------------------------------------------
+# Custom user-defined list types
+# ---------------------------------------------------------------------------
+
+_BUILT_IN_SLUGS = {"groceries", "hardware", "home_goods", "wish_list"}
+
+
+def _slugify(label: str) -> str:
+    """Convert a human label to a safe slug (lowercase, underscores)."""
+    s = label.lower().strip()
+    s = re.sub(r"[^a-z0-9]+", "_", s)
+    s = s.strip("_")
+    return s[:64] or "list"
+
+
+@router.get("/types", response_model=list[UserListTypeRead])
+def list_user_list_types(
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> list[UserListTypeRead]:
+    """Return all custom list types owned by the current user."""
+    rows = db.scalars(
+        select(UserListType)
+        .where(UserListType.user_id == auth.user.id)
+        .order_by(UserListType.sort_order, UserListType.created_at)
+    ).all()
+    return list(rows)
+
+
+@router.post("/types", response_model=UserListTypeRead, status_code=status.HTTP_201_CREATED)
+def create_user_list_type(
+    payload: UserListTypeCreate,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> UserListTypeRead:
+    """Create a new custom list type for the current user."""
+    slug = _slugify(payload.label)
+    if slug in _BUILT_IN_SLUGS:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A built-in list type with this name already exists.",
+        )
+    existing = db.scalar(
+        select(UserListType).where(
+            UserListType.user_id == auth.user.id,
+            UserListType.slug == slug,
+        )
+    )
+    if existing is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="You already have a list type with this name.",
+        )
+    lt = UserListType(
+        user_id=auth.user.id,
+        slug=slug,
+        label=payload.label.strip(),
+        icon=payload.icon,
+    )
+    db.add(lt)
+    db.commit()
+    db.refresh(lt)
+    return lt
+
+
+@router.patch("/types/{type_id}", response_model=UserListTypeRead)
+def update_user_list_type(
+    type_id: str,
+    payload: UserListTypeUpdate,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> UserListTypeRead:
+    lt = db.scalar(
+        select(UserListType).where(
+            UserListType.id == type_id,
+            UserListType.user_id == auth.user.id,
+        )
+    )
+    if lt is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    if payload.label is not None:
+        lt.label = payload.label.strip()
+    if payload.icon is not None:
+        lt.icon = payload.icon
+    if payload.sort_order is not None:
+        lt.sort_order = payload.sort_order
+    db.commit()
+    db.refresh(lt)
+    return lt
+
+
+@router.delete("/types/{type_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user_list_type(
+    type_id: str,
+    db: DBSession = Depends(get_session),
+    auth: AuthContext = Depends(require_user),
+) -> None:
+    lt = db.scalar(
+        select(UserListType).where(
+            UserListType.id == type_id,
+            UserListType.user_id == auth.user.id,
+        )
+    )
+    if lt is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    db.delete(lt)
+    db.commit()
 
 
 @router.post("", response_model=ShoppingItemRead, status_code=status.HTTP_201_CREATED)

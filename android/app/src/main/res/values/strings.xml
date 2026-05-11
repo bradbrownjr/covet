@@ -336,6 +336,9 @@
     <string name="list_type_hardware">Hardware</string>
     <string name="list_type_home_goods">Home Goods</string>
     <string name="list_type_wish_list">Wish List</string>
+    <!-- Custom list type creation -->
+    <string name="create_list_type_title">New list type</string>
+    <string name="create_list_type_hint">Name (e.g. Car Parts)</string>
     <string name="mark_received">Mark as received</string>
     <string name="wish_url_hint">Link (optional)</string>
     <string name="wish_priority_hint">Priority</string>

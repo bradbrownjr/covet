@@ -37,6 +37,7 @@ from tangible.models.shopping import (
     ShoppingItem,
     ShoppingStore,
     ShoppingStoreAisle,
+    UserListType,
 )
 from tangible.models.sync_doc import AutomergeChange, AutomergeDoc
 from tangible.models.tag import ItemTag, Tag
@@ -89,6 +90,7 @@ __all__ = [
     "ShoppingItem",
     "ShoppingStore",
     "ShoppingStoreAisle",
+    "UserListType",
     "Tag",
     "TimestampMixin",
     "ULIDPrimaryKey",

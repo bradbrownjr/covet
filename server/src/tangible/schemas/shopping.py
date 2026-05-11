@@ -154,3 +154,28 @@ class ShoppingCount(BaseModel):
     ad_hoc: int
     depleted_items: int
     by_type: dict[str, int] = Field(default_factory=dict)
+
+
+class UserListTypeRead(BaseModel):
+    """A user-defined custom list type."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    user_id: str
+    slug: str
+    label: str
+    icon: str | None = None
+    sort_order: int = 0
+    created_at: datetime
+
+
+class UserListTypeCreate(BaseModel):
+    label: str = Field(min_length=1, max_length=120)
+    icon: str | None = Field(default=None, max_length=64)
+
+
+class UserListTypeUpdate(BaseModel):
+    label: str | None = Field(default=None, min_length=1, max_length=120)
+    icon: str | None = Field(default=None, max_length=64)
+    sort_order: int | None = None

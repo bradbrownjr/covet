@@ -64,6 +64,8 @@ import io.github.bradbrownjr.tangible.data.remote.ShoppingFeedEntryDto
 import io.github.bradbrownjr.tangible.data.remote.ShoppingItemPatchRequest
 import io.github.bradbrownjr.tangible.data.remote.ShoppingStoreDto
 import io.github.bradbrownjr.tangible.data.remote.TangibleApi
+import io.github.bradbrownjr.tangible.data.remote.UserListTypeCreateRequest
+import io.github.bradbrownjr.tangible.data.remote.UserListTypeDto
 import io.github.bradbrownjr.tangible.data.repo.CollectionRepository
 import io.github.bradbrownjr.tangible.data.repo.ItemRepository
 import io.github.bradbrownjr.tangible.data.repo.ShoppingRepository
@@ -107,6 +109,8 @@ data class ShoppingListUi(
     val viewMode: ShoppingViewMode = ShoppingViewMode.LIST,
     val allItems: List<ShoppingFeedEntryDto> = emptyList(),
     val allItemsLoading: Boolean = false,
+    val customListTypes: List<UserListTypeDto> = emptyList(),
+    val showCreateTypeDialog: Boolean = false,
 )
 
 enum class ShoppingViewMode { LIST, GRID }
@@ -124,10 +128,20 @@ class ShoppingListViewModel @Inject constructor(
 
     init {
         refresh()
+        loadCustomTypes()
         viewModelScope.launch {
             networkMonitor.isOnline.collect { online ->
                 _state.value = _state.value.copy(isOnline = online)
             }
+        }
+    }
+
+    fun loadCustomTypes() {
+        viewModelScope.launch {
+            try {
+                val types = api.listUserListTypes()
+                _state.value = _state.value.copy(customListTypes = types)
+            } catch (_: Throwable) { /* built-in tabs still work */ }
         }
     }
 
@@ -202,14 +216,55 @@ class ShoppingListViewModel @Inject constructor(
     fun loadAllItems() {
         if (_state.value.allItemsLoading) return
         _state.value = _state.value.copy(allItemsLoading = true)
+        val allTypes = LIST_TYPES + _state.value.customListTypes.map { it.slug }
         viewModelScope.launch {
             try {
-                val results = LIST_TYPES.map { type ->
+                val results = allTypes.map { type ->
                     async { shoppingRepo.feed(type) }
                 }.awaitAll().flatten()
                 _state.value = _state.value.copy(allItems = results, allItemsLoading = false)
             } catch (_: Throwable) {
                 _state.value = _state.value.copy(allItemsLoading = false)
+            }
+        }
+    }
+
+    fun showCreateTypeDialog() {
+        _state.value = _state.value.copy(showCreateTypeDialog = true)
+    }
+
+    fun dismissCreateTypeDialog() {
+        _state.value = _state.value.copy(showCreateTypeDialog = false)
+    }
+
+    fun createCustomType(label: String, onSuccess: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val created = api.createUserListType(UserListTypeCreateRequest(label = label))
+                _state.value = _state.value.copy(
+                    customListTypes = _state.value.customListTypes + created,
+                    showCreateTypeDialog = false,
+                )
+                onSuccess(created.slug)
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(error = t.message, showCreateTypeDialog = false)
+            }
+        }
+    }
+
+    fun deleteCustomType(typeId: String) {
+        viewModelScope.launch {
+            try {
+                api.deleteUserListType(typeId)
+                val removed = _state.value.customListTypes.find { it.id == typeId }
+                _state.value = _state.value.copy(
+                    customListTypes = _state.value.customListTypes.filter { it.id != typeId },
+                )
+                if (removed != null && _state.value.listType == removed.slug) {
+                    setListType("groceries")
+                }
+            } catch (t: Throwable) {
+                _state.value = _state.value.copy(error = t.message)
             }
         }
     }
@@ -573,20 +628,29 @@ fun ShoppingListScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
-        val pagerState = rememberPagerState(pageCount = { LIST_TYPES.size + 1 })
-        // Sync pager → ViewModel when user swipes (skip page 0 which is "All")
+        val pagerState = rememberPagerState(pageCount = { 1 + LIST_TYPES.size + ui.customListTypes.size })
+        // Sync pager → ViewModel when user swipes
         LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) {
             if (!pagerState.isScrollInProgress) {
-                if (pagerState.currentPage == 0) {
-                    viewModel.loadAllItems()
-                } else {
-                    viewModel.setListType(LIST_TYPES[pagerState.currentPage - 1])
+                when (val page = pagerState.currentPage) {
+                    0 -> viewModel.loadAllItems()
+                    in 1..LIST_TYPES.size -> viewModel.setListType(LIST_TYPES[page - 1])
+                    else -> {
+                        val ci = page - LIST_TYPES.size - 1
+                        if (ci < ui.customListTypes.size) viewModel.setListType(ui.customListTypes[ci].slug)
+                    }
                 }
             }
         }
-        // Sync ViewModel → pager when tab is tapped (type tabs are offset by 1)
+        // Sync ViewModel → pager when tab is tapped
         LaunchedEffect(ui.listType) {
-            val targetPage = LIST_TYPES.indexOf(ui.listType).coerceAtLeast(0) + 1
+            val builtInIdx = LIST_TYPES.indexOf(ui.listType)
+            val targetPage = if (builtInIdx >= 0) {
+                builtInIdx + 1
+            } else {
+                val ci = ui.customListTypes.indexOfFirst { it.slug == ui.listType }
+                if (ci >= 0) LIST_TYPES.size + 1 + ci else 0
+            }
             if (pagerState.currentPage != 0 && pagerState.currentPage != targetPage) {
                 pagerState.animateScrollToPage(targetPage)
             }
@@ -634,6 +698,21 @@ fun ShoppingListScreen(
                     text = { Text(tabLabels[type] ?: type) },
                 )
             }
+            ui.customListTypes.forEachIndexed { index, customType ->
+                Tab(
+                    selected = pagerState.currentPage == LIST_TYPES.size + 1 + index,
+                    onClick = {
+                        viewModel.setListType(customType.slug)
+                        coroutineScope.launch { pagerState.animateScrollToPage(LIST_TYPES.size + 1 + index) }
+                    },
+                    text = { Text(customType.label) },
+                )
+            }
+            Tab(
+                selected = false,
+                onClick = { viewModel.showCreateTypeDialog() },
+                text = { Text("+") },
+            )
             }
         HorizontalPager(
             state = pagerState,
@@ -871,6 +950,17 @@ fun ShoppingListScreen(
         )
     }
 
+    if (ui.showCreateTypeDialog) {
+        CreateListTypeDialog(
+            onDismiss = { viewModel.dismissCreateTypeDialog() },
+            onCreate = { label ->
+                viewModel.createCustomType(label) { slug ->
+                    viewModel.setListType(slug)
+                }
+            },
+        )
+    }
+
     ui.editingEntry?.let { entry ->
         EditShoppingItemDialog(
             entry = entry,
@@ -879,6 +969,36 @@ fun ShoppingListScreen(
             onSave = { name, qty, brand, notes, catSlug -> viewModel.saveEdit(entry, name, qty, brand, notes, catSlug) },
         )
     }
+}
+
+@Composable
+private fun CreateListTypeDialog(
+    onDismiss: () -> Unit,
+    onCreate: (String) -> Unit,
+) {
+    var label by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.create_list_type_title)) },
+        text = {
+            OutlinedTextField(
+                value = label,
+                onValueChange = { label = it },
+                placeholder = { Text(stringResource(R.string.create_list_type_hint)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { if (label.isNotBlank()) onCreate(label.trim()) },
+                enabled = label.isNotBlank(),
+            ) { Text(stringResource(R.string.create)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
 }
 
 @Composable

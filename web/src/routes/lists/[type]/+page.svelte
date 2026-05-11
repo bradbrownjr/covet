@@ -406,9 +406,7 @@
     });
 
     onMount(() => {
-        if (!VALID_TYPES.includes(listType as ListType)) {
-            goto('/lists/groceries');
-        }
+        // built-in and custom types are all valid; no redirect needed
     });
 </script>
 

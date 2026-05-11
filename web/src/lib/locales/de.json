@@ -764,7 +764,13 @@
     "col_url": "Link",
     "col_priority": "Priorität",
     "view_link": "Ansehen",
-    "empty": "Nichts auf der Liste — alles erledigt!"
+    "empty": "Nichts auf der Liste — alles erledigt!",
+    "add_type_btn": "Neuer Listentyp",
+    "add_type_title": "Listentyp erstellen",
+    "add_type_label_placeholder": "Name (z.B. Autoteile)",
+    "add_type_label_label": "Name",
+    "add_type_confirm": "Erstellen",
+    "add_type_delete_confirm": "Diesen Listentyp entfernen? Vorhandene Einträge behalten ihren Typ."
   },
   "tasks": {
     "title": "Tasks & Alerts",

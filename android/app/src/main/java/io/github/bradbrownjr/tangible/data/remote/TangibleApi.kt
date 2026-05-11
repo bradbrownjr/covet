@@ -139,6 +139,16 @@ interface TangibleApi {
         @Header("Idempotency-Key") idempotencyKey: String? = null,
     )
 
+    // Custom list types
+    @GET("lists/types")
+    suspend fun listUserListTypes(): List<UserListTypeDto>
+
+    @POST("lists/types")
+    suspend fun createUserListType(@Body body: UserListTypeCreateRequest): UserListTypeDto
+
+    @DELETE("lists/types/{id}")
+    suspend fun deleteUserListType(@Path("id") id: String)
+
     // Shopping stores
     @GET("lists/stores")
     suspend fun listShoppingStores(): List<ShoppingStoreDto>

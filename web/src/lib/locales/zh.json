@@ -764,7 +764,13 @@
     "col_url": "链接",
     "col_priority": "优先级",
     "view_link": "查看",
-    "empty": "列表为空 — 一切顺利！"
+    "empty": "列表为空 — 一切顺利！",
+    "add_type_btn": "新建列表类型",
+    "add_type_title": "创建列表类型",
+    "add_type_label_placeholder": "名称（例：汽车零件）",
+    "add_type_label_label": "名称",
+    "add_type_confirm": "创建",
+    "add_type_delete_confirm": "删除此列表类型？现有条目将保留其类型。"
   },
   "tasks": {
     "title": "Tasks & Alerts",

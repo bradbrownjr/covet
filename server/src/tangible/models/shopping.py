@@ -159,3 +159,20 @@ class BarcodeHint(Base):
     hit_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
+
+class UserListType(ULIDPrimaryKey, TimestampMixin, Base):
+    """A custom list type created by a user (in addition to the 4 built-in types)."""
+
+    __tablename__ = "user_list_types"
+
+    user_id: Mapped[str] = mapped_column(
+        String(26),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    slug: Mapped[str] = mapped_column(String(64), nullable=False)
+    label: Mapped[str] = mapped_column(String(120), nullable=False)
+    icon: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+

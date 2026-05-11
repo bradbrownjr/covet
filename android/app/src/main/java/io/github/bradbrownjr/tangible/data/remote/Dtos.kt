@@ -495,3 +495,21 @@ data class ChoreCompletePayloadDto(
     val currency: String? = null,
     val technician: String? = null,
 )
+
+// ---------------------------------------------------------------------------
+// Custom list types
+// ---------------------------------------------------------------------------
+
+@JsonClass(generateAdapter = true)
+data class UserListTypeDto(
+    val id: String,
+    val slug: String,
+    val label: String,
+    val icon: String? = null,
+    val sort_order: Int = 0,
+)
+
+@JsonClass(generateAdapter = true)
+data class UserListTypeCreateRequest(
+    val label: String,
+)
