@@ -2,7 +2,7 @@
     import { onMount, untrack } from 'svelte';
     import { page } from '$app/state';
     import { goto } from '$app/navigation';
-    import { api, type Collection } from '$lib/api';
+    import { api, type Collection, type UserListType } from '$lib/api';
     import { categoriesForType } from '$lib/shoppingCategories';
     import { _ } from 'svelte-i18n';
     import Icon from '$lib/Icon.svelte';
@@ -15,15 +15,6 @@
     import Button from '$lib/components/Button.svelte';
     import EmptyState from '$lib/components/EmptyState.svelte';
     import FormField from '$lib/components/FormField.svelte';
-
-    const VALID_TYPES = ['groceries', 'hardware', 'home_goods', 'wish_list'] as const;
-    type ListType = typeof VALID_TYPES[number];
-
-    const BACKING_COLLECTION: Record<string, string> = {
-        groceries: 'Pantry',
-        hardware: 'Hardware',
-        home_goods: 'Home Goods',
-    };
 
     interface FeedEntry {
         id: string;
@@ -45,7 +36,8 @@
         [key: string]: unknown;
     }
 
-    let listType = $derived((page.params.type ?? 'groceries') as ListType);
+    let listType = $derived(page.params.type ?? '');
+    let currentListType = $state<UserListType | null>(null);
     let loadGen = 0;
 
     // Filter + sort state (client-side, no API round-trip needed for small lists)
@@ -60,24 +52,7 @@
         (listCategoryFilter ? 1 : 0)
     );
 
-    const LIST_ICON: Record<string, string> = {
-        groceries: 'shopping-cart',
-        hardware: 'wrench',
-        home_goods: 'house',
-        wish_list: 'star',
-    };
-
     let categories = $derived(categoriesForType(listType));
-
-    function typeTitle(t: string): string {
-        switch (t) {
-            case 'groceries': return $_('lists.type.groceries');
-            case 'hardware':  return $_('lists.type.hardware');
-            case 'home_goods': return $_('lists.type.home_goods');
-            case 'wish_list': return $_('lists.type.wish_list');
-            default:          return t;
-        }
-    }
 
     function categoryLabel(slug: string | null): string {
         if (!slug) return '';
@@ -144,8 +119,6 @@
     let newQuantity = $state(1);
     let newUnit = $state('');
     let newNotes = $state('');
-    let newWishUrl = $state('');
-    let newWishPriority = $state<number | ''>('');
     let adding = $state(false);
     let scanningBarcode = $state(false);
     let barcodeImageInput: HTMLInputElement | undefined;
@@ -208,8 +181,6 @@
     let editQuantity = $state(1);
     let editUnit = $state('');
     let editNotes = $state('');
-    let editWishUrl = $state('');
-    let editWishPriority = $state<number | ''>('');
     let saving = $state(false);
 
     // Delete confirm state
@@ -223,8 +194,6 @@
         editQuantity = entry.quantity;
         editUnit = entry.unit ?? '';
         editNotes = entry.notes ?? '';
-        editWishUrl = entry.wish_url ?? '';
-        editWishPriority = entry.wish_priority ?? '';
         const preset = categories.find((c) => c.slug === entry.category_slug);
         if (entry.category_slug && !preset) {
             editCategorySlug = 'custom';
@@ -250,19 +219,14 @@
                 : (editCategorySlug || null);
         saving = true;
         try {
-            const body: Record<string, unknown> = {
+            await api.patch(`/lists/${editEntry.id}`, {
                 name: editName.trim(),
                 quantity: Math.max(1, editQuantity || 1),
                 unit: editUnit.trim() || null,
                 brand: editBrand.trim() || null,
                 notes: editNotes.trim() || null,
                 category_slug: resolvedSlug,
-            };
-            if (editEntry.list_type === 'wish_list') {
-                body.wish_url = editWishUrl.trim() || null;
-                body.wish_priority = editWishPriority || null;
-            }
-            await api.patch(`/lists/${editEntry.id}`, body);
+            });
             cancelEdit();
             await load();
         } catch (err) {
@@ -277,19 +241,19 @@
         const snapGen = loadGen;
         loading = true;
         try {
-            const [fetched, fetchedCollections] = await Promise.all([
+            const [fetched, fetchedCollections, listTypes] = await Promise.all([
                 api.get<FeedEntry[]>(`/lists?list_type=${snapType}`),
                 api.get<Collection[]>('/collections'),
+                api.get<UserListType[]>('/lists/types'),
             ]);
             if (snapGen !== loadGen) return;
             feed = fetched;
             collections = new Map(fetchedCollections.map((c) => [c.id, c]));
-            const backingName = BACKING_COLLECTION[snapType];
-            const backing = backingName
-                ? fetchedCollections.find((c) => c.name.toLowerCase() === backingName.toLowerCase())
-                : null;
+            currentListType = listTypes.find((lt) => lt.slug === snapType) ?? null;
             if (!newCollectionId) {
-                newCollectionId = backing?.id ?? (fetchedCollections[0]?.id ?? '');
+                newCollectionId = currentListType?.linked_collection_id
+                    ?? fetchedCollections[0]?.id
+                    ?? '';
             }
         } catch (e) {
             if (snapGen === loadGen) error = (e as Error).message;
@@ -298,35 +262,16 @@
         }
     }
 
-    async function createBackingCollection() {
-        const name = BACKING_COLLECTION[listType];
-        if (!name) return;
-        try {
-            const created = await api.post<Collection>('/collections', {
-                name,
-                description: name + ' items',
-            });
-            collections.set(created.id, created);
-            newCollectionId = created.id;
-        } catch (err) {
-            error = (err as Error).message;
-        }
-    }
-
     async function addItem(e: SubmitEvent) {
         e.preventDefault();
         if (!newName.trim()) return;
-        if (!newCollectionId && listType !== 'wish_list') {
-            await createBackingCollection();
-            if (!newCollectionId) return;
-        }
         const resolvedSlug =
             newCategorySlug === 'custom'
                 ? (customCategory.trim().toLowerCase().replace(/\s+/g, '-') || null)
                 : (newCategorySlug || null);
         adding = true;
         try {
-            const body: Record<string, unknown> = {
+            await api.post('/lists', {
                 collection_id: newCollectionId || null,
                 name: newName.trim(),
                 quantity: Math.max(1, newQuantity || 1),
@@ -335,19 +280,12 @@
                 notes: newNotes.trim() || null,
                 category_slug: resolvedSlug,
                 list_type: listType,
-            };
-            if (listType === 'wish_list') {
-                body.wish_url = newWishUrl.trim() || null;
-                body.wish_priority = newWishPriority || null;
-            }
-            await api.post('/lists', body);
+            });
             newName = '';
             newBrand = '';
             newQuantity = 1;
             newUnit = '';
             newNotes = '';
-            newWishUrl = '';
-            newWishPriority = '';
             newCategorySlug = '';
             customCategory = '';
             await load();
@@ -396,6 +334,7 @@
         loadGen += 1;
         feed = [];
         newCollectionId = '';
+        currentListType = null;
         newCategorySlug = '';
         // Reset filters when switching list types
         listSearch = '';
@@ -405,16 +344,14 @@
         untrack(() => load());
     });
 
-    onMount(() => {
-        // built-in and custom types are all valid; no redirect needed
-    });
+    onMount(() => {});
 </script>
 
 <svelte:head>
-    <title>Tangible · {typeTitle(listType)}</title>
+    <title>Tangible · {currentListType?.label ?? listType}</title>
 </svelte:head>
 
-<p class="muted">{$_(`lists.description.${listType}`)}</p>
+
 
 <form class="add-form" onsubmit={addItem}>
     <input
@@ -432,15 +369,13 @@
             placeholder={$_('lists.item_name_placeholder')}
             required
         />
-        {#if listType !== 'wish_list'}
-            <select class="category-select" bind:value={newCategorySlug}>
-                <option value="">{$_('grocery.no_category')}</option>
-                {#each categories as cat (cat.slug)}
-                    <option value={cat.slug}>{cat.label}</option>
-                {/each}
-                <option value="custom">{$_('grocery.custom_option')}</option>
-            </select>
-        {/if}
+        <select class="category-select" bind:value={newCategorySlug}>
+            <option value="">{$_('grocery.no_category')}</option>
+            {#each categories as cat (cat.slug)}
+                <option value={cat.slug}>{cat.label}</option>
+            {/each}
+            <option value="custom">{$_('grocery.custom_option')}</option>
+        </select>
         <Button variant="secondary" type="button" disabled={scanningBarcode} onclick={() => barcodeImageInput?.click()}>
             {$_('collection.scan_image_button')}
         </Button>
@@ -457,26 +392,15 @@
             {#if newCategorySlug === 'custom'}
                 <input type="text" bind:value={customCategory} placeholder={$_('grocery.custom_placeholder')} />
             {/if}
-            {#if listType !== 'wish_list'}
-                <div class="qty-row">
-                    <input type="number" min="1" bind:value={newQuantity} class="qty" aria-label={$_('grocery.col_qty')} />
-                    <input type="text" bind:value={newUnit} placeholder={$_('grocery.unit_placeholder')} class="unit" />
-                </div>
-                {#if collections.size > 1}
-                    <select bind:value={newCollectionId} aria-label={$_('grocery.col_collection')}>
-                        {#each [...collections.values()] as c (c.id)}
-                            <option value={c.id}>{c.name}</option>
-                        {/each}
-                    </select>
-                {/if}
-            {/if}
-            {#if listType === 'wish_list'}
-                <input type="url" bind:value={newWishUrl} placeholder={$_('lists.wish_url_placeholder')} />
-                <select bind:value={newWishPriority}>
-                    <option value="">{$_('lists.wish_priority_any')}</option>
-                    <option value={1}>{$_('lists.priority.low')}</option>
-                    <option value={2}>{$_('lists.priority.medium')}</option>
-                    <option value={3}>{$_('lists.priority.high')}</option>
+            <div class="qty-row">
+                <input type="number" min="1" bind:value={newQuantity} class="qty" aria-label={$_('grocery.col_qty')} />
+                <input type="text" bind:value={newUnit} placeholder={$_('grocery.unit_placeholder')} class="unit" />
+            </div>
+            {#if collections.size > 1}
+                <select bind:value={newCollectionId} aria-label={$_('grocery.col_collection')}>
+                    {#each [...collections.values()] as c (c.id)}
+                        <option value={c.id}>{c.name}</option>
+                    {/each}
                 </select>
             {/if}
         </div>
@@ -498,7 +422,7 @@
                 placeholder={$_('filters.search_placeholder')}
                 class="list-search-input"
             />
-            {#if listType !== 'wish_list'}
+            {#if categories.length > 0}
                 <select bind:value={listCategoryFilter} class="list-filter-select">
                     <option value="">{$_('filters.all_categories')}</option>
                     {#each categories as cat (cat.slug)}
@@ -510,7 +434,7 @@
                 <option value="name">{$_('filters.sort_name')}</option>
                 <option value="quantity">{$_('filters.sort_qty')}</option>
                 <option value="created_at">{$_('filters.sort_added')}</option>
-                {#if listType !== 'wish_list'}<option value="category_slug">{$_('filters.sort_category')}</option>{/if}
+                <option value="category_slug">{$_('filters.sort_category')}</option>
             </select>
             <select bind:value={listSortDir} class="list-filter-select">
                 <option value="asc">{$_('filters.sort_asc')}</option>
@@ -520,7 +444,7 @@
     </FiltersPanel>
 
     {#if filteredFeed.length === 0}
-        <EmptyState icon={LIST_ICON[listType] ?? 'inbox'} heading={$_('lists.empty')} />
+        <EmptyState icon="list" heading={$_('lists.empty')} />
     {:else}
     {#snippet brandCell(entry: FeedEntry)}
         {#if entry.brand}
@@ -579,8 +503,8 @@
     {#snippet rowActions(entry: FeedEntry)}
         <div class="row-actions">
             <IconButton
-                name={listType === 'wish_list' ? 'package-check' : 'check-circle'}
-                label={listType === 'wish_list' ? $_('lists.mark_received_button') : $_('grocery.mark_purchased_button')}
+                name="check-circle"
+                label={$_('grocery.mark_purchased_button')}
                 variant="primary"
                 btnSize="sm"
                 onclick={() => markPurchased(entry)}
@@ -594,18 +518,12 @@
 
     <DataTable
         class="lists-table"
-        cols={listType !== 'wish_list'
-            ? ([
-                { key: 'brand',         label: $_('grocery.col_brand'),      cell: brandCell,    tdClass: 'col-brand', mobileLabel: $_('grocery.col_brand') },
-                { key: 'name',          label: $_('grocery.col_item'),        cell: nameCell,     tdClass: 'col-name' },
-                { key: 'category_slug', label: $_('grocery.col_category'),    cell: categoryCell, tdClass: 'col-cat' },
-                { key: 'quantity',      label: $_('grocery.col_qty'),         cell: qtyCell,      tdClass: 'col-qty', align: 'right' },
-              ] satisfies Column<FeedEntry>[])
-            : ([
-                { key: 'name',          label: $_('grocery.col_item'),        cell: nameCell,     tdClass: 'col-name' },
-                { key: 'wish_url',      label: $_('lists.col_url'),           cell: urlCell },
-                { key: 'wish_priority', label: $_('lists.col_priority'),      cell: priorityCell },
-              ] satisfies Column<FeedEntry>[])}
+        cols={[
+            { key: 'brand',         label: $_('grocery.col_brand'),      cell: brandCell,    tdClass: 'col-brand', mobileLabel: $_('grocery.col_brand') },
+            { key: 'name',          label: $_('grocery.col_item'),        cell: nameCell,     tdClass: 'col-name' },
+            { key: 'category_slug', label: $_('grocery.col_category'),    cell: categoryCell, tdClass: 'col-cat' },
+            { key: 'quantity',      label: $_('grocery.col_qty'),         cell: qtyCell,      tdClass: 'col-qty', align: 'right' },
+        ] satisfies Column<FeedEntry>[]}
         rows={filteredFeed}
         rowKey="id"
         actions={rowActions}
@@ -621,48 +539,31 @@
         <FormField label={$_('lists.item_name_placeholder')} required>
             <input type="text" bind:value={editName} required />
         </FormField>
-        {#if listType !== 'wish_list'}
-            <FormField label={$_('grocery.col_category')}>
-                <select bind:value={editCategorySlug}>
-                    <option value="">{$_('grocery.no_category')}</option>
-                    {#each categories as cat (cat.slug)}
-                        <option value={cat.slug}>{cat.label}</option>
-                    {/each}
-                    <option value="custom">{$_('grocery.custom_option')}</option>
-                </select>
+        <FormField label={$_('grocery.col_category')}>
+            <select bind:value={editCategorySlug}>
+                <option value="">{$_('grocery.no_category')}</option>
+                {#each categories as cat (cat.slug)}
+                    <option value={cat.slug}>{cat.label}</option>
+                {/each}
+                <option value="custom">{$_('grocery.custom_option')}</option>
+            </select>
+        </FormField>
+        {#if editCategorySlug === 'custom'}
+            <FormField label={$_('grocery.custom_placeholder')}>
+                <input type="text" bind:value={editCustomCategory} />
             </FormField>
-            {#if editCategorySlug === 'custom'}
-                <FormField label={$_('grocery.custom_placeholder')}>
-                    <input type="text" bind:value={editCustomCategory} />
-                </FormField>
-            {/if}
         {/if}
         <FormField label={$_('grocery.notes_placeholder')}>
             <input type="text" bind:value={editNotes} />
         </FormField>
-        {#if listType !== 'wish_list'}
-            <div class="edit-row">
-                <FormField label={$_('grocery.col_qty')}>
-                    <input type="number" min="1" bind:value={editQuantity} />
-                </FormField>
-                <FormField label={$_('grocery.unit_placeholder')}>
-                    <input type="text" bind:value={editUnit} />
-                </FormField>
-            </div>
-        {/if}
-        {#if listType === 'wish_list'}
-            <FormField label={$_('lists.wish_url_placeholder')}>
-                <input type="url" bind:value={editWishUrl} />
+        <div class="edit-row">
+            <FormField label={$_('grocery.col_qty')}>
+                <input type="number" min="1" bind:value={editQuantity} />
             </FormField>
-            <FormField label={$_('lists.col_priority')}>
-                <select bind:value={editWishPriority}>
-                    <option value="">{$_('lists.wish_priority_any')}</option>
-                    <option value={1}>{$_('lists.priority.low')}</option>
-                    <option value={2}>{$_('lists.priority.medium')}</option>
-                    <option value={3}>{$_('lists.priority.high')}</option>
-                </select>
+            <FormField label={$_('grocery.unit_placeholder')}>
+                <input type="text" bind:value={editUnit} />
             </FormField>
-        {/if}
+        </div>
     </form>
     {#snippet footer()}
         <Button type="submit" form="edit-list-item-form" loading={saving} disabled={saving || !editName.trim()}>
