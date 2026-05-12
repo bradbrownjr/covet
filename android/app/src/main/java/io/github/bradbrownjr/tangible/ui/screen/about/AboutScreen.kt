@@ -9,7 +9,8 @@ import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.WindowInsets
+
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -154,6 +155,12 @@ fun AboutScreen(
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        // AboutScreen is embedded in HomeScreen's Scaffold via HorizontalPager.
+        // The outer Scaffold already applies bottom insets (nav bar height) to
+        // the pager. Setting contentWindowInsets to zero here prevents the inner
+        // Scaffold from double-counting those insets, which would otherwise
+        // leave a large dead zone at the bottom of the scroll column.
+        contentWindowInsets = WindowInsets(0),
     ) { padding ->
         Column(
             modifier = Modifier

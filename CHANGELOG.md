@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.30] — 2026-05-11
+
+### Fixed
+
+- **About/Info page scroll doesn't reach bottom nav bar (Android):** The About, Settings, and Maintenance screens each have their own inner `Scaffold` nested inside the `HomeScreen` outer `Scaffold`. The inner Scaffolds were double-counting the bottom window inset (nav bar height), leaving a dead zone at the bottom of each scrollable screen. Fixed by setting `contentWindowInsets = WindowInsets(0)` on each inner Scaffold so the outer pager's bottom padding is solely responsible for nav bar clearance.
+
 ## [0.25.29] — 2026-05-11
 
 ### Fixed
