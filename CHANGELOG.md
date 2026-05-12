@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.31] — 2026-05-12
+
+### Fixed
+
+- **About screen compile error (Android):** `fillMaxWidth` import was accidentally dropped when removing the unused `fillMaxSize` import in v0.25.30, causing a build failure on CI. Import restored.
+
 ## [0.25.30] — 2026-05-11
 
 ### Fixed
