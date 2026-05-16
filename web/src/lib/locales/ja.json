@@ -14,12 +14,15 @@
     "tasks": "メンテナンス",
     "all_lists": "すべてのリスト",
     "home": "ホーム",
-    "import": "インポート"
+    "import": "インポート",
+    "new_list": "+ 新しいリスト"
   },
   "alerts": {
     "no_upcoming": "今後のアラートはありません。",
     "preferences_link": "通知設定",
-    "view_all": "すべてのアラートを見る"
+    "view_all": "すべてのアラートを見る",
+    "page_title": "アラート",
+    "page_description": "今後のアラート、期限切れ、賞味期限、在庫不足。"
   },
   "common": {
     "save": "保存",

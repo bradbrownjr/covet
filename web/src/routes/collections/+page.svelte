@@ -129,7 +129,7 @@
         <div class="presets">
             {#each roots as r (r.id)}
                 <button type="button" class="preset" onclick={() => pickPreset(r)}>
-                    <span class="preset-icon"><Icon name={PRESET_ICON[r.id] ?? 'box'} size={24} /></span>
+                    <span class="preset-icon"><Icon name={PRESET_ICON[r.slug] ?? 'box'} size={24} /></span>
                     <strong>{r.name}</strong>
                     {#if r.description}<span class="muted">{r.description}</span>{/if}
                 </button>
@@ -213,6 +213,7 @@
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
         gap: 0.5rem;
+        align-items: stretch;
     }
     .preset {
         display: flex;

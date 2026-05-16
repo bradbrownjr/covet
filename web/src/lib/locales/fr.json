@@ -14,12 +14,15 @@
     "tasks": "Maintenance",
     "all_lists": "Toutes les listes",
     "home": "Accueil",
-    "import": "Importer"
+    "import": "Importer",
+    "new_list": "+ Nouvelle liste"
   },
   "alerts": {
     "no_upcoming": "Aucune alerte à venir.",
     "preferences_link": "Préférences de notification",
-    "view_all": "Voir toutes les alertes"
+    "view_all": "Voir toutes les alertes",
+    "page_title": "Alertes",
+    "page_description": "Alertes à venir et en retard, dates d'expiration et stock faible."
   },
   "common": {
     "save": "Enregistrer",

@@ -32,6 +32,7 @@
     let shoppingByType = $state<Record<string, number>>({});
     let listsMenuOpen = $state(false);
     let collectionsMenuOpen = $state(false);
+    let tasksMenuOpen = $state(false);
     let navCollections = $state<Collection[]>([]);
     let navListTypes = $state<UserListType[]>([]);
     let menuOpen = $state(false);
@@ -146,9 +147,9 @@
         await goto('/login');
     }
 
-    function closeMenu() { menuOpen = false; listsMenuOpen = false; collectionsMenuOpen = false; }
+    function closeMenu() { menuOpen = false; listsMenuOpen = false; collectionsMenuOpen = false; tasksMenuOpen = false; }
 
-    function handleDocumentClick() { listsMenuOpen = false; collectionsMenuOpen = false; }
+    function handleDocumentClick() { listsMenuOpen = false; collectionsMenuOpen = false; tasksMenuOpen = false; }
 
     $effect(() => {
         document.documentElement.lang = $locale ?? 'en';
@@ -236,6 +237,9 @@
                                 {lt.label}
                             </a>
                         {/each}
+                        <a href="/lists?new=1" role="menuitem" class="add-collection-link" onclick={() => { listsMenuOpen = false; closeMenu(); }}>
+                            {$_('nav.new_list')}
+                        </a>
                     </div>
                 {/if}
             </div>
@@ -243,10 +247,30 @@
                 <Icon name="store" size={16} />
                 <span>{$_('nav.stores')}</span>
             </a>
-            <a href="/tasks" class="nav-link" onclick={closeMenu}>
-                <Icon name="calendar-clock" size={16} />
-                <span>{$_('nav.tasks')}</span>
-            </a>
+            <div class="nav-lists-menu" class:open={tasksMenuOpen}>
+                <button
+                    class="nav-lists-trigger"
+                    onclick={(e) => { e.stopPropagation(); tasksMenuOpen = !tasksMenuOpen; listsMenuOpen = false; collectionsMenuOpen = false; }}
+                    aria-haspopup="true"
+                    aria-expanded={tasksMenuOpen}
+                >
+                    <Icon name="calendar-clock" size={16} />
+                    <span>{$_('nav.tasks')}</span>
+                </button>
+                {#if tasksMenuOpen}
+                    <div class="nav-lists-dropdown" role="menu">
+                        <a href="/tasks?tab=chores" role="menuitem" onclick={() => { tasksMenuOpen = false; closeMenu(); }}>
+                            {$_('tasks.tab_chores')}
+                        </a>
+                        <a href="/tasks?tab=my-tasks" role="menuitem" onclick={() => { tasksMenuOpen = false; closeMenu(); }}>
+                            {$_('tasks.tab_my_tasks')}
+                        </a>
+                        <a href="/tasks?tab=scoreboard" role="menuitem" onclick={() => { tasksMenuOpen = false; closeMenu(); }}>
+                            {$_('tasks.tab_scoreboard')}
+                        </a>
+                    </div>
+                {/if}
+            </div>
             <a href="/settings/appearance" class="nav-link" onclick={closeMenu}>
                 <Icon name="settings" size={16} />
                 <span>{$_('nav.settings')}</span>
@@ -365,10 +389,12 @@
         border: none;
         color: var(--text);
         font-size: 1rem;
+        font: inherit;
+        line-height: inherit;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
-        gap: 0.25rem;
+        gap: 0.35rem;
         padding: 0;
     }
     .nav-lists-trigger:hover {

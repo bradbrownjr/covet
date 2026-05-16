@@ -1,5 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
+    import { page } from '$app/state';
     import { api, type DueAlert, type StandaloneTask, type Collection, type ScoreboardEntry } from '$lib/api';
     import { _ } from 'svelte-i18n';
     import { EmptyState } from '$lib/components';
@@ -9,7 +10,7 @@
     let loading = $state(true);
     let error = $state('');
     let withinDays = $state(30);
-    let tab = $state<'alerts' | 'chores' | 'my-tasks' | 'scoreboard'>('alerts');
+    let tab = $state<'chores' | 'my-tasks' | 'scoreboard'>('chores');
     let showConfetti = $state(false);
 
     // ── My Tasks tab state ──
@@ -36,7 +37,13 @@
         }
     }
 
-    onMount(load);
+    onMount(() => {
+        const tabParam = page.url.searchParams.get('tab');
+        if (tabParam === 'my-tasks' || tabParam === 'scoreboard') {
+            tab = tabParam;
+        }
+        load();
+    });
 
     function daysLabel(isoDate: string | null): string {
         if (!isoDate) return '';
@@ -56,16 +63,6 @@
         task_due:        'check-circle',
     };
 
-    const kindLabels = $derived<Record<string, string>>({
-        maintenance_due: $_('maintenance.kind_maintenance_due'),
-        chore_due:       $_('maintenance.kind_chore_due'),
-        item_use_by:     $_('maintenance.kind_item_use_by'),
-        item_expires:    $_('maintenance.kind_item_expires'),
-        lot_use_by:      $_('maintenance.kind_lot_use_by'),
-        low_stock:       $_('maintenance.kind_low_stock'),
-        task_due:        $_('maintenance.kind_task_due'),
-    });
-
     // All alerts sorted: critical (overdue) first, then by due_at ascending
     const sorted = $derived(
         [...alerts].sort((a, b) => {
@@ -75,15 +72,6 @@
             const db = b.due_at ? new Date(b.due_at).getTime() : Infinity;
             return da - db;
         })
-    );
-
-    const grouped = $derived(
-        sorted.reduce<Record<string, DueAlert[]>>((acc, a) => {
-            const k = a.kind;
-            if (!acc[k]) acc[k] = [];
-            acc[k].push(a);
-            return acc;
-        }, {})
     );
 
     // Chores tab: only chore_due alerts, sorted by due_at
@@ -221,16 +209,6 @@
 <div class="tab-bar" role="tablist">
     <button
         role="tab"
-        aria-selected={tab === 'alerts'}
-        class="tab-btn"
-        class:active={tab === 'alerts'}
-        onclick={() => (tab = 'alerts')}
-    >
-        <Icon name="triangle-alert" size={15} />
-        {$_('tasks.tab_alerts')}
-    </button>
-    <button
-        role="tab"
         aria-selected={tab === 'chores'}
         class="tab-btn"
         class:active={tab === 'chores'}
@@ -289,62 +267,6 @@
     <EmptyState icon="loader" heading={$_('common.loading')} />
 {:else if error}
     <p class="error">{error}</p>
-{:else if tab === 'alerts'}
-    <!-- ── Alerts tab ── -->
-    {#if alerts.length === 0}
-        <EmptyState
-            icon="party-popper"
-            heading={$_('maintenance.empty', { values: { days: withinDays } })}
-            body={$_('maintenance.all_clear')}
-        />
-    {:else}
-        {#each Object.entries(grouped) as [kind, items]}
-            <section class="group">
-                <h2 class="group-title">
-                    <Icon name={KIND_ICON[kind] ?? 'bell'} size={16} />
-                    {kindLabels[kind] ?? kind}
-                    <span class="group-count">{items.length}</span>
-                </h2>
-                <ul class="alert-list">
-                    {#each items as alert (alert.id)}
-                        <li class="alert-card" class:severity-critical={alert.severity === 'critical'} class:severity-warning={alert.severity !== 'critical'}>
-                            <div class="alert-left">
-                                {#if alert.severity === 'critical'}
-                                    <Icon name="circle-alert" size={16} class="sev-icon sev-critical" />
-                                {:else}
-                                    <Icon name="triangle-alert" size={16} class="sev-icon sev-warning" />
-                                {/if}
-                            </div>
-                            <div class="alert-body">
-                                <div class="alert-main">
-                                    <span class="alert-title">{alert.title}</span>
-                                    {#if alert.due_at}
-                                        <span class="due-badge" class:critical={alert.severity === 'critical'}>
-                                            <time datetime={alert.due_at}>{daysLabel(alert.due_at)}</time>
-                                        </span>
-                                    {/if}
-                                </div>
-                                {#if alert.details}
-                                    <p class="alert-detail">{alert.details}</p>
-                                {/if}
-                                <div class="alert-links">
-                                    {#if alert.item_id}
-                                        <a href="/collections/{alert.collection_id}?item={alert.item_id}">
-                                            {$_('maintenance.view_item_link')}
-                                        </a>
-                                    {/if}
-                                    <a href="/collections/{alert.collection_id}">{$_('maintenance.collection_link')}</a>
-                                    {#if kind === 'chore_due'}
-                                        <a href="/collections/{alert.collection_id}/chores">{$_('maintenance.chores_link')}</a>
-                                    {/if}
-                                </div>
-                            </div>
-                        </li>
-                    {/each}
-                </ul>
-            </section>
-        {/each}
-    {/if}
 {:else if tab === 'chores'}
     <!-- ── Chores tab ── -->
     {#if choreAlerts.length === 0}

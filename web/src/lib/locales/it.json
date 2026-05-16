@@ -14,12 +14,15 @@
     "tasks": "Manutenzione",
     "all_lists": "Tutte le liste",
     "home": "Home",
-    "import": "Importa"
+    "import": "Importa",
+    "new_list": "+ Nuova lista"
   },
   "alerts": {
     "no_upcoming": "Nessun avviso imminente.",
     "preferences_link": "Preferenze di notifica",
-    "view_all": "Vedi tutte le notifiche"
+    "view_all": "Vedi tutte le notifiche",
+    "page_title": "Avvisi",
+    "page_description": "Avvisi imminenti e scaduti, date di scadenza e scorte insufficienti."
   },
   "common": {
     "save": "Salva",

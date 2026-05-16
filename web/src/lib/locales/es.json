@@ -14,12 +14,15 @@
     "tasks": "Mantenimiento",
     "all_lists": "Todas las listas",
     "home": "Inicio",
-    "import": "Importar"
+    "import": "Importar",
+    "new_list": "+ Nueva lista"
   },
   "alerts": {
     "no_upcoming": "Sin alertas próximas.",
     "preferences_link": "Preferencias de notificación",
-    "view_all": "Ver todas las alertas"
+    "view_all": "Ver todas las alertas",
+    "page_title": "Alertas",
+    "page_description": "Alertas próximas y vencidas, fechas de caducidad y bajo stock."
   },
   "common": {
     "save": "Guardar",

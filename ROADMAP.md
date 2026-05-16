@@ -1229,6 +1229,114 @@ Tracked separately so they don't bloat this phase:
 
 ---
 
+## Phase 15 — Navigation & discoverability (planned)
+
+Six confirmed issues surfaced during post-v0.25.2 QA. All are visible
+on the web client; Wave 4 mirrors the fixes in Android.
+
+### Issues addressed
+
+| # | Symptom | Root cause |
+|---|---|---|
+| 1 | Collections picker shows a generic box icon for every category | `collections/+page.svelte` calls `PRESET_ICON[r.id]` (UUID key) instead of `PRESET_ICON[r.slug]` |
+| 2 | Preset tiles have ragged heights when descriptions vary in length | `.presets` grid has no `align-items: stretch`; tiles don't fill to the tallest row-mate |
+| 3 | Lists nav dropdown has no "+ New list" shortcut | Collections dropdown has it; Lists does not. `lists/+page.svelte` also lacks `?new=1` onMount handling |
+| 4 | Nav items sit at visually different baselines | `.nav-lists-trigger` button has `gap: 0.25rem` and does not inherit `font`/`line-height` — browser default button rendering shifts it against `<a>` nav-links |
+| 5 | Tasks is a plain link — no tab shortcuts in the nav menu | All four tabs are only reachable after navigating to `/tasks` |
+| 6 | No direct path to Alerts except through `/tasks` | Bell dropdown footer links to `/tasks`; no standalone `/alerts` route exists |
+
+### Wave 1 — Preset picker icon fix + tile alignment (Web)
+
+**Files:** `web/src/routes/collections/+page.svelte`,
+`web/src/routes/lists/+page.svelte`
+
+- Fix `PRESET_ICON[r.id]` → `PRESET_ICON[r.slug]` in the Collections
+  picker so category-specific icons render (palette, book-open, film,
+  wrench, etc.) instead of the generic `box` fallback.
+- Add `align-items: stretch` to the `.presets` CSS grid in both
+  pickers so every tile in a row expands to the height of its tallest
+  neighbour — no more ragged grids when description lengths differ.
+
+**Acceptance:** both picker dialogs show correct category icons;
+all tiles within a row are equal height; `npm run check` clean.
+
+### Wave 2 — Nav alignment + Lists "New list" shortcut + Tasks dropdown (Web)
+
+**Files:** `web/src/routes/+layout.svelte`,
+`web/src/routes/lists/+page.svelte`, all 7 locale JSON files
+
+- Normalise `.nav-lists-trigger` CSS: set `gap: 0.35rem` (match
+  `.nav-link`), add `line-height: inherit; font: inherit` to remove
+  browser-default button baseline offset vs. `<a>` nav-links.
+- Convert the Tasks `<a>` nav link into a dropdown using the same
+  `nav-lists-menu` pattern as Collections / Lists. Items:
+  - **Chores** → `/tasks?tab=chores`
+  - **My Tasks** → `/tasks?tab=my-tasks`
+  - **Scoreboard** → `/tasks?tab=scoreboard`
+- Add `tasksMenuOpen` reactive state; include it in `closeMenu()` and
+  `handleDocumentClick` so it closes with the others.
+- Add a **+ New list** link (styled as `add-collection-link`) at the
+  bottom of the Lists dropdown → `/lists?new=1`.
+- `lists/+page.svelte` `onMount`: add
+  `if (page.url.searchParams.get('new') === '1') openPicker();`
+  (same pattern as `collections/+page.svelte`).
+- Add locale key `nav.new_list` (value: `"+ New list"`) to all 7
+  locale JSON files.
+
+**Acceptance:** Tasks nav button opens a dropdown with Chores / My
+Tasks / Scoreboard; Lists dropdown has a "+ New list" link that opens
+the picker; all desktop nav items sit on the same visual baseline;
+`npm run check` clean.
+
+### Wave 3 — Alerts → `/alerts` + bell wiring (Web)
+
+**Files:** new `web/src/routes/alerts/+page.svelte`,
+`web/src/lib/AlertsDropdown.svelte`,
+`web/src/routes/tasks/+page.svelte`, all 7 locale JSON files
+
+- **New route `web/src/routes/alerts/+page.svelte`** — standalone
+  alerts page. Extract the current Alerts tab content from
+  `tasks/+page.svelte` into this page verbatim: the "show next N days"
+  filter row, the refresh button, and the grouped + sorted alert list
+  with severity icons and item/collection links.
+- **`AlertsDropdown.svelte`** — change the footer "View all alerts"
+  `href` from `/tasks` → `/alerts`.
+- **`tasks/+page.svelte`**:
+  - Remove the Alerts tab button and its full panel content.
+  - Remove derived state and constants used only by the Alerts tab
+    (`sorted`, `grouped`, the per-tab `KIND_ICON` map) — verify none
+    are reused by Chores before deleting.
+  - Change default `tab` value from `'alerts'` to `'chores'`.
+  - On mount, read `page.url.searchParams.get('tab')` and, if it
+    matches a valid tab ID (`'chores'`, `'my-tasks'`, `'scoreboard'`),
+    set the initial `tab` state accordingly. This makes the Tasks nav
+    dropdown deep-links work.
+- Add locale keys `alerts.page_title` and `alerts.page_description`
+  to all 7 locale files.
+
+**Acceptance:** `/alerts` renders the full alerts view with filter
+and grouped list; bell dropdown "View all alerts" links to `/alerts`;
+Tasks page opens with Chores tab active by default; URLs like
+`/tasks?tab=my-tasks` and `/tasks?tab=scoreboard` deep-link to the
+correct tab; `npm run check` and `npm run build` clean.
+
+### Wave 4 — Android counterpart (Android)
+
+Mirror the web changes in the Android app. Details to be fleshed out
+once Web Waves 1–3 are reviewed and merged; at minimum:
+
+- **Category picker icons** — verify the Android collection/list
+  creation flow uses slug-keyed icon lookups; fix any equivalent of
+  the `r.id` bug if present.
+- **Tasks / bottom-nav entry point** — if the Android bottom nav has
+  a Tasks item, ensure it surfaces the Chores tab first (parallel to
+  the updated web default).
+- **Alerts accessibility** — verify Android has a distinct path to
+  alerts (notification tap → alerts screen) that is separate from the
+  Chores/Tasks flow, mirroring the web bell-vs-tasks split.
+
+---
+
 
 
 Long-term work that makes Tangible a foundation other things build on.

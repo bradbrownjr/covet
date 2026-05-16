@@ -1,6 +1,7 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
     import { onMount } from 'svelte';
+    import { page } from '$app/state';
     import { _ } from 'svelte-i18n';
     import { api, type Category, type UserListType, type CollectionListPair } from '$lib/api';
     import { loadCategories, rootCategories } from '$lib/categories';
@@ -99,7 +100,10 @@
         }
     }
 
-    onMount(refresh);
+    onMount(async () => {
+        await refresh();
+        if (page.url.searchParams.get('new') === '1') openPicker();
+    });
 </script>
 
 <h1>{$_('nav.lists')}</h1>
@@ -177,6 +181,7 @@
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
         gap: 0.5rem;
+        align-items: stretch;
     }
 
     .preset {

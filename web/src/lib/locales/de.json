@@ -14,12 +14,15 @@
     "tasks": "Wartung",
     "all_lists": "Alle Listen",
     "home": "Startseite",
-    "import": "Importieren"
+    "import": "Importieren",
+    "new_list": "+ Neue Liste"
   },
   "alerts": {
     "no_upcoming": "Keine bevorstehenden Benachrichtigungen.",
     "preferences_link": "Benachrichtigungseinstellungen",
-    "view_all": "Alle Benachrichtigungen"
+    "view_all": "Alle Benachrichtigungen",
+    "page_title": "Benachrichtigungen",
+    "page_description": "Bevorstehende und überfällige Aufgaben, Ablaufdaten und niedriger Bestand."
   },
   "common": {
     "save": "Speichern",

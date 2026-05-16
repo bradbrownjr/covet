@@ -14,7 +14,8 @@
     "lists": "Lists",
     "import": "Import",
     "stores": "Stores",
-    "tasks": "Tasks"
+    "tasks": "Tasks",
+    "new_list": "+ New list"
   },
   "home": {
     "title": "Home",
@@ -61,7 +62,9 @@
   "alerts": {
     "no_upcoming": "No upcoming alerts.",
     "preferences_link": "Notification preferences",
-    "view_all": "View all alerts"
+    "view_all": "View all alerts",
+    "page_title": "Alerts",
+    "page_description": "Upcoming and overdue alerts, expiry dates, and low stock."
   },
   "common": {
     "save": "Save",
