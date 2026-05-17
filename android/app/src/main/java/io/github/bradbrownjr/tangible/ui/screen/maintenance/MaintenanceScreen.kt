@@ -1,5 +1,6 @@
 package io.github.bradbrownjr.tangible.ui.screen.maintenance
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
@@ -39,6 +40,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
@@ -338,8 +340,8 @@ fun MaintenanceScreen(
                 }
             }
             when (selectedTab) {
-                TaskTab.CHORES     -> ChoresAlertsContent(s, vm, choreOnly = true, onNavigateToChores = onNavigateToChores)
-                TaskTab.MY_TASKS   -> MyTasksContent(s, vm)
+                TaskTab.CHORES     -> ChoresAlertsContent(s, vm, choreOnly = true, onNavigateToChores = onNavigateToChores, onAddChore = { showNewChoreDialog = true })
+                TaskTab.MY_TASKS   -> MyTasksContent(s, vm, onAddTask = { showNewTaskDialog = true })
                 TaskTab.SCOREBOARD -> ScoreboardContent(s, vm)
             }
         }
@@ -417,6 +419,7 @@ private fun ChoresAlertsContent(
     vm: MaintenanceViewModel,
     choreOnly: Boolean,
     onNavigateToChores: (collectionId: String, collectionName: String) -> Unit = { _, _ -> },
+    onAddChore: () -> Unit = {},
 ) {
     val baseAlerts = if (choreOnly) s.alerts.filter { it.kind == "chore_due" } else s.alerts
     val allKinds = if (choreOnly) emptyList() else s.alerts.map { it.kind }.distinct().sorted()
@@ -478,18 +481,12 @@ private fun ChoresAlertsContent(
             item { HorizontalDivider() }
         }
 
-        if (visibleAlerts.isEmpty() && !s.loading) {
-            item {
-                Text(
-                    stringResource(emptyRes, s.withinDays),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(vertical = 24.dp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        } else {
-            items(visibleAlerts, key = { it.id }) { alert ->
+        items(visibleAlerts, key = { it.id }) { alert ->
                 AlertCard(alert, onNavigateToChores = onNavigateToChores.takeIf { choreOnly })
+            }
+        if (choreOnly) {
+            item(key = "new_chore") {
+                NewChoreCard(onClick = onAddChore)
             }
         }
     }
@@ -621,7 +618,7 @@ private fun ScoreboardRow(index: Int, entry: ScoreboardEntryDto) {
 
 
 @Composable
-private fun MyTasksContent(s: MaintenanceUi, vm: MaintenanceViewModel) {
+private fun MyTasksContent(s: MaintenanceUi, vm: MaintenanceViewModel, onAddTask: () -> Unit = {}) {
     PullToRefreshBox(
         isRefreshing = s.tasksLoading,
         onRefresh = vm::refreshTasks,
@@ -644,19 +641,11 @@ private fun MyTasksContent(s: MaintenanceUi, vm: MaintenanceViewModel) {
                 )
             }
         }
-        if (s.myTasks.isEmpty() && !s.tasksLoading) {
-            item {
-                Text(
-                    stringResource(R.string.tasks_my_tasks_empty),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(vertical = 24.dp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        } else {
-            items(s.myTasks, key = { it.id }) { task ->
+        items(s.myTasks, key = { it.id }) { task ->
                 TaskCard(task, onComplete = { vm.completeTask(task.id) }, onDelete = { vm.deleteTask(task.id) })
             }
+        item(key = "new_task") {
+            NewTaskCard(onClick = onAddTask)
         }
     }
     } // end PullToRefreshBox
@@ -711,6 +700,48 @@ private fun TaskCard(
                            else stringResource(R.string.alert_due, task.due_at.take(10)),
                     style = MaterialTheme.typography.bodySmall,
                     color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun NewChoreCard(onClick: () -> Unit) {
+    OutlinedCard(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+    ) {
+        Box(Modifier.fillMaxWidth().padding(12.dp), contentAlignment = Alignment.Center) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Text(
+                    stringResource(R.string.new_chore),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun NewTaskCard(onClick: () -> Unit) {
+    OutlinedCard(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+    ) {
+        Box(Modifier.fillMaxWidth().padding(12.dp), contentAlignment = Alignment.Center) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Text(
+                    stringResource(R.string.tasks_new_task),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }

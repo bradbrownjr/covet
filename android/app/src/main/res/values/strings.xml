@@ -192,6 +192,7 @@
     <string name="cd_edit_aisles">Edit aisles</string>
     <string name="cd_delete_store">Delete store</string>
     <string name="new_store">New store</string>
+    <string name="new_chore" tools:ignore="MissingTranslation">New chore</string>
     <string name="store_name">Store name</string>
     <string name="delete_store_title">Delete store?</string>
     <string name="delete_store_body">\"%s\" and all its aisles will be deleted. Your grocery list is not affected.</string>
