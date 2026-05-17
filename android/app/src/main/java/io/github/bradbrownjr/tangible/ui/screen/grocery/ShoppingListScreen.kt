@@ -738,23 +738,6 @@ fun ShoppingListScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        if (ui.customListTypes.isEmpty() && !ui.allItemsLoading) {
-                            item(span = { GridItemSpan(maxLineSpan) }) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 64.dp, horizontal = 32.dp),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.no_lists),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        textAlign = TextAlign.Center,
-                                    )
-                                }
-                            }
-                        }
                         items(ui.customListTypes, key = { it.id }) { lt ->
                             ListTypeCard(
                                 listType = lt,
@@ -765,6 +748,9 @@ fun ShoppingListScreen(
                                     if (idx >= 0) coroutineScope.launch { pagerState.animateScrollToPage(idx + 1) }
                                 },
                             )
+                        }
+                        item(key = "new_list") {
+                            NewListTypeCard(onClick = { viewModel.openListTypeWizard() })
                         }
                     }
                 } else {

@@ -3,8 +3,12 @@ package io.github.bradbrownjr.tangible.ui.screen.grocery
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -120,45 +124,23 @@ fun ShoppingStoreListScreen(
                 ui.loading -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
-                ui.stores.isEmpty() && !ui.loading -> {
-                    Column(
-                        modifier = Modifier.align(Alignment.Center),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Text(stringResource(R.string.no_stores), style = MaterialTheme.typography.bodyLarge)
-                        Text(
-                            stringResource(R.string.no_stores_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
                 else -> {
-                    LazyColumn(contentPadding = PaddingValues(vertical = 8.dp)) {
-                        items(ui.stores, key = { it.id }) { store ->
-                            ListItem(
-                                headlineContent = { Text(store.name) },
-                                supportingContent = {
-                                    Text(pluralStringResource(R.plurals.aisle_count, store.aisles.size, store.aisles.size))
-                                },
-                                trailingContent = {
-                                    Row {
-                                        IconButton(onClick = { onOpenStore(store.id) }) {
-                                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.cd_edit_aisles))
-                                        }
-                                        IconButton(onClick = { confirmDeleteStore = store }) {
-                                            Icon(
-                                                Icons.Default.Delete,
-                                                contentDescription = stringResource(R.string.cd_delete_store),
-                                                tint = MaterialTheme.colorScheme.error,
-                                            )
-                                        }
-                                    }
-                                },
-                                modifier = Modifier.clickable { onOpenStore(store.id) },
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        gridItems(ui.stores, key = { it.id }) { store ->
+                            StoreCard(
+                                store = store,
+                                onClick = { onOpenStore(store.id) },
+                                onDelete = { confirmDeleteStore = store },
                             )
-                            HorizontalDivider()
+                        }
+                        item(key = "new_store") {
+                            NewStoreCard(onClick = { showCreateDialog = true })
                         }
                     }
                 }
@@ -193,6 +175,71 @@ fun ShoppingStoreListScreen(
             },
             dismissButton = { TextButton(onClick = { confirmDeleteStore = null }) { Text(stringResource(R.string.cancel)) } },
         )
+    }
+}
+
+@Composable
+private fun StoreCard(
+    store: ShoppingStoreDto,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Column(Modifier.padding(12.dp)) {
+            Text(
+                store.name,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    pluralStringResource(R.plurals.aisle_count, store.aisles.size, store.aisles.size),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.size(24.dp),
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.cd_delete_store),
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NewStoreCard(onClick: () -> Unit) {
+    OutlinedCard(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+    ) {
+        Box(Modifier.fillMaxWidth().padding(12.dp), contentAlignment = Alignment.Center) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Text(
+                    stringResource(R.string.new_store),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
     }
 }
 
