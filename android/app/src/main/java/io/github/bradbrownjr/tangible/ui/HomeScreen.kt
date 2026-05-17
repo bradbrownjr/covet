@@ -48,8 +48,8 @@ private val HOME_SECTIONS = listOf(
     NavSection(R.string.home_tab, Icons.Default.Home),
     NavSection(R.string.collections, Icons.Default.Folder),
     NavSection(R.string.grocery_list, Icons.AutoMirrored.Filled.List),
-    NavSection(R.string.alerts, Icons.Default.Notifications),
     NavSection(R.string.tasks, Icons.Default.AssignmentTurnedIn),
+    NavSection(R.string.alerts, Icons.Default.Notifications),
     NavSection(R.string.settings, Icons.Default.Settings),
 )
 
@@ -157,8 +157,8 @@ fun HomeScreen(
                     onNavigateToScanner = onNavigateToScanner,
                     scannedBarcode = scannedBarcode,
                 )
-                3 -> AlertsScreen(onBack = {}, showBackButton = false)
-                4 -> MaintenanceScreen(onBack = {}, showBackButton = false, onNavigateToChores = onNavigateToChores)
+                3 -> MaintenanceScreen(onBack = {}, showBackButton = false, onNavigateToChores = onNavigateToChores)
+                4 -> AlertsScreen(onBack = {}, showBackButton = false)
                 5 -> SettingsScreen(
                     onSignOut = onSignOut,
                     onBack = {},

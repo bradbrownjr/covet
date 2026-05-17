@@ -1,5 +1,6 @@
 package io.github.bradbrownjr.tangible.ui.screen.maintenance
 
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,12 +53,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.bradbrownjr.tangible.R
+import io.github.bradbrownjr.tangible.data.remote.ChoreCreateDto
 import io.github.bradbrownjr.tangible.data.remote.CollectionDto
 import io.github.bradbrownjr.tangible.data.remote.CreateTaskBody
 import io.github.bradbrownjr.tangible.data.remote.DueAlertDto
@@ -91,6 +94,8 @@ data class MaintenanceUi(
     val tasksLoading: Boolean = false,
     val tasksError: String? = null,
     val tasksLoaded: Boolean = false,
+    // Chores tab
+    val choresError: String? = null,
 )
 
 @HiltViewModel
@@ -180,6 +185,26 @@ class MaintenanceViewModel @Inject constructor(
             }
         }
     }
+
+    fun loadCollections() {
+        if (_state.value.taskCollections.isNotEmpty()) return
+        viewModelScope.launch {
+            try {
+                _state.value = _state.value.copy(taskCollections = api.listCollections())
+            } catch (_: Throwable) { }
+        }
+    }
+
+    fun createChore(collectionId: String, name: String, notes: String?, intervalDays: Int?) {
+        viewModelScope.launch {
+            try {
+                api.createChore(collectionId, ChoreCreateDto(name, notes, intervalDays))
+                _state.value = _state.value.copy(choresError = null)
+            } catch (e: Throwable) {
+                _state.value = _state.value.copy(choresError = e.message ?: "Error creating chore")
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -194,9 +219,14 @@ fun MaintenanceScreen(
     var selectedTabIndex by remember { mutableStateOf(0) }
     val selectedTab = TaskTab.values()[selectedTabIndex]
     var showNewTaskDialog by remember { mutableStateOf(false) }
+    var showNewChoreDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedTab) {
-        if (selectedTab == TaskTab.MY_TASKS) vm.loadTasks()
+        when (selectedTab) {
+            TaskTab.CHORES -> vm.loadCollections()
+            TaskTab.MY_TASKS -> vm.loadTasks()
+            else -> {}
+        }
     }
 
     val tabs = listOf(
@@ -234,10 +264,14 @@ fun MaintenanceScreen(
             )
         },
         floatingActionButton = {
-            if (selectedTab == TaskTab.MY_TASKS) {
-                FloatingActionButton(onClick = { showNewTaskDialog = true }) {
+            when (selectedTab) {
+                TaskTab.CHORES -> FloatingActionButton(onClick = { showNewChoreDialog = true }) {
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_chore))
+                }
+                TaskTab.MY_TASKS -> FloatingActionButton(onClick = { showNewTaskDialog = true }) {
                     Icon(Icons.Default.Add, contentDescription = stringResource(R.string.tasks_new_task))
                 }
+                else -> {}
             }
         },
         contentWindowInsets = WindowInsets(0),
@@ -262,6 +296,9 @@ fun MaintenanceScreen(
 
     if (showNewTaskDialog) {
         NewTaskDialog(s, vm, onDismiss = { showNewTaskDialog = false })
+    }
+    if (showNewChoreDialog) {
+        NewChoreDialog(s, vm, onDismiss = { showNewChoreDialog = false })
     }
 }
 
@@ -587,6 +624,97 @@ private fun NewTaskDialog(
                     }
                 },
                 enabled = title.isNotBlank() && selectedCollectionId.isNotBlank(),
+            ) { Text(stringResource(R.string.save)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun NewChoreDialog(
+    s: MaintenanceUi,
+    vm: MaintenanceViewModel,
+    onDismiss: () -> Unit,
+) {
+    var name by remember { mutableStateOf("") }
+    var notes by remember { mutableStateOf("") }
+    var intervalDays by remember { mutableStateOf("") }
+    var selectedCollectionId by remember { mutableStateOf(s.taskCollections.firstOrNull()?.id ?: "") }
+    var menuOpen by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.add_chore)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (!s.choresError.isNullOrBlank()) {
+                    Text(
+                        text = s.choresError!!,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.chore_name_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
+                if (s.taskCollections.isNotEmpty()) {
+                    ExposedDropdownMenuBox(expanded = menuOpen, onExpandedChange = { menuOpen = it }) {
+                        OutlinedTextField(
+                            value = s.taskCollections.firstOrNull { it.id == selectedCollectionId }?.name ?: "",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text(stringResource(R.string.tasks_new_task_collection_label)) },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = menuOpen) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                        )
+                        ExposedDropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                            s.taskCollections.forEach { col ->
+                                DropdownMenuItem(
+                                    text = { Text(col.name) },
+                                    onClick = { selectedCollectionId = col.id; menuOpen = false },
+                                )
+                            }
+                        }
+                    }
+                }
+                OutlinedTextField(
+                    value = intervalDays,
+                    onValueChange = { if (it.isEmpty() || it.all { c -> c.isDigit() }) intervalDays = it },
+                    label = { Text(stringResource(R.string.chore_interval_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                )
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text(stringResource(R.string.chore_notes_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(0.dp))
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (name.isNotBlank() && selectedCollectionId.isNotBlank()) {
+                        vm.createChore(
+                            collectionId = selectedCollectionId,
+                            name = name.trim(),
+                            notes = notes.trim().ifBlank { null },
+                            intervalDays = intervalDays.toIntOrNull(),
+                        )
+                        onDismiss()
+                    }
+                },
+                enabled = name.isNotBlank() && selectedCollectionId.isNotBlank(),
             ) { Text(stringResource(R.string.save)) }
         },
         dismissButton = {

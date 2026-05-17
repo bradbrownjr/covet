@@ -223,7 +223,7 @@ fun HomeTabScreen(
                             }
                         },
                     ) {
-                        IconButton(onClick = { onJumpTo(3) }) {
+                        IconButton(onClick = { onJumpTo(4) }) {
                             Icon(
                                 Icons.Default.Notifications,
                                 contentDescription = stringResource(R.string.tasks_tab_alerts),
@@ -387,13 +387,13 @@ fun HomeTabScreen(
                         JumpToTile(
                             icon = Icons.Default.AssignmentTurnedIn,
                             label = stringResource(R.string.tasks),
-                            onClick = { onJumpTo(4) },
+                            onClick = { onJumpTo(3) },
                             modifier = Modifier.weight(1f),
                         )
                         JumpToTile(
                             icon = Icons.Default.Notifications,
                             label = stringResource(R.string.alerts),
-                            onClick = { onJumpTo(3) },
+                            onClick = { onJumpTo(4) },
                             modifier = Modifier.weight(1f),
                         )
                     }
