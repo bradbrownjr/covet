@@ -72,6 +72,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
 
 private val KIND_LABEL_RES = mapOf(
@@ -121,7 +122,9 @@ class MaintenanceViewModel @Inject constructor(
         _state.value = _state.value.copy(loading = true)
         viewModelScope.launch {
             val alerts = try {
-                api.getAlerts(withinDays = _state.value.withinDays)
+                withTimeout(15_000L) {
+                    api.getAlerts(withinDays = _state.value.withinDays)
+                }
             } catch (_: Throwable) {
                 emptyList()
             }

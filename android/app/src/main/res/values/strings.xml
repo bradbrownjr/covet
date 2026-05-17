@@ -73,6 +73,7 @@
 
     <string name="cd_new_collection">New collection</string>
     <string name="no_collections">No collections yet. Tap + to create one.</string>
+    <string name="no_lists" tools:ignore="MissingTranslation">No lists yet. Tap + to create one.</string>
     <string name="what_are_you_collecting">What are you collecting?</string>
     <string name="new_collection">New collection</string>
     <string name="new_list">New list</string>
