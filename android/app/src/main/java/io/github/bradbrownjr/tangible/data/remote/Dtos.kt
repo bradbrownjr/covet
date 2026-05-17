@@ -282,6 +282,26 @@ data class DueAlertDto(
 )
 
 @JsonClass(generateAdapter = true)
+data class StandaloneTaskDto(
+    val id: String,
+    val collection_id: String,
+    val title: String,
+    val notes: String? = null,
+    val due_at: String? = null,
+    val completed_at: String? = null,
+    val item_id: String? = null,
+    val created_at: String,
+    val updated_at: String,
+)
+
+@JsonClass(generateAdapter = true)
+data class CreateTaskBody(
+    val title: String,
+    val notes: String? = null,
+    val due_at: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
 data class LocationDto(
     val id: String,
     val collection_id: String,

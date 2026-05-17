@@ -190,6 +190,7 @@ class SettingsViewModel @Inject constructor(
 fun SettingsScreen(
     onSignOut: () -> Unit,
     onBack: () -> Unit,
+    onNavigateToAbout: () -> Unit = {},
     showBackButton: Boolean = true,
     vm: SettingsViewModel = hiltViewModel(),
 ) {
@@ -361,6 +362,14 @@ fun SettingsScreen(
             }
             item { HorizontalDivider() }
             item { Button(onClick = { vm.signOut(onSignOut) }) { Text(stringResource(R.string.sign_out)) } }
+            item {
+                TextButton(
+                    onClick = onNavigateToAbout,
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+                ) {
+                    Text(stringResource(R.string.about))
+                }
+            }
         }
     }
 }

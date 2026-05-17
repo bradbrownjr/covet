@@ -30,7 +30,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.bradbrownjr.tangible.R
-import io.github.bradbrownjr.tangible.ui.screen.about.AboutScreen
+import io.github.bradbrownjr.tangible.ui.screen.alerts.AlertsScreen
 import io.github.bradbrownjr.tangible.ui.screen.collections.CollectionsTabsScreen
 import io.github.bradbrownjr.tangible.ui.screen.grocery.ShoppingListScreen
 import io.github.bradbrownjr.tangible.ui.screen.home.HomeTabScreen
@@ -47,9 +47,9 @@ private val HOME_SECTIONS = listOf(
     NavSection(R.string.home_tab, Icons.Default.Home),
     NavSection(R.string.collections, Icons.Default.Folder),
     NavSection(R.string.grocery_list, Icons.AutoMirrored.Filled.List),
+    NavSection(R.string.alerts, Icons.Default.Notifications),
     NavSection(R.string.tasks, Icons.Default.AssignmentTurnedIn),
     NavSection(R.string.settings, Icons.Default.Settings),
-    NavSection(R.string.about, Icons.Default.Info),
 )
 
 @Composable
@@ -59,6 +59,7 @@ fun HomeScreen(
     onNavigateToScanner: () -> Unit,
     onNavigateToChores: (collectionId: String, collectionName: String) -> Unit = { _, _ -> },
     onSignOut: () -> Unit,
+    onNavigateToAbout: () -> Unit = {},
     scannedBarcode: String? = null,
     initialSection: Int = 0,
 ) {
@@ -155,13 +156,14 @@ fun HomeScreen(
                     onNavigateToScanner = onNavigateToScanner,
                     scannedBarcode = scannedBarcode,
                 )
-                3 -> MaintenanceScreen(onBack = {}, showBackButton = false)
-                4 -> SettingsScreen(
+                3 -> AlertsScreen(onBack = {}, showBackButton = false)
+                4 -> MaintenanceScreen(onBack = {}, showBackButton = false, onNavigateToChores = onNavigateToChores)
+                5 -> SettingsScreen(
                     onSignOut = onSignOut,
                     onBack = {},
+                    onNavigateToAbout = onNavigateToAbout,
                     showBackButton = false,
                 )
-                5 -> AboutScreen(onBack = {}, showBackButton = false)
             }
         }
     }

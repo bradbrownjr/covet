@@ -26,6 +26,7 @@ import io.github.bradbrownjr.tangible.ui.screen.scan.ScannerScreen
 object Routes {
     const val LOGIN = "login"
     const val HOME = "home"
+    const val ABOUT = "about"
     const val GROCERY_STORES = "grocery-stores"
     const val GROCERY_STORE_AISLES = "grocery-stores/{storeId}"
     fun groceryStoreAisles(storeId: String) = "grocery-stores/$storeId"
@@ -95,6 +96,7 @@ fun TangibleApp() {
                             popUpTo(0) { inclusive = true }
                         }
                     },
+                    onNavigateToAbout = { nav.navigate(Routes.ABOUT) },
                     scannedBarcode = scannedBarcode,
                 )
             }
@@ -130,6 +132,9 @@ fun TangibleApp() {
                     nav.previousBackStackEntry?.savedStateHandle?.set("barcode", code)
                     nav.popBackStack()
                 })
+            }
+            composable(Routes.ABOUT) {
+                AboutScreen(onBack = { nav.popBackStack() })
             }
             composable(
                 Routes.COLLECTION_CHORES,

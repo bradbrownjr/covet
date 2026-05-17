@@ -1,6 +1,6 @@
 {
     "name": "tangible-web",
-    "version": "0.25.34",
+    "version": "0.25.35",
     "private": true,
     "type": "module",
     "scripts": {

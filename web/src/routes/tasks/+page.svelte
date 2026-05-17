@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { page } from '$app/state';
-    import { api, type DueAlert, type StandaloneTask, type Collection, type ScoreboardEntry } from '$lib/api';
+    import { api, ApiError, type DueAlert, type StandaloneTask, type Collection, type ScoreboardEntry } from '$lib/api';
     import { _ } from 'svelte-i18n';
     import { EmptyState } from '$lib/components';
     import Icon from '$lib/Icon.svelte';
@@ -23,6 +23,11 @@
     let newNotes = $state('');
     let newDueAt = $state('');
     let newCollectionId = $state('');
+
+    function taskErrMsg(e: unknown): string {
+        if (e instanceof ApiError && e.status === 429) return 'Too many requests — please wait a moment and try again.';
+        return (e as Error).message;
+    }
     let taskSaving = $state(false);
 
     async function load() {
@@ -99,7 +104,7 @@
             taskCollections = cols;
             if (!newCollectionId && cols.length) newCollectionId = cols[0].id;
         } catch (e) {
-            tasksError = (e as Error).message;
+            tasksError = taskErrMsg(e);
         } finally {
             tasksLoading = false;
         }
@@ -127,7 +132,7 @@
             newDueAt = '';
             showNewTaskForm = false;
         } catch (e) {
-            tasksError = (e as Error).message;
+            tasksError = taskErrMsg(e);
         } finally {
             taskSaving = false;
         }
@@ -139,7 +144,7 @@
             myTasks = myTasks.filter(t => t.id !== id);
             launchConfetti();
         } catch (e) {
-            tasksError = (e as Error).message;
+            tasksError = taskErrMsg(e);
         }
     }
 
@@ -148,7 +153,7 @@
             await api.delete(`/tasks/${id}`);
             myTasks = myTasks.filter(t => t.id !== id);
         } catch (e) {
-            tasksError = (e as Error).message;
+            tasksError = taskErrMsg(e);
         }
     }
 

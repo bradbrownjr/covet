@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -18,10 +20,13 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AssignmentTurnedIn
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
@@ -88,6 +93,7 @@ data class HomeUi(
     val loading: Boolean = false,
     val searched: Boolean = false,
     val error: String? = null,
+    val alertCount: Int = 0,
 )
 
 @HiltViewModel
@@ -109,6 +115,12 @@ class HomeTabViewModel @Inject constructor(
             } catch (_: Throwable) {
                 // surfaced lazily when user tries to add
             }
+        }
+        viewModelScope.launch {
+            try {
+                val count = api.getAlerts(withinDays = 30).size
+                _state.value = _state.value.copy(alertCount = count)
+            } catch (_: Throwable) { /* non-fatal */ }
         }
     }
 
@@ -201,7 +213,25 @@ fun HomeTabScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(title = { Text(stringResource(R.string.home_tab)) })
+            TopAppBar(
+                title = { Text(stringResource(R.string.home_tab)) },
+                actions = {
+                    BadgedBox(
+                        badge = {
+                            if (s.alertCount > 0) {
+                                Badge { Text(s.alertCount.toString()) }
+                            }
+                        },
+                    ) {
+                        IconButton(onClick = { onJumpTo(3) }) {
+                            Icon(
+                                Icons.Default.Notifications,
+                                contentDescription = stringResource(R.string.tasks_tab_alerts),
+                            )
+                        }
+                    }
+                },
+            )
         },
     ) { padding ->
         Column(
@@ -332,34 +362,53 @@ fun HomeTabScreen(
                     stringResource(R.string.home_shortcuts_heading),
                     style = MaterialTheme.typography.labelLarge,
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    JumpToTile(
-                        icon = Icons.Default.Folder,
-                        label = stringResource(R.string.collections),
-                        onClick = { onJumpTo(1) },
-                        modifier = Modifier.weight(1f),
-                    )
-                    JumpToTile(
-                        icon = Icons.AutoMirrored.Filled.List,
-                        label = stringResource(R.string.grocery_list),
-                        onClick = { onJumpTo(2) },
-                        modifier = Modifier.weight(1f),
-                    )
-                    JumpToTile(
-                        icon = Icons.Default.AssignmentTurnedIn,
-                        label = stringResource(R.string.tasks),
-                        onClick = { onJumpTo(3) },
-                        modifier = Modifier.weight(1f),
-                    )
-                    JumpToTile(
-                        icon = Icons.Default.Settings,
-                        label = stringResource(R.string.settings),
-                        onClick = { onJumpTo(4) },
-                        modifier = Modifier.weight(1f),
-                    )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        JumpToTile(
+                            icon = Icons.Default.Folder,
+                            label = stringResource(R.string.collections),
+                            onClick = { onJumpTo(1) },
+                            modifier = Modifier.weight(1f),
+                        )
+                        JumpToTile(
+                            icon = Icons.AutoMirrored.Filled.List,
+                            label = stringResource(R.string.grocery_list),
+                            onClick = { onJumpTo(2) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        JumpToTile(
+                            icon = Icons.Default.AssignmentTurnedIn,
+                            label = stringResource(R.string.tasks),
+                            onClick = { onJumpTo(4) },
+                            modifier = Modifier.weight(1f),
+                        )
+                        JumpToTile(
+                            icon = Icons.Default.Notifications,
+                            label = stringResource(R.string.alerts),
+                            onClick = { onJumpTo(3) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        JumpToTile(
+                            icon = Icons.Default.Settings,
+                            label = stringResource(R.string.settings),
+                            onClick = { onJumpTo(5) },
+                            modifier = Modifier.weight(1f),
+                        )
+                        Spacer(Modifier.weight(1f))
+                    }
                 }
             }
         }
@@ -433,20 +482,27 @@ private fun JumpToTile(
     modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier.clickable(onClick = onClick),
+        modifier = modifier
+            .heightIn(min = 96.dp)
+            .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp, horizontal = 4.dp),
+                .padding(vertical = 20.dp, horizontal = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.Center,
         ) {
-            Icon(icon, contentDescription = null)
+            Icon(
+                icon,
+                contentDescription = null,
+                modifier = Modifier.size(32.dp),
+            )
+            Spacer(Modifier.height(6.dp))
             Text(
                 label,
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.labelMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )

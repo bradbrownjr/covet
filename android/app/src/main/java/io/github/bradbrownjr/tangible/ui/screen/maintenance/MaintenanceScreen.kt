@@ -62,13 +62,19 @@ private val KIND_LABEL_RES = mapOf(
     "low_stock" to R.string.alert_low_stock,
 )
 
-enum class TaskTab { CHORES, ALERTS, MY_TASKS, SCOREBOARD }
+enum class TaskTab { CHORES, MY_TASKS, SCOREBOARD }
 
 data class MaintenanceUi(
     val alerts: List<DueAlertDto> = emptyList(),
     val loading: Boolean = false,
     val withinDays: Int = 30,
     val selectedKind: String? = null,
+    // My Tasks tab
+    val myTasks: List<StandaloneTaskDto> = emptyList(),
+    val taskCollections: List<CollectionDto> = emptyList(),
+    val tasksLoading: Boolean = false,
+    val tasksError: String? = null,
+    val tasksLoaded: Boolean = false,
 )
 
 @HiltViewModel
@@ -103,6 +109,61 @@ class MaintenanceViewModel @Inject constructor(
     fun setKindFilter(kind: String?) {
         _state.value = _state.value.copy(selectedKind = kind)
     }
+
+    fun loadTasks() {
+        if (_state.value.tasksLoading || _state.value.tasksLoaded) return
+        _state.value = _state.value.copy(tasksLoading = true, tasksError = null)
+        viewModelScope.launch {
+            try {
+                val tasks = api.getTasks()
+                val cols = if (_state.value.taskCollections.isEmpty()) api.listCollections() else _state.value.taskCollections
+                _state.value = _state.value.copy(
+                    myTasks = tasks,
+                    taskCollections = cols,
+                    tasksLoading = false,
+                    tasksLoaded = true,
+                )
+            } catch (e: Throwable) {
+                _state.value = _state.value.copy(
+                    tasksLoading = false,
+                    tasksError = e.message ?: "Error loading tasks",
+                )
+            }
+        }
+    }
+
+    fun createTask(collectionId: String, title: String, notes: String?) {
+        viewModelScope.launch {
+            try {
+                val task = api.createTask(collectionId, CreateTaskBody(title, notes))
+                _state.value = _state.value.copy(myTasks = _state.value.myTasks + task)
+            } catch (e: Throwable) {
+                _state.value = _state.value.copy(tasksError = e.message ?: "Error creating task")
+            }
+        }
+    }
+
+    fun completeTask(id: String) {
+        viewModelScope.launch {
+            try {
+                api.completeTask(id)
+                _state.value = _state.value.copy(myTasks = _state.value.myTasks.filter { it.id != id })
+            } catch (e: Throwable) {
+                _state.value = _state.value.copy(tasksError = e.message ?: "Error completing task")
+            }
+        }
+    }
+
+    fun deleteTask(id: String) {
+        viewModelScope.launch {
+            try {
+                api.deleteTask(id)
+                _state.value = _state.value.copy(myTasks = _state.value.myTasks.filter { it.id != id })
+            } catch (e: Throwable) {
+                _state.value = _state.value.copy(tasksError = e.message ?: "Error deleting task")
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -110,15 +171,20 @@ class MaintenanceViewModel @Inject constructor(
 fun MaintenanceScreen(
     onBack: () -> Unit,
     showBackButton: Boolean = true,
+    onNavigateToChores: (collectionId: String, collectionName: String) -> Unit = { _, _ -> },
     vm: MaintenanceViewModel = hiltViewModel(),
 ) {
     val s by vm.state.collectAsState()
     var selectedTabIndex by remember { mutableStateOf(0) }
     val selectedTab = TaskTab.values()[selectedTabIndex]
+    var showNewTaskDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(selectedTab) {
+        if (selectedTab == TaskTab.MY_TASKS) vm.loadTasks()
+    }
 
     val tabs = listOf(
         R.string.tasks_tab_chores    to TaskTab.CHORES,
-        R.string.tasks_tab_alerts    to TaskTab.ALERTS,
         R.string.tasks_tab_my_tasks  to TaskTab.MY_TASKS,
         R.string.tasks_tab_scoreboard to TaskTab.SCOREBOARD,
     )
@@ -135,7 +201,7 @@ fun MaintenanceScreen(
                     }
                 },
                 actions = {
-                    if (selectedTab == TaskTab.CHORES || selectedTab == TaskTab.ALERTS) {
+                    if (selectedTab == TaskTab.CHORES) {
                         OutlinedButton(
                             onClick = vm::refresh,
                             enabled = !s.loading,
@@ -151,6 +217,13 @@ fun MaintenanceScreen(
                 },
             )
         },
+        floatingActionButton = {
+            if (selectedTab == TaskTab.MY_TASKS) {
+                FloatingActionButton(onClick = { showNewTaskDialog = true }) {
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.tasks_new_task))
+                }
+            }
+        },
         contentWindowInsets = WindowInsets(0),
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
@@ -164,17 +237,23 @@ fun MaintenanceScreen(
                 }
             }
             when (selectedTab) {
-                TaskTab.CHORES     -> ChoresAlertsContent(s, vm, choreOnly = true)
-                TaskTab.ALERTS     -> ChoresAlertsContent(s, vm, choreOnly = false)
-                TaskTab.MY_TASKS   -> StubTabContent(stringResource(R.string.tasks_my_tasks_empty))
+                TaskTab.CHORES     -> ChoresAlertsContent(s, vm, choreOnly = true, onNavigateToChores = onNavigateToChores)
+                TaskTab.MY_TASKS   -> MyTasksContent(s, vm)
                 TaskTab.SCOREBOARD -> StubTabContent(stringResource(R.string.tasks_scoreboard_empty))
             }
         }
     }
+
+    if (showNewTaskDialog) {
+        NewTaskDialog(s, vm, onDismiss = { showNewTaskDialog = false })
+    }
 }
 
 @Composable
-private fun AlertCard(alert: DueAlertDto) {
+private fun AlertCard(
+    alert: DueAlertDto,
+    onNavigateToChores: ((collectionId: String, collectionName: String) -> Unit)? = null,
+) {
     val isOverdue = alert.severity == "critical"
     val kindLabel = KIND_LABEL_RES[alert.kind]?.let { stringResource(it) } ?: alert.kind
     Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
@@ -213,6 +292,17 @@ private fun AlertCard(alert: DueAlertDto) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            if (onNavigateToChores != null && alert.kind == "chore_due") {
+                TextButton(
+                    onClick = { onNavigateToChores(alert.collection_id, alert.title) },
+                    contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.tasks_manage_chores),
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                }
+            }
         }
     }
 }
@@ -222,6 +312,7 @@ private fun ChoresAlertsContent(
     s: MaintenanceUi,
     vm: MaintenanceViewModel,
     choreOnly: Boolean,
+    onNavigateToChores: (collectionId: String, collectionName: String) -> Unit = { _, _ -> },
 ) {
     val baseAlerts = if (choreOnly) s.alerts.filter { it.kind == "chore_due" } else s.alerts
     val allKinds = if (choreOnly) emptyList() else s.alerts.map { it.kind }.distinct().sorted()
@@ -298,7 +389,7 @@ private fun ChoresAlertsContent(
             }
         } else {
             items(visibleAlerts, key = { it.id }) { alert ->
-                AlertCard(alert)
+                AlertCard(alert, onNavigateToChores = onNavigateToChores.takeIf { choreOnly })
             }
         }
     }
@@ -318,4 +409,172 @@ private fun StubTabContent(message: String) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+@Composable
+private fun MyTasksContent(s: MaintenanceUi, vm: MaintenanceViewModel) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(vertical = 8.dp),
+    ) {
+        if (!s.tasksError.isNullOrBlank()) {
+            item {
+                Text(
+                    text = s.tasksError!!,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(vertical = 4.dp),
+                )
+            }
+        }
+        if (s.tasksLoading && s.myTasks.isEmpty()) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(24.dp),
+                    horizontalArrangement = Arrangement.Center,
+                ) { CircularProgressIndicator() }
+            }
+        } else if (s.myTasks.isEmpty()) {
+            item {
+                Text(
+                    stringResource(R.string.tasks_my_tasks_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(vertical = 24.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        } else {
+            items(s.myTasks, key = { it.id }) { task ->
+                TaskCard(task, onComplete = { vm.completeTask(task.id) }, onDelete = { vm.deleteTask(task.id) })
+            }
+        }
+    }
+}
+
+@Composable
+private fun TaskCard(
+    task: StandaloneTaskDto,
+    onComplete: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    val isOverdue = task.due_at != null && task.due_at < java.time.Instant.now().toString().take(10)
+    Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = task.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.weight(1f),
+                )
+                Row {
+                    IconButton(onClick = onComplete) {
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = stringResource(R.string.tasks_complete),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    IconButton(onClick = onDelete) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = stringResource(R.string.tasks_delete_task),
+                            tint = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+            }
+            if (!task.notes.isNullOrBlank()) {
+                Text(
+                    text = task.notes!!,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (task.due_at != null) {
+                Text(
+                    text = if (isOverdue) stringResource(R.string.alert_overdue, task.due_at.take(10))
+                           else stringResource(R.string.alert_due, task.due_at.take(10)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun NewTaskDialog(
+    s: MaintenanceUi,
+    vm: MaintenanceViewModel,
+    onDismiss: () -> Unit,
+) {
+    var title by remember { mutableStateOf("") }
+    var notes by remember { mutableStateOf("") }
+    var selectedCollectionId by remember { mutableStateOf(s.taskCollections.firstOrNull()?.id ?: "") }
+    var menuOpen by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.tasks_new_task)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text(stringResource(R.string.tasks_new_task_title_label)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
+                if (s.taskCollections.isNotEmpty()) {
+                    ExposedDropdownMenuBox(expanded = menuOpen, onExpandedChange = { menuOpen = it }) {
+                        OutlinedTextField(
+                            value = s.taskCollections.firstOrNull { it.id == selectedCollectionId }?.name ?: "",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text(stringResource(R.string.tasks_new_task_collection_label)) },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = menuOpen) },
+                            modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                        )
+                        ExposedDropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                            s.taskCollections.forEach { col ->
+                                DropdownMenuItem(
+                                    text = { Text(col.name) },
+                                    onClick = { selectedCollectionId = col.id; menuOpen = false },
+                                )
+                            }
+                        }
+                    }
+                }
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text(stringResource(R.string.tasks_new_task_notes_label)) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(0.dp))
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (title.isNotBlank() && selectedCollectionId.isNotBlank()) {
+                        vm.createTask(selectedCollectionId, title.trim(), notes.trim().ifBlank { null })
+                        onDismiss()
+                    }
+                },
+                enabled = title.isNotBlank() && selectedCollectionId.isNotBlank(),
+            ) { Text(stringResource(R.string.save)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
 }

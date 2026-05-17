@@ -198,6 +198,22 @@ interface TangibleApi {
     @GET("alerts")
     suspend fun getAlerts(@Query("within_days") withinDays: Int = 14): List<DueAlertDto>
 
+    // --- Standalone Tasks ---
+    @GET("tasks")
+    suspend fun getTasks(): List<StandaloneTaskDto>
+
+    @POST("collections/{collectionId}/tasks")
+    suspend fun createTask(
+        @Path("collectionId") collectionId: String,
+        @Body body: CreateTaskBody,
+    ): StandaloneTaskDto
+
+    @POST("tasks/{id}/complete")
+    suspend fun completeTask(@Path("id") id: String)
+
+    @DELETE("tasks/{id}")
+    suspend fun deleteTask(@Path("id") id: String)
+
     // --- Metadata ---
     @POST("metadata/scrape")
     suspend fun scrape(@Body body: ScrapeRequest): ScrapeResponse
