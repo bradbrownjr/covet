@@ -55,8 +55,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import io.github.bradbrownjr.tangible.data.remote.BarcodeLookupRequest
 import io.github.bradbrownjr.tangible.data.remote.CategoryDto
 import io.github.bradbrownjr.tangible.data.remote.CollectionDto
@@ -502,6 +505,8 @@ fun ShoppingListScreen(
     onManageStores: () -> Unit,
     onNavigateToScanner: () -> Unit = {},
     scannedBarcode: String? = null,
+    onSwipeLeft: () -> Unit = {},
+    onSwipeRight: () -> Unit = {},
 ) {
     val ui by viewModel.state.collectAsState()
     val selectedStore = ui.stores.find { it.id == ui.selectedStoreId }
@@ -509,6 +514,7 @@ fun ShoppingListScreen(
     val aisleGroups = if (selectedStore != null) groupByAisle(ui.items, selectedStore.aisles, otherLabel) else null
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+    val dragThresholdPx = with(LocalDensity.current) { 80.dp.toPx() }
 
     // Auto-refresh whenever the screen returns to the foreground so items added
     // from other surfaces (e.g. Collections → Add to shopping list) appear without
@@ -573,6 +579,20 @@ fun ShoppingListScreen(
 
     Scaffold(
         topBar = {
+            var listDragAccum by remember { mutableFloatStateOf(0f) }
+            Box(
+                Modifier.pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = { listDragAccum = 0f },
+                        onDragCancel = { listDragAccum = 0f },
+                        onHorizontalDrag = { _, amount ->
+                            listDragAccum += amount
+                            if (listDragAccum < -dragThresholdPx) { listDragAccum = 0f; onSwipeLeft() }
+                            else if (listDragAccum > dragThresholdPx) { listDragAccum = 0f; onSwipeRight() }
+                        },
+                    )
+                }
+            ) {
             TopAppBar(
                 title = {
                     Column {
@@ -637,6 +657,7 @@ fun ShoppingListScreen(
                     }
                 },
             )
+            }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->

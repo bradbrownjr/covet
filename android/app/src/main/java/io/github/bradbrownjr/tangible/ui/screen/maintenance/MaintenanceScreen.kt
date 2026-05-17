@@ -1,5 +1,6 @@
 package io.github.bradbrownjr.tangible.ui.screen.maintenance
 
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,11 +49,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.font.FontWeight
@@ -255,6 +259,8 @@ fun MaintenanceScreen(
     showBackButton: Boolean = true,
     onNavigateToChores: (collectionId: String, collectionName: String) -> Unit = { _, _ -> },
     vm: MaintenanceViewModel = hiltViewModel(),
+    onSwipeLeft: () -> Unit = {},
+    onSwipeRight: () -> Unit = {},
 ) {
     val s by vm.state.collectAsState()
     var selectedTabIndex by remember { mutableStateOf(0) }
@@ -275,9 +281,24 @@ fun MaintenanceScreen(
         R.string.tasks_tab_my_tasks  to TaskTab.MY_TASKS,
         R.string.tasks_tab_scoreboard to TaskTab.SCOREBOARD,
     )
+    val dragThresholdPx = with(LocalDensity.current) { 80.dp.toPx() }
 
     Scaffold(
         topBar = {
+            var tasksDragAccum by remember { mutableFloatStateOf(0f) }
+            Box(
+                Modifier.pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = { tasksDragAccum = 0f },
+                        onDragCancel = { tasksDragAccum = 0f },
+                        onHorizontalDrag = { _, amount ->
+                            tasksDragAccum += amount
+                            if (tasksDragAccum < -dragThresholdPx) { tasksDragAccum = 0f; onSwipeLeft() }
+                            else if (tasksDragAccum > dragThresholdPx) { tasksDragAccum = 0f; onSwipeRight() }
+                        },
+                    )
+                }
+            ) {
             TopAppBar(
                 title = { Text(stringResource(R.string.tasks)) },
                 navigationIcon = {
@@ -302,6 +323,7 @@ fun MaintenanceScreen(
                     }
                 },
             )
+            }
         },
         contentWindowInsets = WindowInsets(0),
     ) { padding ->

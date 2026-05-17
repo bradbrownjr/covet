@@ -159,13 +159,21 @@ fun HomeScreen(
                     onManageStores = { scope.launch { pagerState.animateScrollToPage(3) } },
                     onNavigateToScanner = onNavigateToScanner,
                     scannedBarcode = scannedBarcode,
+                    onSwipeLeft = { scope.launch { pagerState.animateScrollToPage((pagerState.currentPage + 1).coerceAtMost(HOME_SECTIONS.size - 1)) } },
+                    onSwipeRight = { scope.launch { pagerState.animateScrollToPage((pagerState.currentPage - 1).coerceAtLeast(0)) } },
                 )
                 3 -> ShoppingStoreListScreen(
                     onBack = {},
                     showBackButton = false,
                     onOpenStore = onNavigateToStoreAisles,
                 )
-                4 -> MaintenanceScreen(onBack = {}, showBackButton = false, onNavigateToChores = onNavigateToChores)
+                4 -> MaintenanceScreen(
+                    onBack = {},
+                    showBackButton = false,
+                    onNavigateToChores = onNavigateToChores,
+                    onSwipeLeft = { scope.launch { pagerState.animateScrollToPage((pagerState.currentPage + 1).coerceAtMost(HOME_SECTIONS.size - 1)) } },
+                    onSwipeRight = { scope.launch { pagerState.animateScrollToPage((pagerState.currentPage - 1).coerceAtLeast(0)) } },
+                )
                 5 -> AlertsScreen(onBack = {}, showBackButton = false)
                 6 -> SettingsScreen(
                     onSignOut = onSignOut,
