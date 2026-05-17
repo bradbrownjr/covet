@@ -1,6 +1,7 @@
 <script lang="ts">
     import { api } from '$lib/api';
     import { _ } from 'svelte-i18n';
+    import { tick } from 'svelte';
     import { GROCERY_CATEGORIES } from '$lib/shoppingCategories';
     import type { ShoppingCategory } from '$lib/shoppingCategories';
     import Icon from '$lib/Icon.svelte';
@@ -21,7 +22,7 @@
         aisles: Aisle[];
     }
 
-    let { onClose = undefined, standalone = false }: { onClose?: () => void; standalone?: boolean } = $props();
+    let { onClose = undefined, standalone = false, initialStoreId = null, focusNew = false }: { onClose?: () => void; standalone?: boolean; initialStoreId?: string | null; focusNew?: boolean } = $props();
 
     let stores = $state<Store[]>([]);
     let selectedStoreId = $state<string | null>(null);
@@ -46,11 +47,22 @@
         selectedStore ? [...selectedStore.aisles].sort((a, b) => a.position - b.position) : []
     );
 
+    // new-store input ref for focusNew support
+    let newStoreInput = $state<HTMLInputElement | null>(null);
+
     async function load() {
         loading = true;
         try {
             stores = await api.get<Store[]>('/grocery/stores');
-            if (stores.length && !selectedStoreId) selectedStoreId = stores[0].id;
+            if (initialStoreId && stores.find(s => s.id === initialStoreId)) {
+                selectedStoreId = initialStoreId;
+            } else if (stores.length && !selectedStoreId) {
+                selectedStoreId = stores[0].id;
+            }
+            if (focusNew) {
+                await tick();
+                newStoreInput?.focus();
+            }
         } catch (e) {
             error = (e as Error).message;
         } finally {
@@ -240,6 +252,7 @@
                     <form class="new-store-form" onsubmit={(e) => { e.preventDefault(); createStore(); }}>
                         <input
                             type="text"
+                            bind:this={newStoreInput}
                             bind:value={newStoreName}
                             placeholder={$_('grocery_store.create_store_placeholder')}
                             required

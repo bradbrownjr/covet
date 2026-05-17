@@ -14,6 +14,9 @@
     "lists": "Lists",
     "import": "Import",
     "stores": "Stores",
+    "all_stores": "All Stores",
+    "add_store": "+ Add Store",
+    "all_settings": "All Settings",
     "tasks": "Tasks",
     "new_list": "+ New list"
   },

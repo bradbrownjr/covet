@@ -33,8 +33,11 @@
     let listsMenuOpen = $state(false);
     let collectionsMenuOpen = $state(false);
     let tasksMenuOpen = $state(false);
+    let storesMenuOpen = $state(false);
+    let settingsMenuOpen = $state(false);
     let navCollections = $state<Collection[]>([]);
     let navListTypes = $state<UserListType[]>([]);
+    let navStores = $state<{id: string, name: string}[]>([]);
     let menuOpen = $state(false);
 
     async function refreshNavCollections() {
@@ -52,6 +55,16 @@
             navListTypes = await api.get<UserListType[]>('/lists/types', true);
         } catch {
             navListTypes = [];
+        }
+    }
+
+    async function refreshNavStores() {
+        if (!$me) { navStores = []; return; }
+        try {
+            const all = await api.get<{id: string, name: string}[]>('/grocery/stores', true);
+            navStores = all.map(s => ({ id: s.id, name: s.name }));
+        } catch {
+            navStores = [];
         }
     }
 
@@ -96,7 +109,7 @@
         }
         await Promise.all([refreshMe(), loadPublicConfig()]);
         ready = true;
-        await Promise.all([refreshShoppingCount(), refreshNavCollections(), refreshNavListTypes()]);
+        await Promise.all([refreshShoppingCount(), refreshNavCollections(), refreshNavListTypes(), refreshNavStores()]);
         const path = page.url.pathname;
         const onAuth = path === '/login' || path === '/register';
         const isPublic = path.startsWith('/share/') || path.startsWith('/invite/');
@@ -140,16 +153,16 @@
         }
     });
 
-    afterNavigate(() => { refreshNavCollections(); refreshNavListTypes(); });
+    afterNavigate(() => { refreshNavCollections(); refreshNavListTypes(); refreshNavStores(); });
 
     async function doLogout() {
         await logout();
         await goto('/login');
     }
 
-    function closeMenu() { menuOpen = false; listsMenuOpen = false; collectionsMenuOpen = false; tasksMenuOpen = false; }
+    function closeMenu() { menuOpen = false; listsMenuOpen = false; collectionsMenuOpen = false; tasksMenuOpen = false; storesMenuOpen = false; settingsMenuOpen = false; }
 
-    function handleDocumentClick() { listsMenuOpen = false; collectionsMenuOpen = false; tasksMenuOpen = false; }
+    function handleDocumentClick() { listsMenuOpen = false; collectionsMenuOpen = false; tasksMenuOpen = false; storesMenuOpen = false; settingsMenuOpen = false; }
 
     $effect(() => {
         document.documentElement.lang = $locale ?? 'en';
@@ -243,14 +256,36 @@
                     </div>
                 {/if}
             </div>
-            <a href="/stores" class="nav-link" onclick={closeMenu}>
-                <Icon name="store" size={16} />
-                <span>{$_('nav.stores')}</span>
-            </a>
+            <div class="nav-lists-menu" class:open={storesMenuOpen}>
+                <button
+                    class="nav-lists-trigger"
+                    onclick={(e) => { e.stopPropagation(); storesMenuOpen = !storesMenuOpen; listsMenuOpen = false; collectionsMenuOpen = false; tasksMenuOpen = false; settingsMenuOpen = false; }}
+                    aria-haspopup="true"
+                    aria-expanded={storesMenuOpen}
+                >
+                    <Icon name="store" size={16} />
+                    <span>{$_('nav.stores')}</span>
+                </button>
+                {#if storesMenuOpen}
+                    <div class="nav-lists-dropdown" role="menu">
+                        <a href="/stores" role="menuitem" onclick={() => { storesMenuOpen = false; closeMenu(); }}>
+                            {$_('nav.all_stores')}
+                        </a>
+                        {#each navStores as store (store.id)}
+                            <a href="/stores?store={store.id}" role="menuitem" onclick={() => { storesMenuOpen = false; closeMenu(); }}>
+                                {store.name}
+                            </a>
+                        {/each}
+                        <a href="/stores?new=1" role="menuitem" class="add-collection-link" onclick={() => { storesMenuOpen = false; closeMenu(); }}>
+                            {$_('nav.add_store')}
+                        </a>
+                    </div>
+                {/if}
+            </div>
             <div class="nav-lists-menu" class:open={tasksMenuOpen}>
                 <button
                     class="nav-lists-trigger"
-                    onclick={(e) => { e.stopPropagation(); tasksMenuOpen = !tasksMenuOpen; listsMenuOpen = false; collectionsMenuOpen = false; }}
+                    onclick={(e) => { e.stopPropagation(); tasksMenuOpen = !tasksMenuOpen; listsMenuOpen = false; collectionsMenuOpen = false; storesMenuOpen = false; settingsMenuOpen = false; }}
                     aria-haspopup="true"
                     aria-expanded={tasksMenuOpen}
                 >
@@ -271,10 +306,41 @@
                     </div>
                 {/if}
             </div>
-            <a href="/settings/appearance" class="nav-link" onclick={closeMenu}>
-                <Icon name="settings" size={16} />
-                <span>{$_('nav.settings')}</span>
-            </a>
+            <div class="nav-lists-menu" class:open={settingsMenuOpen}>
+                <button
+                    class="nav-lists-trigger"
+                    onclick={(e) => { e.stopPropagation(); settingsMenuOpen = !settingsMenuOpen; listsMenuOpen = false; collectionsMenuOpen = false; tasksMenuOpen = false; storesMenuOpen = false; }}
+                    aria-haspopup="true"
+                    aria-expanded={settingsMenuOpen}
+                >
+                    <Icon name="settings" size={16} />
+                    <span>{$_('nav.settings')}</span>
+                </button>
+                {#if settingsMenuOpen}
+                    <div class="nav-lists-dropdown" role="menu">
+                        <a href="/settings/appearance" role="menuitem" onclick={() => { settingsMenuOpen = false; closeMenu(); }}>
+                            {$_('nav.all_settings')}
+                        </a>
+                        <a href="/settings/appearance" role="menuitem" onclick={() => { settingsMenuOpen = false; closeMenu(); }}>
+                            {$_('settings.nav_appearance')}
+                        </a>
+                        <a href="/settings/notifications" role="menuitem" onclick={() => { settingsMenuOpen = false; closeMenu(); }}>
+                            {$_('settings.nav_notifications')}
+                        </a>
+                        <a href="/settings/security" role="menuitem" onclick={() => { settingsMenuOpen = false; closeMenu(); }}>
+                            {$_('settings.nav_security')}
+                        </a>
+                        <a href="/settings/account" role="menuitem" onclick={() => { settingsMenuOpen = false; closeMenu(); }}>
+                            {$_('settings.nav_account')}
+                        </a>
+                        {#if $me?.is_admin}
+                            <a href="/settings/admin" role="menuitem" onclick={() => { settingsMenuOpen = false; closeMenu(); }}>
+                                {$_('settings.nav_admin')}
+                            </a>
+                        {/if}
+                    </div>
+                {/if}
+            </div>
             <a href="/profile" class="user nav-link" onclick={closeMenu} title={$_('nav.edit_profile')}>
                 <Icon name="user" size={16} />
                 <span>{userLabel($me)}</span>

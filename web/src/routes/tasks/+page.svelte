@@ -542,9 +542,9 @@
         font-weight: 700;
     }
 
-    .filter-row { display: flex; gap: 1rem; align-items: flex-end; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .filter-row { display: flex; gap: 1rem; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; }
     .filter-row button { min-height: unset; }
-    label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.875rem; }
+    label { display: flex; flex-direction: row; align-items: center; gap: 0.5rem; font-size: 0.875rem; }
 
     .tab-hint { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.75rem; }
 
