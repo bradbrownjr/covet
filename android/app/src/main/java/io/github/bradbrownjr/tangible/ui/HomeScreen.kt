@@ -118,12 +118,13 @@ fun HomeScreen(
             }
         },
     ) { innerPadding ->
-        // userScrollEnabled = false: the outer pager no longer intercepts content-area swipes.
-        // Sections with inner tabs (e.g. Lists) let their own HorizontalPager handle the gesture.
-        // Section navigation from the content area is done by swiping the nav bar below.
+        // userScrollEnabled = true: content-area swipes navigate sections on screens that don't
+        // have an inner HorizontalPager (Home, Stores, Alerts, Settings). Screens that do have
+        // inner pagers (Collections, Shopping List) consume the gesture themselves; section
+        // navigation from those screens still works via the top-bar drag and nav-bar drag.
         HorizontalPager(
             state = pagerState,
-            userScrollEnabled = false,
+            userScrollEnabled = true,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(bottom = innerPadding.calculateBottomPadding()),

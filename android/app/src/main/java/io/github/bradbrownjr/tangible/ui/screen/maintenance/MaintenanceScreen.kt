@@ -2,6 +2,8 @@ package io.github.bradbrownjr.tangible.ui.screen.maintenance
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -54,6 +56,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -265,24 +268,24 @@ fun MaintenanceScreen(
     onSwipeRight: () -> Unit = {},
 ) {
     val s by vm.state.collectAsState()
-    var selectedTabIndex by remember { mutableStateOf(0) }
-    val selectedTab = TaskTab.values()[selectedTabIndex]
-    var showNewTaskDialog by remember { mutableStateOf(false) }
-    var showNewChoreDialog by remember { mutableStateOf(false) }
-
-    LaunchedEffect(selectedTab) {
-        when (selectedTab) {
-            TaskTab.CHORES -> vm.loadCollections()
-            TaskTab.MY_TASKS -> vm.loadTasks()
-            TaskTab.SCOREBOARD -> vm.loadScoreboard()
-        }
-    }
-
     val tabs = listOf(
         R.string.tasks_tab_chores    to TaskTab.CHORES,
         R.string.tasks_tab_my_tasks  to TaskTab.MY_TASKS,
         R.string.tasks_tab_scoreboard to TaskTab.SCOREBOARD,
     )
+    val pagerState = rememberPagerState(pageCount = { tabs.size })
+    val scope = rememberCoroutineScope()
+    var showNewTaskDialog by remember { mutableStateOf(false) }
+    var showNewChoreDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(pagerState.currentPage) {
+        when (pagerState.currentPage) {
+            0 -> vm.loadCollections()
+            1 -> vm.loadTasks()
+            2 -> vm.loadScoreboard()
+        }
+    }
+
     val dragThresholdPx = with(LocalDensity.current) { 80.dp.toPx() }
 
     Scaffold(
@@ -314,11 +317,11 @@ fun MaintenanceScreen(
                     IconButton(onClick = vm::refresh, enabled = !s.loading) {
                         Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.refresh))
                     }
-                    when (selectedTab) {
-                        TaskTab.CHORES -> IconButton(onClick = { showNewChoreDialog = true }) {
+                    when (pagerState.currentPage) {
+                        0 -> IconButton(onClick = { showNewChoreDialog = true }) {
                             Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_chore))
                         }
-                        TaskTab.MY_TASKS -> IconButton(onClick = { showNewTaskDialog = true }) {
+                        1 -> IconButton(onClick = { showNewTaskDialog = true }) {
                             Icon(Icons.Default.Add, contentDescription = stringResource(R.string.tasks_new_task))
                         }
                         else -> {}
@@ -330,19 +333,25 @@ fun MaintenanceScreen(
         contentWindowInsets = WindowInsets(0),
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            ScrollableTabRow(selectedTabIndex = selectedTabIndex) {
+            ScrollableTabRow(selectedTabIndex = pagerState.currentPage) {
                 tabs.forEachIndexed { index, (labelRes, _) ->
                     Tab(
-                        selected = selectedTabIndex == index,
-                        onClick = { selectedTabIndex = index },
+                        selected = pagerState.currentPage == index,
+                        onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
                         text = { Text(stringResource(labelRes)) },
                     )
                 }
             }
-            when (selectedTab) {
-                TaskTab.CHORES     -> ChoresAlertsContent(s, vm, choreOnly = true, onNavigateToChores = onNavigateToChores, onAddChore = { showNewChoreDialog = true })
-                TaskTab.MY_TASKS   -> MyTasksContent(s, vm, onAddTask = { showNewTaskDialog = true })
-                TaskTab.SCOREBOARD -> ScoreboardContent(s, vm)
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+            ) { page ->
+                when (page) {
+                    0 -> ChoresAlertsContent(s, vm, choreOnly = true, onNavigateToChores = onNavigateToChores, onAddChore = { showNewChoreDialog = true })
+                    1 -> MyTasksContent(s, vm, onAddTask = { showNewTaskDialog = true })
+                    2 -> ScoreboardContent(s, vm)
+                    else -> {}
+                }
             }
         }
     }
