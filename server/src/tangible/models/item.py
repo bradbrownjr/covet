@@ -42,7 +42,7 @@ class Item(ULIDPrimaryKey, TimestampMixin, Base):
     current_value: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
     currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
     acquired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
     location_id: Mapped[str | None] = mapped_column(
         String(26),
         ForeignKey("locations.id", ondelete="SET NULL"),
@@ -52,7 +52,7 @@ class Item(ULIDPrimaryKey, TimestampMixin, Base):
 
     # Consumable-specific dates for FIFO management (e.g. pantry items).
     purchased_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    use_by_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    use_by_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
     date_frozen: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     date_opened: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
@@ -74,7 +74,7 @@ class Item(ULIDPrimaryKey, TimestampMixin, Base):
     wanted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # Archival/disposition tracking for sold/disposed/donated items.
-    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
     disposition_type: Mapped[str | None] = mapped_column(String(16), nullable=True)
     disposition_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     disposition_amount: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)

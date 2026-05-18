@@ -12,6 +12,7 @@ import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import io.github.bradbrownjr.tangible.data.local.PendingMutationDao
+import io.github.bradbrownjr.tangible.data.remote.ChoreCreateDto
 import io.github.bradbrownjr.tangible.data.remote.RestockRequest
 import io.github.bradbrownjr.tangible.data.remote.TangibleApi
 import org.json.JSONObject
@@ -59,6 +60,22 @@ class MutationDrainerWorker @AssistedInject constructor(
                                 mark_in_stock = true,
                             ),
                             idempotencyKey = mutation.id,
+                        )
+                    }
+                    "CREATE_CHORE" -> {
+                        val collectionId = payload.getString("collection_id")
+                        val name = payload.getString("name")
+                        val notes = if (!payload.isNull("notes")) payload.getString("notes") else null
+                        val intervalDays = if (!payload.isNull("interval_days")) payload.getInt("interval_days") else null
+                        val nextDueAt = if (payload.has("next_due_at") && !payload.isNull("next_due_at")) payload.getString("next_due_at") else null
+                        api.createChore(
+                            collectionId,
+                            ChoreCreateDto(
+                                name = name,
+                                notes = notes,
+                                interval_days = intervalDays,
+                                next_due_at = nextDueAt,
+                            ),
                         )
                     }
                     else -> {

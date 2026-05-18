@@ -77,13 +77,20 @@ import io.github.bradbrownjr.tangible.data.remote.CreateTaskBody
 import io.github.bradbrownjr.tangible.data.remote.DueAlertDto
 import io.github.bradbrownjr.tangible.data.remote.ScoreboardEntryDto
 import io.github.bradbrownjr.tangible.data.remote.StandaloneTaskDto
+import io.github.bradbrownjr.tangible.data.local.PendingMutationDao
+import io.github.bradbrownjr.tangible.data.local.PendingMutationEntity
 import io.github.bradbrownjr.tangible.data.remote.TangibleApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
+import java.io.IOException
+import java.util.UUID
 import javax.inject.Inject
+import org.json.JSONObject
 
 private val KIND_LABEL_RES = mapOf(
     "maintenance_due" to R.string.alert_maintenance,
@@ -99,6 +106,7 @@ enum class TaskTab { CHORES, MY_TASKS, SCOREBOARD }
 data class MaintenanceUi(
     val alerts: List<DueAlertDto> = emptyList(),
     val loading: Boolean = false,
+    val alertsError: String? = null,
     val withinDays: Int = 30,
     val selectedKind: String? = null,
     // My Tasks tab
@@ -119,6 +127,7 @@ data class MaintenanceUi(
 @HiltViewModel
 class MaintenanceViewModel @Inject constructor(
     private val api: TangibleApi,
+    private val mutationDao: PendingMutationDao,
 ) : ViewModel() {
     private val _state = MutableStateFlow(MaintenanceUi())
     val state: StateFlow<MaintenanceUi> = _state.asStateFlow()
@@ -129,21 +138,31 @@ class MaintenanceViewModel @Inject constructor(
 
     fun refresh() {
         if (_state.value.loading) return
-        _state.value = _state.value.copy(loading = true)
+        _state.value = _state.value.copy(loading = true, alertsError = null)
         viewModelScope.launch {
+            var error: String? = null
             val alerts = try {
-                withTimeout(15_000L) {
+                withTimeout(8_000L) {
                     api.getAlerts(withinDays = _state.value.withinDays)
                 }
+            } catch (_: TimeoutCancellationException) {
+                error = "Request timed out. Pull to retry."
+                emptyList()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: IOException) {
+                error = "No connection. Pull to retry."
+                emptyList()
             } catch (_: Throwable) {
+                error = "Couldn't load alerts. Pull to retry."
                 emptyList()
             }
-            _state.value = _state.value.copy(alerts = alerts, loading = false)
+            _state.value = _state.value.copy(alerts = alerts, loading = false, alertsError = error)
         }
     }
 
     fun setWithinDays(days: Int) {
-        _state.value = _state.value.copy(withinDays = days, alerts = emptyList())
+        _state.value = _state.value.copy(withinDays = days, alerts = emptyList(), alertsError = null)
         refresh()
     }
 
@@ -220,6 +239,21 @@ class MaintenanceViewModel @Inject constructor(
             try {
                 api.createChore(collectionId, ChoreCreateDto(name, notes, intervalDays))
                 _state.value = _state.value.copy(choresError = null)
+            } catch (e: IOException) {
+                val payload = JSONObject().apply {
+                    put("collection_id", collectionId)
+                    put("name", name)
+                    if (notes != null) put("notes", notes) else put("notes", JSONObject.NULL)
+                    if (intervalDays != null) put("interval_days", intervalDays) else put("interval_days", JSONObject.NULL)
+                }
+                mutationDao.insert(
+                    PendingMutationEntity(
+                        id = UUID.randomUUID().toString(),
+                        type = "CREATE_CHORE",
+                        payloadJson = payload.toString(),
+                    )
+                )
+                _state.value = _state.value.copy(choresError = "No connection — chore will sync when online")
             } catch (e: Throwable) {
                 _state.value = _state.value.copy(choresError = e.message ?: "Error creating chore")
             }
@@ -449,6 +483,20 @@ private fun ChoresAlertsContent(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = PaddingValues(vertical = 8.dp),
     ) {
+        // Error banner
+        if (s.alertsError != null) {
+            item {
+                Text(
+                    text = s.alertsError,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                )
+            }
+        }
+
         // Time window chips
         item {
             Row(
@@ -460,6 +508,7 @@ private fun ChoresAlertsContent(
                         selected = s.withinDays == days,
                         onClick = { vm.setWithinDays(days) },
                         label = { Text("${days}d") },
+                        enabled = !s.loading,
                     )
                 }
             }
@@ -769,6 +818,12 @@ private fun NewTaskDialog(
     var selectedCollectionId by remember { mutableStateOf(s.taskCollections.firstOrNull()?.id ?: "") }
     var menuOpen by remember { mutableStateOf(false) }
 
+    LaunchedEffect(s.taskCollections) {
+        if (selectedCollectionId.isBlank() && s.taskCollections.isNotEmpty()) {
+            selectedCollectionId = s.taskCollections.first().id
+        }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.tasks_new_task)) },
@@ -839,6 +894,12 @@ private fun NewChoreDialog(
     var intervalDays by remember { mutableStateOf("") }
     var selectedCollectionId by remember { mutableStateOf(s.taskCollections.firstOrNull()?.id ?: "") }
     var menuOpen by remember { mutableStateOf(false) }
+
+    LaunchedEffect(s.taskCollections) {
+        if (selectedCollectionId.isBlank() && s.taskCollections.isNotEmpty()) {
+            selectedCollectionId = s.taskCollections.first().id
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,

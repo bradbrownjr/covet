@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.ui.graphics.Color
+import io.github.bradbrownjr.tangible.ui.screen.about.AboutScreen
 import io.github.bradbrownjr.tangible.ui.theme.ALL_PALETTES
 import io.github.bradbrownjr.tangible.ui.theme.AppPalette
 import io.github.bradbrownjr.tangible.ui.theme.DEFAULT_PALETTE_ID
@@ -203,7 +204,7 @@ fun SettingsScreen(
     vm: SettingsViewModel = hiltViewModel(),
 ) {
     val s by vm.state.collectAsState()
-    val pagerState = rememberPagerState(pageCount = { 3 })
+    val pagerState = rememberPagerState(pageCount = { 4 })
     val scope = rememberCoroutineScope()
 
     Scaffold(
@@ -223,7 +224,7 @@ fun SettingsScreen(
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             TabRow(selectedTabIndex = pagerState.currentPage) {
-                listOf(R.string.appearance, R.string.notifications, R.string.account).forEachIndexed { index, labelRes ->
+                listOf(R.string.appearance, R.string.notifications, R.string.account, R.string.about).forEachIndexed { index, labelRes ->
                     Tab(
                         selected = pagerState.currentPage == index,
                         onClick = { scope.launch { pagerState.animateScrollToPage(index) } },
@@ -238,7 +239,8 @@ fun SettingsScreen(
                 when (page) {
                     0 -> SettingsAppearanceTab(s, vm)
                     1 -> SettingsNotificationsTab(s, vm)
-                    2 -> SettingsAccountTab(s, vm, onSignOut, onNavigateToAbout)
+                    2 -> SettingsAccountTab(s, vm, onSignOut)
+                    3 -> AboutScreen(onBack = {}, showBackButton = false)
                     else -> {}
                 }
             }
@@ -382,7 +384,6 @@ private fun SettingsAccountTab(
     s: SettingsUi,
     vm: SettingsViewModel,
     onSignOut: () -> Unit,
-    onNavigateToAbout: () -> Unit,
 ) {
     LazyColumn(
         Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 24.dp),
@@ -416,14 +417,6 @@ private fun SettingsAccountTab(
         }
         item { HorizontalDivider() }
         item { Button(onClick = { vm.signOut(onSignOut) }) { Text(stringResource(R.string.sign_out)) } }
-        item {
-            TextButton(
-                onClick = onNavigateToAbout,
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
-            ) {
-                Text(stringResource(R.string.about))
-            }
-        }
     }
 }
 

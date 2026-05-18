@@ -214,18 +214,25 @@ def _build_alerts(
     now = datetime.now(UTC)
     horizon = now + timedelta(days=within_days)
 
-    owned = db.scalars(
+    owned_ids: set[str] = set(db.scalars(
         select(Collection.id).where(Collection.owner_id == auth.user.id)
-    ).all()
-    membered = db.scalars(
-        select(CollectionMembership.collection_id)
-        .where(CollectionMembership.user_id == auth.user.id)
-        .distinct()
-    ).all()
-    readable_collection_ids = [
-        cid for cid in set(list(owned) + list(membered))
-        if collection_role(db, auth.user, cid) in _VIEWER_ROLES
-    ]
+    ).all())
+
+    # Batch-load membership roles in one query to avoid N+1 collection_role() calls.
+    membership_roles: dict[str, str] = dict(
+        db.execute(
+            select(CollectionMembership.collection_id, CollectionMembership.role)
+            .where(CollectionMembership.user_id == auth.user.id)
+        ).all()
+    )
+
+    readable_collection_ids = list(
+        owned_ids
+        | {
+            cid for cid, role in membership_roles.items()
+            if auth.user.is_admin or role in _VIEWER_ROLES
+        }
+    )
 
     if collection_id is not None:
         readable_collection_ids = [collection_id]

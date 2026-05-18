@@ -144,7 +144,7 @@ class StandaloneTask(ULIDPrimaryKey, TimestampMixin, Base):
         DateTime(timezone=True), nullable=True, index=True
     )
     completed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
+        DateTime(timezone=True), nullable=True, index=True
     )
     completed_by_user_id: Mapped[str | None] = mapped_column(
         String(26), ForeignKey("users.id", ondelete="SET NULL"), nullable=True

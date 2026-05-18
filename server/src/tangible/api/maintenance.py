@@ -13,7 +13,8 @@ from sqlalchemy.orm import Session as DBSession
 
 from tangible.auth.deps import AuthContext, collection_role, require_user
 from tangible.db import get_session
-from tangible.models import Item, MaintenanceCompletion, MaintenanceTask, MaintenanceTaskConsumable
+from tangible.models import Collection, Item, MaintenanceCompletion, MaintenanceTask, MaintenanceTaskConsumable
+from tangible.models.user import CollectionMembership
 from tangible.schemas import (
     MaintenanceCompletePayload,
     MaintenanceCompletionRead,
@@ -226,10 +227,18 @@ def list_due(
     if collection_id is not None:
         _require_role(db, auth, collection_id, _VIEWER_ROLES)
         stmt = stmt.where(Item.collection_id == collection_id)
+    else:
+        if not auth.user.is_admin:
+            owned_ids: set[str] = set(db.scalars(
+                select(Collection.id).where(Collection.owner_id == auth.user.id)
+            ).all())
+            membered_ids: set[str] = set(db.scalars(
+                select(CollectionMembership.collection_id)
+                .where(CollectionMembership.user_id == auth.user.id)
+            ).all())
+            stmt = stmt.where(Item.collection_id.in_(owned_ids | membered_ids))
     out: list[MaintenanceTaskRead] = []
     for task, item in db.execute(stmt).all():
-        if collection_role(db, auth.user, item.collection_id) is None:
-            continue
         out.append(MaintenanceTaskRead.model_validate(task))
     out.sort(key=lambda t: t.next_due_at or horizon)
     return out

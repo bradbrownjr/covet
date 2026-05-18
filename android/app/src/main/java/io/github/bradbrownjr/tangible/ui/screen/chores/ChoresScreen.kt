@@ -51,6 +51,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.bradbrownjr.tangible.R
+import io.github.bradbrownjr.tangible.data.local.PendingMutationDao
+import io.github.bradbrownjr.tangible.data.local.PendingMutationEntity
 import io.github.bradbrownjr.tangible.data.remote.ChoreCompletePayloadDto
 import io.github.bradbrownjr.tangible.data.remote.ChoreCreateDto
 import io.github.bradbrownjr.tangible.data.remote.ChoreDto
@@ -59,7 +61,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.IOException
+import java.util.UUID
 import javax.inject.Inject
+import org.json.JSONObject
 
 // ---------------------------------------------------------------------------
 // State
@@ -80,6 +85,7 @@ data class ChoresUi(
 @HiltViewModel
 class ChoresViewModel @Inject constructor(
     private val api: TangibleApi,
+    private val mutationDao: PendingMutationDao,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -131,6 +137,23 @@ class ChoresViewModel @Inject constructor(
                         compareBy(nullsLast()) { it.next_due_at }
                     )
                 )
+                onDone()
+            } catch (e: IOException) {
+                val payload = JSONObject().apply {
+                    put("collection_id", collectionId)
+                    put("name", name)
+                    if (notes != null) put("notes", notes) else put("notes", JSONObject.NULL)
+                    if (intervalDays != null) put("interval_days", intervalDays) else put("interval_days", JSONObject.NULL)
+                    if (nextDueAt != null) put("next_due_at", nextDueAt) else put("next_due_at", JSONObject.NULL)
+                }
+                mutationDao.insert(
+                    PendingMutationEntity(
+                        id = UUID.randomUUID().toString(),
+                        type = "CREATE_CHORE",
+                        payloadJson = payload.toString(),
+                    )
+                )
+                _state.value = _state.value.copy(error = "No connection — chore will sync when online")
                 onDone()
             } catch (e: Throwable) {
                 _state.value = _state.value.copy(error = e.message)
