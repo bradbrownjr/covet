@@ -241,12 +241,13 @@
     <string name="server_prefix">Server: %s</string>
     <string name="signed_in_as">Signed in as: %s</string>
     <string name="appearance">Appearance</string>
+    <string name="palette" tools:ignore="MissingTranslation">Color Palette</string>
     <string name="theme_system">System</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="language">Language</string>
     <string name="notifications">Notifications</string>
-    <string name="account">Account</string>
+    <string name="account" tools:ignore="MissingTranslation">Account</string>
     <string name="no_notification_prefs">No notification preferences.</string>
     <string name="app_label">App</string>
     <string name="due_soon">Due soon</string>

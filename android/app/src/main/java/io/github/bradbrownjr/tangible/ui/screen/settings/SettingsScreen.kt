@@ -12,9 +12,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
+import androidx.compose.ui.graphics.Color
+import io.github.bradbrownjr.tangible.ui.theme.ALL_PALETTES
+import io.github.bradbrownjr.tangible.ui.theme.AppPalette
+import io.github.bradbrownjr.tangible.ui.theme.DEFAULT_PALETTE_ID
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -70,6 +82,7 @@ data class SettingsUi(
     val testOk: Boolean = false,
     // "system" | "light" | "dark" — null treated as "system"
     val themeMode: String? = null,
+    val palette: String = DEFAULT_PALETTE_ID,
     val locale: String? = null,
     val notifPrefs: List<NotificationPrefDto> = emptyList(),
     val notifBusy: Boolean = false,
@@ -100,6 +113,11 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             session.locale.collect { loc ->
                 _state.value = _state.value.copy(locale = loc)
+            }
+        }
+        viewModelScope.launch {
+            session.palette.collect { pal ->
+                _state.value = _state.value.copy(palette = pal ?: DEFAULT_PALETTE_ID)
             }
         }
         loadNotifPrefs()
@@ -143,6 +161,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setTheme(mode: String) {
         viewModelScope.launch { session.saveTheme(mode) }
+    }
+
+    fun setPalette(id: String) {
+        viewModelScope.launch { session.savePalette(id) }
     }
 
     fun setLocale(code: String) {
@@ -249,6 +271,40 @@ private fun SettingsAppearanceTab(s: SettingsUi, vm: SettingsViewModel) {
                         shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
                         label = { Text(label) },
                     )
+                }
+            }
+        }
+        item { HorizontalDivider() }
+        item {
+            Text(stringResource(R.string.palette), style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        item {
+            val systemDark = isSystemInDarkTheme()
+            val swatchDark = when (s.themeMode ?: "system") {
+                "light" -> false
+                "dark"  -> true
+                else    -> systemDark
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                ALL_PALETTES.chunked(3).forEach { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        row.forEach { pal ->
+                            PaletteSwatch(
+                                palette = pal,
+                                selected = s.palette == pal.id,
+                                dark = swatchDark,
+                                onClick = { vm.setPalette(pal.id) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                        repeat(3 - row.size) {
+                            Spacer(Modifier.weight(1f))
+                        }
+                    }
                 }
             }
         }
@@ -366,6 +422,56 @@ private fun SettingsAccountTab(
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
             ) {
                 Text(stringResource(R.string.about))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PaletteSwatch(
+    palette: AppPalette,
+    selected: Boolean,
+    dark: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val bg     = if (dark) palette.darkBg     else palette.lightBg
+    val accent = if (dark) palette.darkAccent else palette.lightAccent
+    val textColor = if (dark) Color.White.copy(alpha = 0.9f) else Color.Black.copy(alpha = 0.75f)
+    Surface(
+        onClick = onClick,
+        modifier = modifier.aspectRatio(1.6f),
+        shape = MaterialTheme.shapes.medium,
+        border = if (selected)
+            BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+        else
+            BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Box(modifier = Modifier.fillMaxSize().background(bg)) {
+            Text(
+                text = palette.name,
+                style = MaterialTheme.typography.labelSmall,
+                color = textColor,
+                modifier = Modifier.align(Alignment.TopStart).padding(6.dp),
+            )
+            Box(
+                modifier = Modifier
+                    .padding(6.dp)
+                    .size(10.dp)
+                    .background(accent, CircleShape)
+                    .align(Alignment.BottomEnd),
+            )
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = accent,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(4.dp)
+                        .size(14.dp),
+                )
             }
         }
     }

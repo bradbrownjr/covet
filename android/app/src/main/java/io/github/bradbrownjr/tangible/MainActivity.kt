@@ -17,6 +17,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import io.github.bradbrownjr.tangible.data.auth.SessionStore
 import io.github.bradbrownjr.tangible.nfc.NfcManager
 import io.github.bradbrownjr.tangible.ui.TangibleApp
+import io.github.bradbrownjr.tangible.ui.theme.DEFAULT_PALETTE_ID
 import io.github.bradbrownjr.tangible.ui.theme.TangibleTheme
 import javax.inject.Inject
 
@@ -44,13 +45,14 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val themeMode by sessionStore.themeMode.collectAsState(initial = null)
+            val palette by sessionStore.palette.collectAsState(initial = null)
             val systemDark = isSystemInDarkTheme()
             val dark = when (themeMode) {
                 "light" -> false
                 "dark"  -> true
                 else    -> systemDark
             }
-            TangibleTheme(darkTheme = dark) {
+            TangibleTheme(darkTheme = dark, paletteId = palette ?: DEFAULT_PALETTE_ID) {
                 TangibleApp()
             }
         }
