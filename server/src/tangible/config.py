@@ -156,7 +156,7 @@ class Settings(BaseSettings):
 
     # Rate limiting
     rate_limit_login: str = "5/minute"
-    rate_limit_api: str = "120/minute"
+    rate_limit_api: str = "300/minute"
     api_token_ttl_days: int = 0
 
     # Observability

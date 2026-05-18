@@ -28,17 +28,22 @@ from tangible.config import Settings
 # --- Rate limiting -----------------------------------------------------------------------
 
 
-# slowapi limit-provider callables must be zero-arg (or take `key`); we can't
-# read settings from inside one. We therefore bake the defaults from
-# `tangible.config.Settings` here as module constants — deployments that need
-# different ceilings can edit these or remove the decorators and rely on
-# upstream rate limiting (Caddy, nginx, Cloudflare).
-DEFAULT_GLOBAL_LIMIT = "120/minute"
+# Login-specific limit is a module constant because it is baked into the
+# @limiter.limit() decorator on auth endpoints at import time.
 DEFAULT_LOGIN_LIMIT = "5/minute"
+
+# Global API limit is read via a callable so that install_hardening() can
+# override it from Settings before the first request is processed.
+_api_rate_limit_str = "300/minute"
+
+
+def _api_rate_limit() -> str:  # called by slowapi on every request
+    return _api_rate_limit_str
+
 
 limiter = Limiter(
     key_func=get_remote_address,
-    default_limits=[DEFAULT_GLOBAL_LIMIT],
+    default_limits=[_api_rate_limit],
     headers_enabled=False,
 )
 
@@ -228,6 +233,10 @@ def _spa_inline_script_hashes(settings: Settings) -> list[str]:
 def install_hardening(app: FastAPI, settings: Settings) -> None:
     """Attach all hardening middleware + the rate limiter to ``app``."""
     import contextlib
+
+    # Wire the configurable API rate limit from settings.
+    global _api_rate_limit_str
+    _api_rate_limit_str = settings.rate_limit_api
 
     # Reset in-memory storage between app constructions so tests don't share counters.
     with contextlib.suppress(Exception):
