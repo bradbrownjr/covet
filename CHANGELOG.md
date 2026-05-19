@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.66] — 2026-05-19
+
+### Fixed
+
+- **Home header height (Android):** The `OutlinedTextField` was still rendering at Material3's hard `minHeight = 56dp` despite the `contentPadding` override introduced in v0.25.65. Added `.height(48.dp)` to the wrapping `Surface`, which passes an exact height constraint that bypasses `defaultMinSize` internally. Removed the now-redundant `contentPadding` override. Home topBar is now 64dp (TopAppBar) + 48dp (search Surface) = 112dp, matching every other section's 112dp header. Fixes visible header-height mismatch during HorizontalPager swipe transitions.
+
 ## [0.25.65] — 2026-05-19
 
 ### Changed
