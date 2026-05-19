@@ -34,8 +34,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -70,10 +68,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.bradbrownjr.tangible.R
+import io.github.bradbrownjr.tangible.data.remote.ChoreCompletePayloadDto
 import io.github.bradbrownjr.tangible.data.remote.ChoreCreateDto
+import io.github.bradbrownjr.tangible.data.remote.ChoreDto
 import io.github.bradbrownjr.tangible.data.remote.CollectionDto
 import io.github.bradbrownjr.tangible.data.remote.CreateTaskBody
-import io.github.bradbrownjr.tangible.data.remote.DueAlertDto
 import io.github.bradbrownjr.tangible.data.remote.ScoreboardEntryDto
 import io.github.bradbrownjr.tangible.data.remote.StandaloneTaskDto
 import io.github.bradbrownjr.tangible.data.local.PendingMutationDao
@@ -82,40 +81,26 @@ import io.github.bradbrownjr.tangible.data.remote.TangibleApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
 import java.io.IOException
 import java.util.UUID
 import javax.inject.Inject
 import org.json.JSONObject
 
-private val KIND_LABEL_RES = mapOf(
-    "maintenance_due" to R.string.alert_maintenance,
-    "chore_due" to R.string.alert_chore,
-    "item_use_by" to R.string.alert_use_by,
-    "item_expires" to R.string.alert_expires,
-    "lot_use_by" to R.string.alert_package,
-    "low_stock" to R.string.alert_low_stock,
-)
-
 enum class TaskTab { CHORES, MY_TASKS, SCOREBOARD }
 
 data class MaintenanceUi(
-    val alerts: List<DueAlertDto> = emptyList(),
-    val loading: Boolean = false,
-    val alertsError: String? = null,
-    val withinDays: Int = 30,
-    val selectedKind: String? = null,
+    // Chores tab
+    val chores: List<ChoreDto> = emptyList(),
+    val choresLoading: Boolean = false,
+    val choresLoaded: Boolean = false,
+    val choresError: String? = null,
     // My Tasks tab
     val myTasks: List<StandaloneTaskDto> = emptyList(),
     val taskCollections: List<CollectionDto> = emptyList(),
     val tasksLoading: Boolean = false,
     val tasksError: String? = null,
     val tasksLoaded: Boolean = false,
-    // Chores tab
-    val choresError: String? = null,
     // Scoreboard tab
     val scoreboard: List<ScoreboardEntryDto> = emptyList(),
     val scoreboardLoading: Boolean = false,
@@ -132,40 +117,52 @@ class MaintenanceViewModel @Inject constructor(
     val state: StateFlow<MaintenanceUi> = _state.asStateFlow()
 
     init {
-        refresh()
+        // No eager loading — each tab loads lazily on first visit.
     }
 
-    fun refresh() {
-        if (_state.value.loading) return
-        _state.value = _state.value.copy(loading = true, alertsError = null)
+    fun loadChores() {
+        if (_state.value.choresLoading || _state.value.choresLoaded) return
+        _state.value = _state.value.copy(choresLoading = true, choresError = null)
         viewModelScope.launch {
-            var alerts: List<DueAlertDto> = emptyList()
-            var error: String? = null
             try {
-                alerts = withTimeout(8_000L) {
-                    api.getAlerts(withinDays = _state.value.withinDays)
-                }
-            } catch (_: TimeoutCancellationException) {
-                error = "Request timed out. Pull to retry."
-            } catch (e: CancellationException) {
-                throw e
-            } catch (_: IOException) {
-                error = "No connection. Pull to retry."
-            } catch (_: Throwable) {
-                error = "Couldn't load alerts. Pull to retry."
-            } finally {
-                _state.value = _state.value.copy(alerts = alerts, loading = false, alertsError = error)
+                val chores = api.listStandaloneChores()
+                _state.value = _state.value.copy(chores = chores, choresLoaded = true, choresLoading = false)
+            } catch (e: Throwable) {
+                _state.value = _state.value.copy(
+                    choresLoading = false,
+                    choresError = e.message ?: "Couldn't load chores. Pull to retry.",
+                )
             }
         }
     }
 
-    fun setWithinDays(days: Int) {
-        _state.value = _state.value.copy(withinDays = days, alerts = emptyList(), alertsError = null)
-        refresh()
+    fun refreshChores() {
+        _state.value = _state.value.copy(choresLoaded = false)
+        loadChores()
     }
 
-    fun setKindFilter(kind: String?) {
-        _state.value = _state.value.copy(selectedKind = kind)
+    fun completeChore(choreId: String) {
+        viewModelScope.launch {
+            try {
+                val updated = api.completeChore(choreId, ChoreCompletePayloadDto())
+                _state.value = _state.value.copy(
+                    chores = _state.value.chores.map { if (it.id == updated.id) updated else it }
+                )
+            } catch (e: Throwable) {
+                _state.value = _state.value.copy(choresError = e.message ?: "Error completing chore")
+            }
+        }
+    }
+
+    fun deleteChore(choreId: String) {
+        viewModelScope.launch {
+            try {
+                api.deleteChore(choreId)
+                _state.value = _state.value.copy(chores = _state.value.chores.filter { it.id != choreId })
+            } catch (e: Throwable) {
+                _state.value = _state.value.copy(choresError = e.message ?: "Error deleting chore")
+            }
+        }
     }
 
     fun loadTasks() {
@@ -242,6 +239,10 @@ class MaintenanceViewModel @Inject constructor(
                     api.createChore(collectionId, dto)
                 }
                 _state.value = _state.value.copy(choresError = null)
+                if (collectionId.isNullOrBlank()) {
+                    _state.value = _state.value.copy(choresLoaded = false)
+                    loadChores()
+                }
             } catch (e: IOException) {
                 val payload = JSONObject().apply {
                     if (!collectionId.isNullOrBlank()) put("collection_id", collectionId) else put("collection_id", JSONObject.NULL)
@@ -317,7 +318,7 @@ fun MaintenanceScreen(
 
     LaunchedEffect(pagerState.currentPage) {
         when (pagerState.currentPage) {
-            0 -> vm.loadCollections()
+            0 -> { vm.loadCollections(); vm.loadChores() }
             1 -> vm.loadTasks()
             2 -> vm.loadScoreboard()
         }
@@ -370,7 +371,7 @@ fun MaintenanceScreen(
                 modifier = Modifier.fillMaxSize(),
             ) { page ->
                 when (page) {
-                    0 -> ChoresAlertsContent(s, vm, choreOnly = true, onNavigateToChores = onNavigateToChores, onAddChore = { showNewChoreDialog = true })
+                    0 -> ChoresContent(s, vm, onAddChore = { showNewChoreDialog = true })
                     1 -> MyTasksContent(s, vm, onAddTask = { showNewTaskDialog = true })
                     2 -> ScoreboardContent(s, vm)
                     else -> {}
@@ -388,156 +389,101 @@ fun MaintenanceScreen(
 }
 
 @Composable
-private fun AlertCard(
-    alert: DueAlertDto,
-    onNavigateToChores: ((collectionId: String, collectionName: String) -> Unit)? = null,
+private fun ChoreCard(
+    chore: ChoreDto,
+    onComplete: () -> Unit,
+    onDelete: () -> Unit,
 ) {
-    val isOverdue = alert.severity == "critical"
-    val kindLabel = KIND_LABEL_RES[alert.kind]?.let { stringResource(it) } ?: alert.kind
-    Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    text = alert.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    text = kindLabel,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            if (!alert.due_at.isNullOrBlank()) {
-                Text(
-                    text = if (isOverdue) stringResource(R.string.alert_overdue, alert.due_at!!.take(10))
-                           else stringResource(R.string.alert_due, alert.due_at!!.take(10)),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (isOverdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            if (!alert.details.isNullOrBlank()) {
-                Text(
-                    text = alert.details!!,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            if (onNavigateToChores != null && alert.kind == "chore_due" && !alert.collection_id.isNullOrBlank()) {
-                TextButton(
-                    onClick = { onNavigateToChores(alert.collection_id!!, alert.title) },
-                    contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp),
-                ) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(chore.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                if (chore.next_due_at != null) {
                     Text(
-                        text = stringResource(R.string.tasks_manage_chores),
-                        style = MaterialTheme.typography.labelMedium,
+                        text = chore.next_due_at.take(10),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+                if (chore.notes != null) {
+                    Text(
+                        text = chore.notes,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            IconButton(onClick = onComplete) {
+                Icon(Icons.Default.Check, contentDescription = stringResource(R.string.chore_complete), tint = MaterialTheme.colorScheme.primary)
+            }
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.cd_delete), tint = MaterialTheme.colorScheme.error)
             }
         }
     }
 }
 
 @Composable
-private fun ChoresAlertsContent(
+private fun ChoresContent(
     s: MaintenanceUi,
     vm: MaintenanceViewModel,
-    choreOnly: Boolean,
-    onNavigateToChores: (collectionId: String, collectionName: String) -> Unit = { _, _ -> },
     onAddChore: () -> Unit = {},
 ) {
-    val baseAlerts = if (choreOnly) s.alerts.filter { it.kind == "chore_due" } else s.alerts
-    val allKinds = if (choreOnly) emptyList() else s.alerts.map { it.kind }.distinct().sorted()
-    val visibleAlerts = (if (choreOnly || s.selectedKind == null) baseAlerts
-                         else baseAlerts.filter { it.kind == s.selectedKind })
-        .sortedWith(compareBy({ it.severity != "critical" }, { it.due_at ?: "" }))
-    val emptyRes = if (choreOnly) R.string.tasks_no_chore_alerts else R.string.no_alerts
-
     PullToRefreshBox(
-        isRefreshing = s.loading,
-        onRefresh = vm::refresh,
+        isRefreshing = s.choresLoading,
+        onRefresh = vm::refreshChores,
         modifier = Modifier.fillMaxSize(),
     ) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(vertical = 8.dp),
-    ) {
-        // Error banner
-        if (s.alertsError != null) {
-            item {
-                Text(
-                    text = s.alertsError,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                )
-            }
-        }
-
-        // Time window chips
-        item {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(vertical = 8.dp),
-            ) {
-                listOf(7, 14, 30, 60, 90).forEach { days ->
-                    FilterChip(
-                        selected = s.withinDays == days,
-                        onClick = { vm.setWithinDays(days) },
-                        label = { Text("${days}d") },
-                        enabled = !s.loading,
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(vertical = 8.dp),
+        ) {
+            if (s.choresError != null) {
+                item {
+                    Text(
+                        text = s.choresError,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
                     )
                 }
             }
-        }
-
-        // Kind filter chips (Alerts tab only)
-        if (!choreOnly && allKinds.isNotEmpty()) {
-            item {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    FilterChip(
-                        selected = s.selectedKind == null,
-                        onClick = { vm.setKindFilter(null) },
-                        label = { Text(stringResource(R.string.all)) },
-                    )
-                    allKinds.forEach { kind ->
-                        val label = KIND_LABEL_RES[kind]?.let { stringResource(it) } ?: kind
-                        FilterChip(
-                            selected = s.selectedKind == kind,
-                            onClick = { vm.setKindFilter(if (s.selectedKind == kind) null else kind) },
-                            label = { Text(label) },
+            if (s.chores.isEmpty() && !s.choresLoading) {
+                item {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(32.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = stringResource(R.string.chores_empty),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
             }
-            item { HorizontalDivider() }
-        }
-
-        items(visibleAlerts, key = { it.id }) { alert ->
-                AlertCard(alert, onNavigateToChores = onNavigateToChores.takeIf { choreOnly })
+            items(s.chores, key = { it.id }) { chore ->
+                ChoreCard(
+                    chore = chore,
+                    onComplete = { vm.completeChore(chore.id) },
+                    onDelete = { vm.deleteChore(chore.id) },
+                )
             }
-        if (choreOnly) {
             item(key = "new_chore") {
                 NewChoreCard(onClick = onAddChore)
             }
         }
     }
-    } // end PullToRefreshBox
 }
 
 @Composable

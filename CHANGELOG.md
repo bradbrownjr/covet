@@ -4,6 +4,14 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.73] — 2026-05-19
+
+### Changed
+
+- **Android Chores tab now shows actual chores** (loaded from `GET /chores`) instead of alert notifications filtered by `chore_due`. The tab is no longer coupled to the Alerts API — it loads chores independently, with pull-to-refresh, inline complete and delete buttons, and a proper empty state.
+- Removed leftover eager alert-loading from `MaintenanceViewModel` (`init { refresh() }`). The Tasks screen no longer calls the alerts endpoint at all; alerts are handled exclusively by the dedicated Alerts screen. This fixes the progress indicator hang on the Tasks screen.
+- `MaintenanceUi` alert fields (`alerts`, `loading`, `alertsError`, `withinDays`, `selectedKind`) replaced with chore list fields (`chores`, `choresLoading`, `choresLoaded`).
+
 ## [0.25.72] — 2026-05-19
 
 ### Added
