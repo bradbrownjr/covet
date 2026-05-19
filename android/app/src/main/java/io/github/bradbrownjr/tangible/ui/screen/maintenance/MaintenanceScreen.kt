@@ -25,7 +25,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -345,20 +344,6 @@ fun MaintenanceScreen(
                         IconButton(onClick = onBack) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back))
                         }
-                    }
-                },
-                actions = {
-                    IconButton(onClick = vm::refresh, enabled = !s.loading) {
-                        Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.refresh))
-                    }
-                    when (pagerState.currentPage) {
-                        0 -> IconButton(onClick = { showNewChoreDialog = true }) {
-                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_chore))
-                        }
-                        1 -> IconButton(onClick = { showNewTaskDialog = true }) {
-                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.tasks_new_task))
-                        }
-                        else -> {}
                     }
                 },
             )

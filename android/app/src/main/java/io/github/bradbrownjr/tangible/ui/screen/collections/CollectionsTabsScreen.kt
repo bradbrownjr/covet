@@ -519,38 +519,6 @@ fun CollectionsTabsScreen(
                                 ),
                             )
                         }
-                        IconButton(onClick = onNavigateToScanner) {
-                            Icon(
-                                Icons.Default.QrCodeScanner,
-                                contentDescription = stringResource(R.string.cd_scan_barcode),
-                            )
-                        }
-                        currentColl?.let { coll ->
-                            IconButton(onClick = { onNavigateToChores(coll.id, coll.name) }) {
-                                Icon(
-                                    Icons.Default.Task,
-                                    contentDescription = stringResource(R.string.cd_chores),
-                                )
-                            }
-                        }
-                        if (currentColl != null) {
-                            IconButton(onClick = { imagePicker.launch("image/*") }) {
-                                Icon(
-                                    Icons.Default.Image,
-                                    contentDescription = stringResource(R.string.cd_scan_barcode_image),
-                                )
-                            }
-                        }
-                        currentColl?.let { coll ->
-                            IconButton(onClick = { vm.showCreateItem(coll) }) {
-                                Icon(
-                                    Icons.Default.Add,
-                                    contentDescription = stringResource(R.string.cd_add_item),
-                                )
-                            }
-                        } ?: IconButton(onClick = vm::openWizard) {
-                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_new_collection))
-                        }
                     },
                 )
             }
@@ -572,6 +540,12 @@ fun CollectionsTabsScreen(
                         onClick = { scope.launch { pagerState.animateScrollToPage(index + 1) } },
                         text = { Text(c.name) },
                     )
+                }
+                // "+ New collection" placed right after the last tab
+                Box(modifier = Modifier.height(48.dp), contentAlignment = Alignment.Center) {
+                    IconButton(onClick = vm::openWizard) {
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_new_collection))
+                    }
                 }
             }
             // PullToRefreshBox wraps the pager (not the other way around) so that the
@@ -631,80 +605,98 @@ fun CollectionsTabsScreen(
                         val coll = s.collections[page - 1]
                         val items = s.itemsByCollection[coll.id] ?: emptyList()
                         val pageLoading = s.loadingByCollection[coll.id] == true
-                        // Always use a LazyColumn (even for empty/loading) so the outer
-                        // PullToRefreshBox receives the nested-scroll pull gesture.
-                        when {
-                            pageLoading && items.isEmpty() ->
-                                LazyColumn(Modifier.fillMaxSize()) {
-                                    item {
-                                        Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                                            CircularProgressIndicator()
-                                        }
-                                    }
+                        Column(Modifier.fillMaxSize()) {
+                            // In-tab toolbar: scan, image, add item
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                IconButton(onClick = onNavigateToScanner) {
+                                    Icon(Icons.Default.QrCodeScanner, contentDescription = stringResource(R.string.cd_scan_barcode))
                                 }
-                            items.isEmpty() -> LazyColumn(Modifier.fillMaxSize()) {
-                                item {
-                                    Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                                        ) {
-                                            Text(stringResource(R.string.no_items))
-                                            OutlinedButton(onClick = { vm.showCreateItem(coll) }) {
-                                                Text(stringResource(R.string.add_item))
-                                            }
-                                        }
-                                    }
+                                IconButton(onClick = { imagePicker.launch("image/*") }) {
+                                    Icon(Icons.Default.Image, contentDescription = stringResource(R.string.cd_scan_barcode_image))
+                                }
+                                IconButton(onClick = { vm.showCreateItem(coll) }) {
+                                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_item))
                                 }
                             }
-                            else -> {
-                                val searchQuery = s.searchByCollection[coll.id].orEmpty()
-                                val displayItems = remember(items, searchQuery) {
-                                    if (searchQuery.isBlank()) items
-                                    else items.filter { it.title.contains(searchQuery, ignoreCase = true) }
-                                }
-                                if (s.viewMode == ViewMode.LIST) {
-                                    LazyColumn(Modifier.fillMaxSize()) {
-                                        item(key = "search") {
-                                            SearchBar(searchQuery) { vm.setSearch(coll.id, it) }
-                                        }
-                                        if (displayItems.isEmpty()) {
-                                            item(key = "no_results") { NoSearchResults() }
-                                        } else {
-                                            items(displayItems, key = { it.id }) { item ->
-                                                ItemRow(
-                                                    item = item,
-                                                    onClick = { onItemEdit(item.id) },
-                                                    onEdit = { onItemEdit(item.id) },
-                                                    onAddToList = { vm.confirmAddToList(item) },
-                                                    onDelete = { vm.confirmDelete(item) },
-                                                )
-                                                HorizontalDivider()
+                            // Always use a LazyColumn (even for empty/loading) so the outer
+                            // PullToRefreshBox receives the nested-scroll pull gesture.
+                            when {
+                                pageLoading && items.isEmpty() ->
+                                    LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
+                                        item {
+                                            Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                                                CircularProgressIndicator()
                                             }
                                         }
                                     }
-                                } else {
-                                    LazyVerticalGrid(
-                                        columns = GridCells.Fixed(2),
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentPadding = PaddingValues(8.dp),
-                                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    ) {
-                                        item(span = { GridItemSpan(maxLineSpan) }) {
-                                            SearchBar(searchQuery) { vm.setSearch(coll.id, it) }
+                                items.isEmpty() -> LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
+                                    item {
+                                        Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                            ) {
+                                                Text(stringResource(R.string.no_items))
+                                                OutlinedButton(onClick = { vm.showCreateItem(coll) }) {
+                                                    Text(stringResource(R.string.add_item))
+                                                }
+                                            }
                                         }
-                                        if (displayItems.isEmpty()) {
-                                            item(span = { GridItemSpan(maxLineSpan) }) { NoSearchResults() }
-                                        } else {
-                                            gridItems(displayItems, key = { it.id }) { item ->
-                                                ItemCard(
-                                                    item = item,
-                                                    onClick = { onItemEdit(item.id) },
-                                                    onEdit = { onItemEdit(item.id) },
-                                                    onAddToList = { vm.confirmAddToList(item) },
-                                                    onDelete = { vm.confirmDelete(item) },
-                                                )
+                                    }
+                                }
+                                else -> {
+                                    val searchQuery = s.searchByCollection[coll.id].orEmpty()
+                                    val displayItems = remember(items, searchQuery) {
+                                        if (searchQuery.isBlank()) items
+                                        else items.filter { it.title.contains(searchQuery, ignoreCase = true) }
+                                    }
+                                    if (s.viewMode == ViewMode.LIST) {
+                                        LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
+                                            item(key = "search") {
+                                                SearchBar(searchQuery) { vm.setSearch(coll.id, it) }
+                                            }
+                                            if (displayItems.isEmpty()) {
+                                                item(key = "no_results") { NoSearchResults() }
+                                            } else {
+                                                items(displayItems, key = { it.id }) { item ->
+                                                    ItemRow(
+                                                        item = item,
+                                                        onClick = { onItemEdit(item.id) },
+                                                        onEdit = { onItemEdit(item.id) },
+                                                        onAddToList = { vm.confirmAddToList(item) },
+                                                        onDelete = { vm.confirmDelete(item) },
+                                                    )
+                                                    HorizontalDivider()
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        LazyVerticalGrid(
+                                            columns = GridCells.Fixed(2),
+                                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                                            contentPadding = PaddingValues(8.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        ) {
+                                            item(span = { GridItemSpan(maxLineSpan) }) {
+                                                SearchBar(searchQuery) { vm.setSearch(coll.id, it) }
+                                            }
+                                            if (displayItems.isEmpty()) {
+                                                item(span = { GridItemSpan(maxLineSpan) }) { NoSearchResults() }
+                                            } else {
+                                                gridItems(displayItems, key = { it.id }) { item ->
+                                                    ItemCard(
+                                                        item = item,
+                                                        onClick = { onItemEdit(item.id) },
+                                                        onEdit = { onItemEdit(item.id) },
+                                                        onAddToList = { vm.confirmAddToList(item) },
+                                                        onDelete = { vm.confirmDelete(item) },
+                                                    )
+                                                }
                                             }
                                         }
                                     }

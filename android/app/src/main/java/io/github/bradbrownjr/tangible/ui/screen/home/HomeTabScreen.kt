@@ -26,8 +26,6 @@ import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
@@ -218,22 +216,6 @@ fun HomeTabScreen(
             Column {
                 TopAppBar(
                     title = { Text(stringResource(R.string.home_tab)) },
-                    actions = {
-                        BadgedBox(
-                            badge = {
-                                if (s.alertCount > 0) {
-                                    Badge { Text(s.alertCount.toString()) }
-                                }
-                            },
-                        ) {
-                            IconButton(onClick = { onJumpTo(5) }) {
-                                Icon(
-                                    Icons.Default.Notifications,
-                                    contentDescription = stringResource(R.string.tasks_tab_alerts),
-                                )
-                            }
-                        }
-                    },
                 )
                 Surface(
                     color = MaterialTheme.colorScheme.surface,
@@ -244,8 +226,9 @@ fun HomeTabScreen(
                         onValueChange = vm::onQueryChange,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                        placeholder = { Text(stringResource(R.string.home_search_placeholder)) },
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                        textStyle = MaterialTheme.typography.bodySmall,
+                        placeholder = { Text(stringResource(R.string.home_search_placeholder), style = MaterialTheme.typography.bodySmall) },
                         singleLine = true,
                         trailingIcon = {
                             if (s.q.isNotEmpty()) {

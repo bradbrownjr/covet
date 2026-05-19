@@ -657,40 +657,35 @@ fun ShoppingListScreen(
                     )
                 }
             }
-            // List type tabs
-            Row(
+            // List type tabs — "+" placed right after the last tab inside the row
+            ScrollableTabRow(
+                selectedTabIndex = pagerState.currentPage,
+                edgePadding = 0.dp,
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
             ) {
-                ScrollableTabRow(
-                    selectedTabIndex = pagerState.currentPage,
-                    edgePadding = 0.dp,
-                    modifier = Modifier.weight(1f),
-                ) {
+                Tab(
+                    selected = pagerState.currentPage == 0,
+                    onClick = {
+                        viewModel.loadAllItems()
+                        coroutineScope.launch { pagerState.animateScrollToPage(0) }
+                    },
+                    text = { Text(stringResource(R.string.tab_all)) },
+                )
+                ui.customListTypes.forEachIndexed { index, customType ->
                     Tab(
-                        selected = pagerState.currentPage == 0,
+                        selected = pagerState.currentPage == 1 + index,
                         onClick = {
-                            viewModel.loadAllItems()
-                            coroutineScope.launch { pagerState.animateScrollToPage(0) }
+                            viewModel.setListType(customType.slug)
+                            coroutineScope.launch { pagerState.animateScrollToPage(1 + index) }
                         },
-                        text = { Text(stringResource(R.string.tab_all)) },
+                        text = { Text(customType.label) },
                     )
-                    ui.customListTypes.forEachIndexed { index, customType ->
-                        Tab(
-                            selected = pagerState.currentPage == 1 + index,
-                            onClick = {
-                                viewModel.setListType(customType.slug)
-                                coroutineScope.launch { pagerState.animateScrollToPage(1 + index) }
-                            },
-                            text = { Text(customType.label) },
-                        )
-                    }
                 }
-                IconButton(
-                    onClick = { viewModel.openListTypeWizard() },
-                    modifier = Modifier.padding(end = 4.dp),
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_list_type))
+                // "+" placed right after the last tab, inheriting tab row background
+                Box(modifier = Modifier.height(48.dp), contentAlignment = Alignment.Center) {
+                    IconButton(onClick = { viewModel.openListTypeWizard() }) {
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_add_list_type))
+                    }
                 }
             }
         HorizontalPager(

@@ -144,7 +144,7 @@ fun AlertsScreen(
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
                     ) {
                         listOf(7, 14, 30, 60, 90).forEach { days ->
                             FilterChip(
