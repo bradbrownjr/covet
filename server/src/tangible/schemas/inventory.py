@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 class ItemLotCreate(BaseModel):
     label: str | None = None
-    notes: str | None = None
+    notes: str | None = Field(default=None, max_length=65535)
     quantity: int = Field(default=1, ge=1, le=100000)
     purchased_at: datetime | None = None
     use_by_date: datetime | None = None
@@ -19,7 +19,7 @@ class ItemLotCreate(BaseModel):
 
 class ItemLotUpdate(BaseModel):
     label: str | None = None
-    notes: str | None = None
+    notes: str | None = Field(default=None, max_length=65535)
     quantity: int | None = Field(default=None, ge=1, le=100000)
     purchased_at: datetime | None = None
     use_by_date: datetime | None = None

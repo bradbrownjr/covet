@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import re
 from datetime import UTC, datetime
 from decimal import Decimal
 
@@ -58,6 +59,12 @@ from tangible.services.metadata import ScrapeResult, barcode_lookup
 from tangible.services.qr_labels import generate_qr_codes_pdf
 
 router = APIRouter(prefix="/items", tags=["items"])
+
+
+def _safe_filename(name: str) -> str:
+    """Strip characters that could cause Content-Disposition header injection."""
+    return re.sub(r'[\r\n"\\]', '', name).strip()
+
 
 _EDITOR_ROLES = {"editor", "owner"}
 _VIEWER_ROLES = {"viewer", "editor", "owner"}
@@ -1426,5 +1433,5 @@ def generate_qr_labels(
     return StreamingResponse(
         iter([pdf_bytes]),
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=qr-labels-{collection.name}.pdf"},
+        headers={"Content-Disposition": f'attachment; filename="qr-labels-{_safe_filename(collection.name)}.pdf"'},
     )

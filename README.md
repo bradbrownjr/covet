@@ -43,6 +43,7 @@ internet connection.
 - [Configuration reference](docs/configuration.md) — every
   `TANGIBLE_*` environment variable
 - [Development guide](docs/development.md) — running the stack locally
+- [Security](SECURITY.md) — security architecture, audit history, vulnerability reporting
 
 ## Quick start (development)
 

@@ -9,7 +9,7 @@ class ContactBase(BaseModel):
     name: str = Field(min_length=1, max_length=128)
     email: EmailStr | None = None
     phone: str | None = None
-    notes: str | None = None
+    notes: str | None = Field(default=None, max_length=65535)
 
 
 class ContactCreate(ContactBase):
@@ -20,7 +20,7 @@ class ContactUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=128)
     email: EmailStr | None = None
     phone: str | None = None
-    notes: str | None = None
+    notes: str | None = Field(default=None, max_length=65535)
 
 
 class ContactRead(ContactBase):

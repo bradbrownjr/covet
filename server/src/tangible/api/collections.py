@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import StreamingResponse
@@ -28,6 +29,11 @@ from tangible.schemas import (
 )
 from tangible.services import audit
 from tangible.services.reports import CollectionReport
+
+
+def _safe_filename(name: str) -> str:
+    """Strip characters that could cause Content-Disposition header injection."""
+    return re.sub(r'[\r\n"\\]', '', name).strip()
 
 router = APIRouter(prefix="/collections", tags=["collections"])
 
@@ -319,7 +325,7 @@ def get_collection_bom(
     return StreamingResponse(
         iter([bom_text.encode("utf-8")]),
         media_type="text/plain",
-        headers={"Content-Disposition": f"attachment; filename=bom-{collection.name}.txt"},
+        headers={"Content-Disposition": f'attachment; filename="bom-{_safe_filename(collection.name)}.txt"'},
     )
 
 
@@ -343,7 +349,7 @@ def get_insurance_export(
     return StreamingResponse(
         iter([zip_data]),
         media_type="application/zip",
-        headers={"Content-Disposition": f"attachment; filename=insurance-export-{collection.name}.zip"},
+        headers={"Content-Disposition": f'attachment; filename="insurance-export-{_safe_filename(collection.name)}.zip"'},
     )
 
 

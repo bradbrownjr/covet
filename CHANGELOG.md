@@ -4,6 +4,14 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.70] — 2026-05-19
+
+### Security
+
+- **LoginRequest unbounded fields (DoS):** `POST /auth/login` accepted arbitrarily long `username` and `password` strings. Because Argon2 is intentionally CPU/memory-intensive, a crafted request with a multi-megabyte password string could amplify CPU burn even under the 5 req/min rate limit. Added `max_length=64` to `username` and `max_length=1024` to `password` in `LoginRequest`, matching the limits already in place on the registration endpoint.
+- **Content-Disposition header injection:** Collection names and usernames were interpolated directly into `Content-Disposition` response headers without sanitization (e.g. `attachment; filename=bom-{collection.name}.txt`). A name containing `\r\n` could inject additional HTTP response headers. Added `_safe_filename()` helper (strips `\r`, `\n`, `"`, `\\`) in `api/items.py`, `api/collections.py`, and `api/auth.py`, applied to all four affected download endpoints. Filenames are now also consistently double-quoted per RFC 6266.
+- **Unbounded `notes` fields (storage DoS):** `notes` fields on `Item`, `MaintenanceTask`, `Chore`, `ChoreCompletePayload`, `MaintenanceCompletePayload`, `QuickChorePayload`, `StandaloneTask`, `Contact`, `Loan`, and `ItemLot` input schemas had no `max_length` constraint. Added `Field(default=None, max_length=65535)` to all affected input schemas; read schemas are unaffected.
+
 ## [0.25.69] — 2026-05-19
 
 ### Fixed

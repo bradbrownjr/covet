@@ -14,7 +14,7 @@ class ItemBase(BaseModel):
 
     title: str = Field(min_length=1, max_length=512)
     subtitle: str | None = Field(default=None, max_length=512)
-    notes: str | None = None
+    notes: str | None = Field(default=None, max_length=65535)
     condition: str | None = None
     quantity: int = Field(default=1, ge=0)
     purchase_price: Decimal | None = None
@@ -58,7 +58,7 @@ class ItemCreate(ItemBase):
 class ItemUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=512)
     subtitle: str | None = None
-    notes: str | None = None
+    notes: str | None = Field(default=None, max_length=65535)
     condition: str | None = None
     quantity: int | None = Field(default=None, ge=0)
     purchase_price: Decimal | None = None

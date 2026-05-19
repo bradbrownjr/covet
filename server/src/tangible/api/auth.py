@@ -6,6 +6,7 @@ import base64
 import hashlib
 import io
 import json
+import re
 import secrets
 import zipfile
 
@@ -45,6 +46,12 @@ from tangible.schemas.auth import (
 from tangible.services.site_settings import get_site_bool
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+def _safe_filename(name: str) -> str:
+    """Strip characters that could cause Content-Disposition header injection."""
+    return re.sub(r'[\r\n"\\]', '', name).strip()
+
 
 _TOTP_TICKET_SALT = "tangible-totp-login"
 _TOTP_TICKET_MAX_AGE = 300  # 5 minutes
@@ -413,7 +420,7 @@ def export_account(
     return StreamingResponse(
         buf,
         media_type="application/zip",
-        headers={"Content-Disposition": f'attachment; filename="tangible-export-{user.username}.zip"'},
+        headers={"Content-Disposition": f'attachment; filename="tangible-export-{_safe_filename(user.username)}.zip"'},
     )
 
 

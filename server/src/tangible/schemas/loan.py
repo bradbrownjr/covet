@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class LoanBase(BaseModel):
@@ -12,7 +12,7 @@ class LoanBase(BaseModel):
     contact_id: str
     loaned_at: datetime
     due_at: datetime | None = None
-    notes: str | None = None
+    notes: str | None = Field(default=None, max_length=65535)
 
 
 class LoanCreate(LoanBase):
@@ -24,7 +24,7 @@ class LoanUpdate(BaseModel):
     loaned_at: datetime | None = None
     due_at: datetime | None = None
     returned_at: datetime | None = None
-    notes: str | None = None
+    notes: str | None = Field(default=None, max_length=65535)
 
 
 class LoanRead(LoanBase):

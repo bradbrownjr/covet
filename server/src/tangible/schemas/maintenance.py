@@ -10,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class MaintenanceTaskBase(BaseModel):
     name: str = Field(min_length=1, max_length=128)
-    notes: str | None = None
+    notes: str | None = Field(default=None, max_length=65535)
     interval_days: int | None = Field(default=None, ge=1, le=36500)
     last_completed_at: datetime | None = None
     next_due_at: datetime | None = None
@@ -22,7 +22,7 @@ class MaintenanceTaskCreate(MaintenanceTaskBase):
 
 class MaintenanceTaskUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=128)
-    notes: str | None = None
+    notes: str | None = Field(default=None, max_length=65535)
     interval_days: int | None = Field(default=None, ge=1, le=36500)
     last_completed_at: datetime | None = None
     next_due_at: datetime | None = None
@@ -40,7 +40,7 @@ class MaintenanceTaskRead(MaintenanceTaskBase):
 class MaintenanceCompletePayload(BaseModel):
     """Optional body for POST /maintenance/{id}/complete."""
 
-    notes: str | None = None
+    notes: str | None = Field(default=None, max_length=65535)
     cost: Decimal | None = Field(default=None, ge=0)
     currency: str | None = Field(default=None, min_length=3, max_length=3)
     technician: str | None = Field(default=None, max_length=128)
@@ -70,7 +70,7 @@ class MaintenanceCompletionRead(BaseModel):
 
 class ChoreBase(BaseModel):
     name: str = Field(min_length=1, max_length=128)
-    notes: str | None = None
+    notes: str | None = Field(default=None, max_length=65535)
     interval_days: int | None = Field(default=None, ge=1, le=36500)
     last_completed_at: datetime | None = None
     next_due_at: datetime | None = None
@@ -82,7 +82,7 @@ class ChoreCreate(ChoreBase):
 
 class ChoreUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=128)
-    notes: str | None = None
+    notes: str | None = Field(default=None, max_length=65535)
     interval_days: int | None = Field(default=None, ge=1, le=36500)
     next_due_at: datetime | None = None
 
@@ -99,7 +99,7 @@ class ChoreRead(ChoreBase):
 class ChoreCompletePayload(BaseModel):
     """Optional body for POST /chores/{id}/complete."""
 
-    notes: str | None = None
+    notes: str | None = Field(default=None, max_length=65535)
     cost: Decimal | None = Field(default=None, ge=0)
     currency: str | None = Field(default=None, min_length=3, max_length=3)
     technician: str | None = Field(default=None, max_length=128)
@@ -110,7 +110,7 @@ class QuickChorePayload(BaseModel):
 
     chore_name: str = Field(min_length=1, max_length=128)
     interval_days: int | None = Field(default=None, ge=1, le=36500)
-    notes: str | None = None
+    notes: str | None = Field(default=None, max_length=65535)
     cost: Decimal | None = Field(default=None, ge=0)
     currency: str | None = Field(default=None, min_length=3, max_length=3)
     technician: str | None = Field(default=None, max_length=128)
@@ -136,7 +136,7 @@ class ChoreCompletionRead(BaseModel):
 
 class StandaloneTaskBase(BaseModel):
     title: str = Field(min_length=1, max_length=128)
-    notes: str | None = None
+    notes: str | None = Field(default=None, max_length=65535)
     due_at: datetime | None = None
 
 
@@ -147,7 +147,7 @@ class StandaloneTaskCreate(StandaloneTaskBase):
 
 class StandaloneTaskUpdate(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=128)
-    notes: str | None = None
+    notes: str | None = Field(default=None, max_length=65535)
     due_at: datetime | None = None
     item_id: str | None = None
     assigned_to_user_id: str | None = None

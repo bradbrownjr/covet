@@ -10,8 +10,8 @@ from tangible.schemas.user import UserRead
 
 
 class LoginRequest(BaseModel):
-    username: str
-    password: str
+    username: str = Field(max_length=64)
+    password: str = Field(max_length=1024)
 
 
 class RegisterRequest(BaseModel):
