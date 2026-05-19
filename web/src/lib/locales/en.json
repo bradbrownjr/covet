@@ -131,7 +131,7 @@
   },
   "collections": {
     "title": "Collections",
-    "add_button": "+ New collection",
+    "add_button": "New collection",
     "wizard_heading": "Start a new collection",
     "wizard_subtitle": "Pick a starting point — you can customize categories and rename it at any time.",
     "custom_preset_title": "Custom",

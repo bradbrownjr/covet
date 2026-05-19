@@ -129,6 +129,13 @@
                 {c.name}
             </button>
         {/each}
+        <button
+            type="button"
+            class="tab tab-add"
+            aria-label={$_('collections.add_button')}
+            title={$_('collections.add_button')}
+            onclick={() => goto('/collections?new=1')}
+        >+</button>
     </div>
 
     <div
@@ -183,6 +190,14 @@
         color: var(--accent);
         border-bottom-color: var(--accent);
     }
+
+    .tab-add {
+        color: var(--accent);
+        font-size: 1.2rem;
+        padding: 0 var(--space-3);
+        opacity: 0.7;
+    }
+    .tab-add:hover { opacity: 1; }
 
     .tab-content {
         touch-action: pan-y;

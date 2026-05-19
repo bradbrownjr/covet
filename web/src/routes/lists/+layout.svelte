@@ -210,7 +210,6 @@
     .tab-del:hover { opacity: 1; color: var(--danger, #e53e3e); }
 
     .tab-add {
-        margin-left: auto;
         color: var(--accent);
         font-size: 1.2rem;
         padding: 0 var(--space-3);

@@ -418,6 +418,11 @@
         grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
         gap: 0.5rem;
     }
+    @media (min-width: 768px) {
+        .tiles {
+            grid-template-columns: repeat(4, 1fr);
+        }
+    }
     .tile {
         display: flex;
         flex-direction: column;

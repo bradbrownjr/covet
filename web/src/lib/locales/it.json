@@ -86,7 +86,7 @@
   },
   "collections": {
     "title": "Collezioni",
-    "add_button": "+ Nuova collezione",
+    "add_button": "Nuova collezione",
     "wizard_heading": "Cosa stai collezionando?",
     "wizard_subtitle": "Scegli un punto di partenza — puoi rinominare, mescolare e aggiungere altre categorie in seguito.",
     "custom_preset_title": "Personalizzato",

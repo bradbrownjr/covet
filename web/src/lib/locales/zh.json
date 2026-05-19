@@ -86,7 +86,7 @@
   },
   "collections": {
     "title": "收藏",
-    "add_button": "+ 新建收藏",
+    "add_button": "新建收藏",
     "wizard_heading": "您在收藏什么？",
     "wizard_subtitle": "选择一个起点 — 之后可以重命名、混合和添加其他分类。",
     "custom_preset_title": "自定义",

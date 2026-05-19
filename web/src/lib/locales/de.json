@@ -86,7 +86,7 @@
   },
   "collections": {
     "title": "Sammlungen",
-    "add_button": "+ Neue Sammlung",
+    "add_button": "Neue Sammlung",
     "wizard_heading": "Was sammeln Sie?",
     "wizard_subtitle": "Wählen Sie einen Ausgangspunkt — Sie können später umbenennen und Kategorien mischen.",
     "custom_preset_title": "Benutzerdefiniert",

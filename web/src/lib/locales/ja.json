@@ -86,7 +86,7 @@
   },
   "collections": {
     "title": "コレクション",
-    "add_button": "+ 新規コレクション",
+    "add_button": "新規コレクション",
     "wizard_heading": "何を集めていますか？",
     "wizard_subtitle": "スタート地点を選択してください。後で名前変更、混在、その他のカテゴリを追加できます。",
     "custom_preset_title": "カスタム",
