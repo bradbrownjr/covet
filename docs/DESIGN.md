@@ -178,6 +178,32 @@ Every **detail page** (any route showing a single item / collection) follows:
 
 **Canonical reference:** `web/src/routes/collections/[id]/+page.svelte`.
 
+### Android: status / nav bar icon color
+
+Always sync icon color with the active theme via a `SideEffect` in `MainActivity`:
+
+```kotlin
+SideEffect {
+    val controller = WindowCompat.getInsetsController(window, window.decorView)
+    controller.isAppearanceLightStatusBars = !dark
+    controller.isAppearanceLightNavigationBars = !dark
+}
+```
+
+Where `dark` is derived from the current `MaterialTheme.colorScheme.isLight` or the resolved palette mode. This must be updated whenever the theme changes so dark themes get white icons and light themes get dark icons. **Never** rely on the system default — it may not match the app palette.
+
+### Android: `OutlinedTextField` height
+
+The `OutlinedTextField(value, onValueChange, ...)` overload has no `contentPadding` parameter and defaults to ~56dp height. Section headers target 48dp (matching `TabRow` / `FilterChip` touch targets). For any search field in a `topBar`:
+
+- Use the **`TextFieldState`** overload: `OutlinedTextField(state: TextFieldState, ...)`.
+- Set `lineLimits = TextFieldLineLimits.SingleLine` (replaces `singleLine = true`).
+- Set `contentPadding = OutlinedTextFieldDefaults.contentPadding(top = 14.dp, bottom = 14.dp)`.
+- Propagate text changes to the ViewModel via `snapshotFlow { state.text.toString() }.collect { vm.onQueryChange(it) }` inside a `LaunchedEffect(Unit)`.
+- To clear programmatically: `state.edit { replace(0, length, "") }` — the `LaunchedEffect` will propagate the empty string automatically.
+
+**Do not** use the `value/onValueChange` overload for any search field in a header row; the fixed 56dp height makes headers visually inconsistent.
+
 ---
 
 ## Cross-platform parity table

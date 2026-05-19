@@ -142,6 +142,13 @@ This is the bar that protects shipped features:
 
 ### Release procedure
 
+**STOP before running any `git commit` for a release.** The CHANGELOG entry
+is not optional and is not a "do it later" item. The `release.yml` workflow
+reads `CHANGELOG.md` to populate the GitHub Release body -- a missing entry
+means the published release has no description. If you are about to run a
+release commit and `CHANGELOG.md` does not already have a `## [X.Y.Z]`
+section for this version, write it first.
+
 A new version requires four file edits, one CHANGELOG entry, and a tag
 push. The `release.yml` workflow auto-publishes the GitHub Release from the
 tag and the matching `## [X.Y.Z]` section of `CHANGELOG.md`.
@@ -150,7 +157,7 @@ tag and the matching `## [X.Y.Z]` section of `CHANGELOG.md`.
    - `server/src/tangible/__init__.py` (`__version__`)
    - `server/pyproject.toml` (`version`)
    - `web/package.json` (`"version"`)
-   - `android/app/build.gradle.kts` — bump **both** `versionCode` (integer,
+   - `android/app/build.gradle.kts` -- bump **both** `versionCode` (integer,
      increment by 1) **and** `versionName` (string, match the release tag).
      Even if no Android code changed, `versionName` must match the tag so
      `Settings → About` in the app always reflects the current release.
@@ -177,7 +184,9 @@ tag and the matching `## [X.Y.Z]` section of `CHANGELOG.md`.
 - Test suite passes locally for the affected component.
 - `ruff check` / `svelte-check` / lint clean.
 - Documentation updated (`CHANGELOG.md` for user-facing changes;
-  `AGENTS.md` for new rules / gotchas; `README.md` only when needed).
+  `AGENTS.md` for new rules / gotchas; `docs/DESIGN.md` for new UI
+  patterns; `README.md` only when needed). **CHANGELOG.md must be
+  updated before the release commit, not after.**
 - Update the user/admin guides whenever shipped behavior changes:
   `docs/user-guide.md` for web/server user workflows,
   `docs/android-user-guide.md` for Android workflows,

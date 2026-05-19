@@ -4,6 +4,277 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.65] — 2026-05-19
+
+### Changed
+
+- **Home search box height (Android):** Migrated `OutlinedTextField` from the `value/onValueChange` overload to the `TextFieldState` overload, which exposes `contentPadding`. Setting `top = 14dp / bottom = 14dp` reduces the field height from ~56dp to ~48dp, matching the tab-row height used by every other section header. Text changes are propagated to the ViewModel via `snapshotFlow`; the clear button edits `TextFieldState` directly.
+
+## [0.25.64] — 2026-05-19
+
+### Changed
+
+- **Home header padding (Android):** Removed outer vertical padding on the search box `Surface`, narrowing the header so the search box sits flush.
+- **Alerts chip row padding (Android):** Removed top/bottom padding on the date-filter chip row; the row now matches the ~48dp tab-row height of other section headers.
+- **Category picker card alignment (Web):** Preset grids (`.presets`) now use `align-items: start` so cards are anchored to the top edge regardless of description length. Previously `align-items: stretch` caused shorter cards to gain empty whitespace below their content.
+- **Status / nav bar icon color (Android):** Added a `SideEffect` in `MainActivity` that calls `WindowCompat.getInsetsController` to sync `isAppearanceLightStatusBars` and `isAppearanceLightNavigationBars` with the active theme. Dark themes get white icons; light themes get dark icons; switches apply instantly on theme change.
+
+### Docs
+
+- **DESIGN.md:** Added "Preset/category picker grid" rule documenting `align-items: start` + `justify-content: flex-start` and why `align-items: stretch` is forbidden.
+
+## [0.25.63] — 2026-05-19
+
+### Changed
+
+- **Header / tab-row uniformity (Android):** Multiple screens brought in line so every section header row is the same height as the `TabRow` (~48dp):
+  - Home: search box shrunk; redundant bell icon removed from `TopAppBar`.
+  - Collections: `+` button moved into the `ScrollableTabRow`; QR scan, image add, and add-item actions moved to per-tab toolbar rows.
+  - Lists: `+` button placed directly inside `ScrollableTabRow`, after the last tab, using the correct `Surface` background.
+  - Alerts: date-filter chip row vertical padding reduced.
+  - Tasks: `Refresh` and `Add` removed from `TopAppBar`; pull-to-refresh and card-level affordances handle those actions.
+
+## [0.25.62] — 2026-05-19
+
+### Fixed
+
+- **Collections / Lists `+` tab not updating content (Web):** The wizard open/close state was held in local `$state(pickerOpen)` and checked only in `onMount`. SvelteKit does not remount the page on query-param changes, so clicking the `+` tab changed the URL but left the wizard closed. Fixed by deriving `pickerOpen` from `page.url.searchParams`; a `$effect` resets `chosen`, `formName`, `formDescription`, and `error` whenever the picker closes. `cancel()` and `openPicker()` now navigate rather than toggling local state.
+
+## [0.25.61] — 2026-05-19
+
+### Changed
+
+- **Home search field placement (Android):** Moved the search `OutlinedTextField` into `topBar` so it no longer creates a jagged layout during section swipes.
+- **Stores spacer row (Android):** Added 48dp spacer row in `topBar` to match the Lists tab-strip height.
+- **Alerts day-filter chips (Android):** Moved filter chips into a `topBar` `Surface` row, matching the Collections/Lists pattern.
+- **Home Jump-To grid (Android):** Capped the tile grid at 4 columns in landscape (≥768px).
+- **Collections `+` tab (Web):** Added a `+` tab button in the tab strip.
+- **Lists `+` tab (Web):** Repositioned `+` button directly after the last tab (removed `margin-left: auto`).
+- **Lists / All (Web):** Restored the dashed "New list" card in the presets grid.
+- **Collections label (Web):** Removed redundant `+ ` prefix from all 7 locale files.
+
+### Fixed
+
+- Added `cd_add_list_type` string to all 6 non-English Android locale files.
+
+## [0.25.60] — 2026-05-19
+
+### Fixed
+
+- **Missing `cd_add_list_type` string (Android):** Added the missing content description string that caused a lint failure in v0.25.59.
+
+## [0.25.59] — 2026-05-19
+
+### Changed
+
+- **Header flow polish (Android):** `AlertsScreen`, `ShoppingListScreen`, and `HomeTabScreen` refactored to keep header rows inside `topBar` (eliminates layout shift during swipe navigation).
+- **Per-type store selection (Android):** `ShoppingStoreScreen` now filters stores by list type; users see only the stores relevant to the current list.
+- **Lists `[type]` page rewrite (Web):** `lists/[type]/+page.svelte` now fetches `UserListType` dynamically; removed all hardcoded type slugs. Added `lists/+layout.svelte` for shared list context.
+- **Home tile quick-links (Web):** Added list-type shortcuts to the home page.
+
+## [0.25.58] — 2026-05-18
+
+### Fixed
+
+- **Nav tab deep-links not switching active tab (Web):** SPA navigation to the same route with a different query param was not re-activating the correct tab. Fixed by keying the active-tab effect on `page.url` rather than component mount.
+
+## [0.25.57] — 2026-05-18
+
+### Fixed
+
+- **Orphaned CSS on Tasks page (Web):** Removed dead `.group`, `.group-title`, and `.group-count` CSS rules that were left after the Tasks page was restructured.
+
+## [0.25.56] — 2026-05-18
+
+### Fixed
+
+- **Infinite `$effect` reactive loop on Tasks / Chores / Scoreboard tabs (Web):** A `$effect` that wrote to a reactive variable it also read was causing an infinite update cycle. Refactored to use a derived value instead.
+
+## [0.25.55] — 2026-05-18
+
+### Changed
+
+- **API rate limit (Server):** Wired the `rate_limit_api` config setting to the rate limiter middleware. Raised the default from 60 to 300 requests per minute.
+
+## [0.25.54] — 2026-05-18
+
+### Fixed
+
+- **`chosen.name` crash on Lists page (Web):** Accessing `.name` before checking if `chosen` is defined caused a runtime crash when the wizard was dismissed quickly.
+- **Import page `$app/stores` API (Web):** Updated import to use the current SvelteKit API (`$app/state` instead of deprecated `$app/stores`).
+- **`0002` migration on fresh installs (Server):** The performance-index migration failed on databases that had not yet run `0001`. Added a dependency guard so migrations apply in the correct order.
+
+## [0.25.53] — 2026-05-18
+
+### Added
+
+- **Offline mutation queue (Android):** `MutationDrainerWorker` enqueues item creates/updates/deletes when the device is offline and drains them when connectivity is restored.
+- **Chores screen (Android):** Dedicated `ChoresScreen` with collection-scoped chore list, completion flow, and inline create.
+- **Performance indexes (Server):** Migration `0002_add_perf_indexes` adds covering indexes on `items.collection_id`, `items.archived`, `maintenance_tasks.item_id`, and `maintenance_tasks.next_due` to speed up list and alert queries on large datasets.
+
+### Changed
+
+- **Maintenance API (Server):** `/maintenance/alerts` now supports `kind` filter and returns `collection_name` on each alert for cross-collection views.
+- **Settings screen (Android):** Moved chore management and alert counts out of Settings; they now live in the dedicated Chores and Alerts tabs.
+
+## [0.25.52] — 2026-05-18
+
+### Added
+
+- **11-palette theming (Android):** `Theme.kt` now defines all 11 palettes (Blackboard, Blues, Cloud, Espresso, Gazette, Granite, One Dark, Paper, Passion, Tangible, Tron) with full light + dark Material3 color schemes mapped from the web design tokens. Material You dynamic color is replaced; palette selection is authoritative.
+- **Palette picker in Settings (Android):** `Settings → Appearance` shows a 3-column swatch grid (background + accent preview, checkmark on selection). Palette persists via `SessionStore`.
+
+### Changed
+
+- **Default palette (Android):** Changed from Material You dynamic to Granite (charcoal/teal), matching the web default.
+
+## [0.25.51] — 2026-05-18
+
+### Changed
+
+- **Settings screen tabbed layout (Android):** Settings is now a 3-tab screen (Appearance / Notifications / Account) using `HorizontalPager + TabRow`.
+  - Appearance: theme toggle + language picker.
+  - Notifications: per-kind push toggle switches.
+  - Account: server URL, username, test connection, sign out, About.
+- Removed the inline Alerts / Due Soon section from Settings (the dedicated Alerts nav section handles this).
+
+## [0.25.50] — 2026-05-18
+
+### Fixed
+
+- **Collections `TopAppBar` title (Android):** Shows "Collections" on the All tab instead of "All".
+- **"My Stores" renamed to "Stores" (Android):** Corrected the `R.string.stores` resource to match the nav label.
+
+## [0.25.49] — 2026-05-18
+
+### Changed
+
+- **Swipe navigation between tabs and sections (Android):** `HomeScreen` `HorizontalPager` now has `userScrollEnabled = true` so content-area swipes navigate sections on screens without inner pagers (Home, Stores, Alerts, Settings, About). `MaintenanceScreen` replaced `ScrollableTabRow + index` with `HorizontalPager` so Chores / My Tasks / Scoreboard tabs respond to swipe gestures.
+
+## [0.25.48] — 2026-05-18
+
+### Changed
+
+- **New store card in store sidebar (Android):** Replaced the always-open create-store form with a dashed "New store" card. Clicking the card opens the inline form; a cancel button dismisses it. Matches the `OutlinedCard` dashed pattern used by Collections, Lists, and Tasks.
+
+## [0.25.47] — 2026-05-18
+
+### Changed
+
+- **Inline New cards for web index pages (Web):** Collections, Lists, Tasks/Chores, and Tasks/My Tasks pages all now use the dashed "New X" card as the last item in the content grid, with no separate top-of-page button. This brings all index pages into conformance with the `DESIGN.md` page anatomy.
+
+### Docs
+
+- **DESIGN.md:** Updated Primary action spec to the inline New card pattern; documented index vs. detail UX levels; added CSS reference snippet.
+
+## [0.25.46] — 2026-05-17
+
+### Changed
+
+- **Inline New cards for Chores and Tasks tabs (Android):** Replaced empty-state text on Chores and My Tasks tabs with always-visible `NewChoreCard` / `NewTaskCard` (`OutlinedCard`, full-width, `+` icon). Cards trigger the existing create dialogs.
+
+## [0.25.45] — 2026-05-17
+
+### Changed
+
+- **Inline "New" cards for Lists and Stores (Android):** Lists All tab replaced centered empty-state text with `NewListTypeCard` as the last grid item. Stores converted from `LazyColumn + ListItem` to `LazyVerticalGrid` with `StoreCard` and `NewStoreCard`, matching the Collections `OutlinedCard` pattern.
+
+## [0.25.44] — 2026-05-17
+
+### Fixed
+
+- **Stores `TopAppBar` back button (Android):** `ShoppingStoreListScreen` was always showing a back arrow regardless of the `showBackButton` parameter.
+- **Stores FAB removed (Android):** Replaced `FloatingActionButton` with an `IconButton` in `TopAppBar`, matching `DESIGN.md` (no FABs).
+
+## [0.25.43] — 2026-05-17
+
+### Changed
+
+- **Cross-section swipe for Lists and Tasks (Android):** `ShoppingListScreen` and `MaintenanceScreen` now support `onSwipeLeft` / `onSwipeRight` callbacks wired to the outer `HomeScreen` `HorizontalPager`, enabling edge-swipe section navigation consistent with Collections.
+
+## [0.25.42] — 2026-05-17
+
+### Fixed
+
+- **Collections "All" tab hidden when empty (Android):** An early-return guard bypassed the pager when `collections` was empty, hiding the tab strip. The All tab (with the New Collection card) now renders unconditionally.
+
+## [0.25.41] — 2026-05-17
+
+### Added
+
+- **Stores as a dedicated bottom nav section (Android):** Stores (index 3) inserted between Lists and Tasks in `HOME_SECTIONS`. Tasks shifted to index 4, Alerts to 5, Settings to 6. The Home Jump-To grid updated accordingly.
+
+## [0.25.40] — 2026-05-17
+
+### Changed
+
+- **Pull-to-refresh on all Tasks tabs (Android):** Replaced centered `CircularProgressIndicator` items on Chores, My Tasks, and Scoreboard tabs with `PullToRefreshBox`, consistent with Collections and Lists.
+
+## [0.25.39] — 2026-05-17
+
+### Fixed
+
+- **Chores spinner never clearing (Android):** Wrapped `getAlerts()` in `withTimeout(15_000L)` so the spinner clears within 15 seconds if the server is unreachable.
+- **Lists empty state missing (Android):** Added `no_lists` string and guidance text to `ShoppingListScreen` page 0 when no list types exist.
+
+## [0.25.38] — 2026-05-17
+
+### Changed
+
+- **Unified `AppBar` design for Tasks and Lists (Android):** `MaintenanceScreen` replaced `OutlinedButton("Refresh")` with an `IconButton` and removed the `FloatingActionButton`; context-sensitive `+` button in AppBar (Chores → new chore dialog, My Tasks → new task dialog). `ShoppingListScreen` AppBar `+` is context-sensitive (page 0 opens list wizard; page 1+ opens add-item dialog). All three index screens (Collections, Lists, Tasks) now use a consistent `TopAppBar + IconButton` pattern with no FABs or text buttons.
+
+## [0.25.37] — 2026-05-17
+
+### Added
+
+- **Inline chore creation (Web):** Tasks page Chores tab now has an inline create form (collection picker, name, interval, notes; `POST /collections/{id}/chores`). Added `tasks.new_chore_button` locale key to all 7 languages.
+- **Scoreboard tab (Android):** `MaintenanceScreen` gains a Scoreboard tab showing a ranked list with medals, achievement badges, and breakdown counts. Added `ScoreboardEntryDto` and `getScoreboard()` API call.
+
+## [0.25.36] — 2026-05-17
+
+### Changed
+
+- **Nav order (Android):** Swapped Alerts and Tasks — order is now Home > Collections > Lists > Tasks > Alerts > Settings. Home Jump-To tile indices updated to match.
+- **New chore dialog (Android):** `+` FAB on the Chores tab opens `NewChoreDialog` (collection picker, name, optional repeat interval, optional notes).
+
+## [0.25.35] — 2026-05-17
+
+### Added
+
+- **My Tasks create/complete/delete flow (Android):** Full `NewTaskDialog`, `TaskCard` with complete/delete actions, `StandaloneTaskDto` / `CreateTaskBody` DTOs, and `getTasks` / `createTask` / `completeTask` / `deleteTask` API endpoints. Replaced the previous stub.
+- **Home grid expanded (Android):** 2×3 grid with all 5 nav sections (Collections, Lists, Tasks, Alerts, Settings) with correct pager indices.
+- **Chores "Manage chores →" link (Android):** `TextButton` on each chore alert card deep-links to the collection's Chores tab via `HomeScreen → MaintenanceScreen → AlertCard`.
+
+### Fixed
+
+- **Web My Tasks 429 error (Web):** Shows a friendly message instead of a raw HTTP status code when the rate limiter is hit.
+
+## [0.25.34] — 2026-05-17
+
+### Changed
+
+- **Stores and Settings nav dropdowns (Web):** Navigation bar gains dropdown menus for Stores (list of store names) and Settings (Appearance, Notifications, Account subsections).
+- **Filter row alignment (Web):** Collection item filter rows align correctly with the content grid on narrow viewports.
+
+## [0.25.33] — 2026-05-17
+
+### Fixed
+
+- **Android version drift:** `versionCode` corrected to 104 / `versionName` to `"0.25.33"` for Obtainium detection (was stuck at values from v0.25.31).
+
+## [0.25.32] — 2026-05-16
+
+### Added
+
+- **Standalone `/alerts` route (Web):** Alerts moved to their own page; the bell dropdown "View all" link points to `/alerts`.
+- **Tasks nav dropdown (Web):** Tasks nav link converted to a dropdown with Chores / My Tasks / Scoreboard sub-links.
+- **"+ New list" shortcut (Web):** Added to the Lists nav dropdown.
+
+### Fixed
+
+- **Collections preset picker icons (Web):** Icon lookup was using `r.id` as the key instead of `r.slug`, causing all preset icons to fall back to the default.
+- **Nav vertical alignment (Web):** `nav-lists-trigger` inherited correct `font` and `line-height` so the trigger button aligns with other nav items.
+
 ## [0.25.31] — 2026-05-12
 
 ### Fixed
