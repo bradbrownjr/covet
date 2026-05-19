@@ -152,6 +152,15 @@ with dashed border as the last grid item.
 - Detail page inline form → adds an *item inside* an existing thing.
 These are on different routes; there is no visual ambiguity.
 
+**Preset/category picker grid** — When a wizard step presents a grid of
+selectable category or preset cards (`.presets`), always use
+`align-items: start` on the grid container and `justify-content: flex-start`
+on each `.preset`. This keeps every card's content anchored to the top edge,
+regardless of description length. Do **not** use `align-items: stretch`;
+stretching shorter cards to match their row's tallest neighbor creates empty
+whitespace below the content, causing visual bouncing and jaggedness as the
+eye tracks across rows.
+
 **Canonical reference:** `web/src/routes/collections/+page.svelte`. When in
 doubt, make the new page look like Collections.
 

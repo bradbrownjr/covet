@@ -180,13 +180,14 @@
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
         gap: 0.5rem;
-        align-items: stretch;
+        align-items: start;
     }
 
     .preset {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
+        justify-content: flex-start;
         gap: 0.25rem;
         padding: 0.75rem;
         min-height: 6rem;

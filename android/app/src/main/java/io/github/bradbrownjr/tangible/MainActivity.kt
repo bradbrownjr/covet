@@ -10,9 +10,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import dagger.hilt.android.AndroidEntryPoint
 import io.github.bradbrownjr.tangible.data.auth.SessionStore
 import io.github.bradbrownjr.tangible.nfc.NfcManager
@@ -51,6 +53,13 @@ class MainActivity : ComponentActivity() {
                 "light" -> false
                 "dark"  -> true
                 else    -> systemDark
+            }
+            // Keep status-bar and nav-bar icons readable regardless of which
+            // theme mode the user has pinned (light / dark / system).
+            SideEffect {
+                val controller = WindowCompat.getInsetsController(window, window.decorView)
+                controller.isAppearanceLightStatusBars = !dark
+                controller.isAppearanceLightNavigationBars = !dark
             }
             TangibleTheme(darkTheme = dark, paletteId = palette ?: DEFAULT_PALETTE_ID) {
                 TangibleApp()

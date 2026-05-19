@@ -226,7 +226,7 @@ fun HomeTabScreen(
                         onValueChange = vm::onQueryChange,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                            .padding(horizontal = 8.dp),
                         textStyle = MaterialTheme.typography.bodySmall,
                         placeholder = { Text(stringResource(R.string.home_search_placeholder), style = MaterialTheme.typography.bodySmall) },
                         singleLine = true,
