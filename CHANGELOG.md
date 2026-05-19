@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.71] — 2026-05-19
+
+### Fixed
+
+- **Category picker card height uniformity (Lists & Collections):** Cards in the "New list" and "New collection" category pickers varied in height depending on description length, producing an uneven grid. All cards are now a fixed uniform height (`9rem`) with `overflow: hidden`, and the grid no longer uses `align-items: start`.
+
 ## [0.25.70] — 2026-05-19
 
 ### Security
