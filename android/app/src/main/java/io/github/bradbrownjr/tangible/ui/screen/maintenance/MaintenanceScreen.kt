@@ -139,24 +139,23 @@ class MaintenanceViewModel @Inject constructor(
         if (_state.value.loading) return
         _state.value = _state.value.copy(loading = true, alertsError = null)
         viewModelScope.launch {
+            var alerts: List<DueAlertDto> = emptyList()
             var error: String? = null
-            val alerts = try {
-                withTimeout(8_000L) {
+            try {
+                alerts = withTimeout(8_000L) {
                     api.getAlerts(withinDays = _state.value.withinDays)
                 }
             } catch (_: TimeoutCancellationException) {
                 error = "Request timed out. Pull to retry."
-                emptyList()
             } catch (e: CancellationException) {
                 throw e
             } catch (_: IOException) {
                 error = "No connection. Pull to retry."
-                emptyList()
             } catch (_: Throwable) {
                 error = "Couldn't load alerts. Pull to retry."
-                emptyList()
+            } finally {
+                _state.value = _state.value.copy(alerts = alerts, loading = false, alertsError = error)
             }
-            _state.value = _state.value.copy(alerts = alerts, loading = false, alertsError = error)
         }
     }
 

@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.69] — 2026-05-19
+
+### Fixed
+
+- **Chores tab stuck progress indicator (Android):** If a `CancellationException` was thrown inside the `refresh()` coroutine (e.g. from structured-concurrency cancellation), the rethrow caused the coroutine to exit before reaching the `_state.value = ... loading = false` assignment, leaving `loading` permanently `true`. Moved the state update into a `finally` block so `loading` is guaranteed to be cleared to `false` regardless of whether the coroutine completes normally, times out, encounters a network error, or is cancelled.
+
 ## [0.25.68] — 2026-05-19
 
 ### Fixed
