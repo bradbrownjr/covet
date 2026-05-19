@@ -830,12 +830,6 @@ private fun NewChoreDialog(
     var selectedCollectionId by remember { mutableStateOf("") }
     var menuOpen by remember { mutableStateOf(false) }
 
-    LaunchedEffect(s.taskCollections) {
-        if (selectedCollectionId.isBlank() && s.taskCollections.isNotEmpty()) {
-            selectedCollectionId = s.taskCollections.first().id
-        }
-    }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.add_chore)) },
@@ -857,8 +851,10 @@ private fun NewChoreDialog(
                 )
                 if (s.taskCollections.isNotEmpty()) {
                     ExposedDropdownMenuBox(expanded = menuOpen, onExpandedChange = { menuOpen = it }) {
+                        val selectedName = s.taskCollections.firstOrNull { it.id == selectedCollectionId }?.name
+                            ?: stringResource(R.string.chore_no_collection)
                         OutlinedTextField(
-                            value = s.taskCollections.firstOrNull { it.id == selectedCollectionId }?.name ?: "",
+                            value = selectedName,
                             onValueChange = {},
                             readOnly = true,
                             label = { Text(stringResource(R.string.tasks_new_task_collection_label)) },
@@ -866,6 +862,10 @@ private fun NewChoreDialog(
                             modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
                         )
                         ExposedDropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.chore_no_collection)) },
+                                onClick = { selectedCollectionId = ""; menuOpen = false },
+                            )
                             s.taskCollections.forEach { col ->
                                 DropdownMenuItem(
                                     text = { Text(col.name) },

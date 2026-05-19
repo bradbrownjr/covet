@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.74] — 2026-05-19
+
+### Fixed
+
+- **Android Add Chore dialog:** Removed the `LaunchedEffect` that was auto-selecting the first collection, overriding the blank (standalone) default. Added "— No collection (standalone)" as the first item in the collection dropdown so users with existing collections can still create standalone chores.
+
 ## [0.25.73] — 2026-05-19
 
 ### Changed
