@@ -162,6 +162,40 @@
         }
     }
 
+    // ── Task inline edit ──
+    let editingTaskId = $state<string | null>(null);
+    let editTaskTitle = $state('');
+    let editTaskNotes = $state('');
+    let editTaskDueAt = $state('');
+    let taskEditSaving = $state(false);
+
+    function openTaskEdit(task: StandaloneTask) {
+        editingTaskId = task.id;
+        editTaskTitle = task.title;
+        editTaskNotes = task.notes ?? '';
+        // Convert ISO string to datetime-local format (trim seconds/ms)
+        editTaskDueAt = task.due_at ? task.due_at.slice(0, 16) : '';
+    }
+
+    async function saveTaskEdit(id: string) {
+        if (!editTaskTitle.trim()) return;
+        taskEditSaving = true;
+        tasksError = '';
+        try {
+            const updated = await api.patch<StandaloneTask>(`/tasks/${id}`, {
+                title: editTaskTitle.trim(),
+                notes: editTaskNotes.trim() || null,
+                due_at: editTaskDueAt || null,
+            });
+            myTasks = myTasks.map(t => t.id === id ? updated : t);
+            editingTaskId = null;
+        } catch (e) {
+            tasksError = taskErrMsg(e);
+        } finally {
+            taskEditSaving = false;
+        }
+    }
+
     // ── Scoreboard tab state ──
     let scoreboard = $state<ScoreboardEntry[]>([]);
     let scoreboardLoading = $state(false);
@@ -242,6 +276,47 @@
             launchConfetti();
         } catch (e) {
             // silently ignore
+        }
+    }
+
+    async function deleteChore(id: string) {
+        try {
+            await api.delete(`/chores/${id}`);
+            chores = chores.filter(c => c.id !== id);
+        } catch (e) {
+            // silently ignore
+        }
+    }
+
+    // ── Chore inline edit ──
+    let editingChoreId = $state<string | null>(null);
+    let editChoreName = $state('');
+    let editChoreNotes = $state('');
+    let editChoreInterval = $state('');
+    let choreEditSaving = $state(false);
+
+    function openChoreEdit(chore: Chore) {
+        editingChoreId = chore.id;
+        editChoreName = chore.name;
+        editChoreNotes = chore.notes ?? '';
+        editChoreInterval = chore.interval_days != null ? String(chore.interval_days) : '';
+    }
+
+    async function saveChoreEdit(id: string) {
+        if (!editChoreName.trim()) return;
+        choreEditSaving = true;
+        try {
+            const updated = await api.patch<Chore>(`/chores/${id}`, {
+                name: editChoreName.trim(),
+                notes: editChoreNotes.trim() || null,
+                interval_days: editChoreInterval ? parseInt(editChoreInterval, 10) : null,
+            });
+            chores = chores.map(c => c.id === id ? updated : c);
+            editingChoreId = null;
+        } catch (e) {
+            // silently ignore
+        } finally {
+            choreEditSaving = false;
         }
     }
 
@@ -404,34 +479,81 @@
         {/each}
         {#each chores as chore (chore.id)}
             {@const completable = isChoreCompletable(chore)}
-            <li class="alert-card chore-card" class:chore-not-due={!completable}>
-                <div class="alert-left">
-                    <Icon name="sparkles" size={16} class="sev-icon" />
-                </div>
-                <div class="alert-body">
-                    <div class="alert-main">
-                        <span class="alert-title">{chore.name}</span>
-                        {#if chore.next_due_at}
-                            <span class="due-badge">
-                                <time datetime={chore.next_due_at}>{daysLabel(chore.next_due_at)}</time>
-                            </span>
+            <li class="alert-card chore-card" class:chore-not-due={!completable && editingChoreId !== chore.id}>
+                {#if editingChoreId === chore.id}
+                    <form class="chore-edit-form" onsubmit={(e) => { e.preventDefault(); saveChoreEdit(chore.id); }}>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-group-label" for="edit-chore-name-{chore.id}">{$_('chores.name_label')}</label>
+                                <input id="edit-chore-name-{chore.id}" type="text" class="form-input" bind:value={editChoreName} required />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-group-label" for="edit-chore-interval-{chore.id}">{$_('chores.interval_label')}</label>
+                                <input id="edit-chore-interval-{chore.id}" type="number" class="form-input" min="1" max="36500" bind:value={editChoreInterval} />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-group-label" for="edit-chore-notes-{chore.id}">{$_('chores.notes_label')}</label>
+                            <input id="edit-chore-notes-{chore.id}" type="text" class="form-input" bind:value={editChoreNotes} />
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary" disabled={choreEditSaving || !editChoreName.trim()}>
+                                {#if choreEditSaving}<Icon name="loader" size={14} />{:else}<Icon name="check" size={14} />{/if}
+                                {$_('chores.save_button')}
+                            </button>
+                            <button type="button" class="btn-ghost" onclick={() => { editingChoreId = null; }}>
+                                {$_('tasks.new_task_cancel')}
+                            </button>
+                        </div>
+                    </form>
+                {:else}
+                    <div class="alert-left">
+                        <Icon name="sparkles" size={16} class="sev-icon" />
+                    </div>
+                    <div class="alert-body">
+                        <div class="alert-main">
+                            <span class="alert-title">{chore.name}</span>
+                            {#if chore.next_due_at}
+                                <span class="due-badge">
+                                    <time datetime={chore.next_due_at}>{daysLabel(chore.next_due_at)}</time>
+                                </span>
+                            {/if}
+                        </div>
+                        {#if chore.interval_days}
+                            <p class="alert-detail chore-recurrence">{$_('tasks.chore_every_n_days', { values: { n: chore.interval_days } })}</p>
+                        {/if}
+                        {#if chore.notes}
+                            <p class="alert-detail">{chore.notes}</p>
                         {/if}
                     </div>
-                    {#if chore.notes}
-                        <p class="alert-detail">{chore.notes}</p>
-                    {/if}
-                </div>
-                <div class="chore-actions">
-                    <button
-                        class="done-btn"
-                        title={completable ? $_('tasks.mark_done_tooltip') : $_('tasks.chore_not_due_tooltip')}
-                        disabled={!completable}
-                        onclick={() => completeChore(chore.id)}
-                    >
-                        <Icon name="calendar-check" size={16} />
-                        <span class="sr-only">{$_('tasks.mark_done_tooltip')}</span>
-                    </button>
-                </div>
+                    <div class="chore-actions">
+                        <button
+                            class="done-btn"
+                            title={completable ? $_('tasks.mark_done_tooltip') : $_('tasks.chore_not_due_tooltip')}
+                            disabled={!completable}
+                            onclick={() => completeChore(chore.id)}
+                        >
+                            <Icon name="calendar-check" size={16} />
+                            <span class="sr-only">{$_('tasks.mark_done_tooltip')}</span>
+                        </button>
+                        <button
+                            class="done-btn"
+                            title={$_('chores.edit_button')}
+                            onclick={() => openChoreEdit(chore)}
+                        >
+                            <Icon name="pencil" size={16} />
+                            <span class="sr-only">{$_('chores.edit_button')}</span>
+                        </button>
+                        <button
+                            class="done-btn delete-btn"
+                            title={$_('tasks.chore_delete_tooltip')}
+                            onclick={() => deleteChore(chore.id)}
+                        >
+                            <Icon name="trash-2" size={16} />
+                            <span class="sr-only">{$_('tasks.chore_delete_tooltip')}</span>
+                        </button>
+                    </div>
+                {/if}
             </li>
         {/each}
         {#if showNewChoreForm}
@@ -530,55 +652,98 @@
                 {@const hasDue = !!task.due_at}
                 <li
                     class="alert-card task-card"
-                    class:severity-critical={overdue}
-                    class:severity-warning={hasDue && !overdue}
+                    class:severity-critical={overdue && editingTaskId !== task.id}
+                    class:severity-warning={hasDue && !overdue && editingTaskId !== task.id}
                 >
-                    <div class="alert-left">
-                        <Icon
-                            name="check-circle"
-                            size={16}
-                            class="sev-icon {overdue ? 'sev-critical' : hasDue ? 'sev-warning' : ''}"
-                        />
-                    </div>
-                    <div class="alert-body">
-                        <div class="alert-main">
-                            <span class="alert-title">{task.title}</span>
-                            {#if task.due_at}
-                                <span class="due-badge" class:critical={overdue}>
-                                    <time datetime={task.due_at}>{daysLabel(task.due_at)}</time>
-                                </span>
-                            {/if}
+                    {#if editingTaskId === task.id}
+                        <form class="chore-edit-form" onsubmit={(e) => { e.preventDefault(); saveTaskEdit(task.id); }}>
+                            <div class="form-row">
+                                <input
+                                    type="text"
+                                    class="form-input"
+                                    placeholder={$_('tasks.new_task_title_placeholder')}
+                                    bind:value={editTaskTitle}
+                                    required
+                                />
+                            </div>
+                            <div class="form-row">
+                                <input
+                                    type="text"
+                                    class="form-input"
+                                    placeholder={$_('tasks.new_task_notes_placeholder')}
+                                    bind:value={editTaskNotes}
+                                />
+                                <label class="due-label">
+                                    <span>{$_('tasks.new_task_due_label')}</span>
+                                    <input type="datetime-local" class="form-input" bind:value={editTaskDueAt} />
+                                </label>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn-primary" disabled={taskEditSaving || !editTaskTitle.trim()}>
+                                    {#if taskEditSaving}<Icon name="loader" size={14} />{:else}<Icon name="check" size={14} />{/if}
+                                    {$_('chores.save_button')}
+                                </button>
+                                <button type="button" class="btn-ghost" onclick={() => { editingTaskId = null; }}>
+                                    {$_('tasks.new_task_cancel')}
+                                </button>
+                            </div>
+                        </form>
+                    {:else}
+                        <div class="alert-left">
+                            <Icon
+                                name="check-circle"
+                                size={16}
+                                class="sev-icon {overdue ? 'sev-critical' : hasDue ? 'sev-warning' : ''}"
+                            />
                         </div>
-                        {#if task.notes}
-                            <p class="alert-detail">{task.notes}</p>
-                        {/if}
-                        <div class="alert-links">
-                            {#if task.item_id}
-                                <a href="/collections/{task.collection_id}?item={task.item_id}">
-                                    {$_('maintenance.view_item_link')}
-                                </a>
+                        <div class="alert-body">
+                            <div class="alert-main">
+                                <span class="alert-title">{task.title}</span>
+                                {#if task.due_at}
+                                    <span class="due-badge" class:critical={overdue}>
+                                        <time datetime={task.due_at}>{daysLabel(task.due_at)}</time>
+                                    </span>
+                                {/if}
+                            </div>
+                            {#if task.notes}
+                                <p class="alert-detail">{task.notes}</p>
                             {/if}
-                            <a href="/collections/{task.collection_id}">{$_('maintenance.collection_link')}</a>
+                            <div class="alert-links">
+                                {#if task.item_id}
+                                    <a href="/collections/{task.collection_id}?item={task.item_id}">
+                                        {$_('maintenance.view_item_link')}
+                                    </a>
+                                {/if}
+                                <a href="/collections/{task.collection_id}">{$_('maintenance.collection_link')}</a>
+                            </div>
                         </div>
-                    </div>
-                    <div class="chore-actions">
-                        <button
-                            class="done-btn"
-                            title={$_('tasks.complete_tooltip')}
-                            onclick={() => completeTask(task.id)}
-                        >
-                            <Icon name="check-circle" size={16} />
-                            <span class="sr-only">{$_('tasks.complete_tooltip')}</span>
-                        </button>
-                        <button
-                            class="done-btn delete-btn"
-                            title={$_('tasks.delete_tooltip')}
-                            onclick={() => deleteTask(task.id)}
-                        >
-                            <Icon name="trash-2" size={16} />
-                            <span class="sr-only">{$_('tasks.delete_tooltip')}</span>
-                        </button>
-                    </div>
+                        <div class="chore-actions">
+                            <button
+                                class="done-btn"
+                                title={$_('tasks.complete_tooltip')}
+                                onclick={() => completeTask(task.id)}
+                            >
+                                <Icon name="check-circle" size={16} />
+                                <span class="sr-only">{$_('tasks.complete_tooltip')}</span>
+                            </button>
+                            <button
+                                class="done-btn"
+                                title={$_('chores.edit_button')}
+                                onclick={() => openTaskEdit(task)}
+                            >
+                                <Icon name="pencil" size={16} />
+                                <span class="sr-only">{$_('chores.edit_button')}</span>
+                            </button>
+                            <button
+                                class="done-btn delete-btn"
+                                title={$_('tasks.delete_tooltip')}
+                                onclick={() => deleteTask(task.id)}
+                            >
+                                <Icon name="trash-2" size={16} />
+                                <span class="sr-only">{$_('tasks.delete_tooltip')}</span>
+                            </button>
+                        </div>
+                    {/if}
                 </li>
             {/each}
             {#if showNewTaskForm}
@@ -778,6 +943,8 @@
         color: var(--danger);
     }
     .alert-detail { margin: 0.25rem 0 0; font-size: 0.8rem; color: var(--text-muted); }
+    .chore-recurrence { font-size: 0.75rem; font-style: italic; }
+    .chore-edit-form { padding: 0.75rem; width: 100%; display: flex; flex-direction: column; gap: 0.5rem; }
     .alert-links { margin-top: 0.5rem; display: flex; gap: 0.75rem; font-size: 0.8rem; align-items: center; flex-wrap: wrap; }
     .alert-links a { color: var(--accent); text-decoration: none; display: flex; align-items: center; gap: 0.2rem; }
     .alert-links a:hover { text-decoration: underline; }

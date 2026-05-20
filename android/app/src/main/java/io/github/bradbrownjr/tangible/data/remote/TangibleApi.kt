@@ -214,6 +214,9 @@ interface TangibleApi {
     @DELETE("tasks/{id}")
     suspend fun deleteTask(@Path("id") id: String)
 
+    @PATCH("tasks/{id}")
+    suspend fun updateTask(@Path("id") id: String, @Body body: TaskUpdateDto): StandaloneTaskDto
+
     // --- Metadata ---
     @POST("metadata/scrape")
     suspend fun scrape(@Body body: ScrapeRequest): ScrapeResponse
@@ -279,6 +282,9 @@ interface TangibleApi {
 
     @DELETE("chores/{choreId}")
     suspend fun deleteChore(@Path("choreId") choreId: String)
+
+    @PATCH("chores/{choreId}")
+    suspend fun updateChore(@Path("choreId") choreId: String, @Body body: ChoreUpdateDto): ChoreDto
 
     @GET("tasks/scoreboard")
     suspend fun getScoreboard(): List<ScoreboardEntryDto>

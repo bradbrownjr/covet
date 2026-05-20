@@ -25,6 +25,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -72,10 +73,12 @@ import io.github.bradbrownjr.tangible.R
 import io.github.bradbrownjr.tangible.data.remote.ChoreCompletePayloadDto
 import io.github.bradbrownjr.tangible.data.remote.ChoreCreateDto
 import io.github.bradbrownjr.tangible.data.remote.ChoreDto
+import io.github.bradbrownjr.tangible.data.remote.ChoreUpdateDto
 import io.github.bradbrownjr.tangible.data.remote.CollectionDto
 import io.github.bradbrownjr.tangible.data.remote.CreateTaskBody
 import io.github.bradbrownjr.tangible.data.remote.ScoreboardEntryDto
 import io.github.bradbrownjr.tangible.data.remote.StandaloneTaskDto
+import io.github.bradbrownjr.tangible.data.remote.TaskUpdateDto
 import io.github.bradbrownjr.tangible.data.local.PendingMutationDao
 import io.github.bradbrownjr.tangible.data.local.PendingMutationEntity
 import io.github.bradbrownjr.tangible.data.remote.TangibleApi
@@ -166,6 +169,17 @@ class MaintenanceViewModel @Inject constructor(
         }
     }
 
+    fun updateChore(choreId: String, name: String, notes: String?, intervalDays: Int?) {
+        viewModelScope.launch {
+            try {
+                val updated = api.updateChore(choreId, ChoreUpdateDto(name = name, notes = notes, interval_days = intervalDays))
+                _state.value = _state.value.copy(chores = _state.value.chores.map { if (it.id == choreId) updated else it })
+            } catch (e: Throwable) {
+                _state.value = _state.value.copy(choresError = e.message ?: "Error updating chore")
+            }
+        }
+    }
+
     fun loadTasks() {
         if (_state.value.tasksLoading || _state.value.tasksLoaded) return
         _state.value = _state.value.copy(tasksLoading = true, tasksError = null)
@@ -217,6 +231,17 @@ class MaintenanceViewModel @Inject constructor(
                 _state.value = _state.value.copy(myTasks = _state.value.myTasks.filter { it.id != id })
             } catch (e: Throwable) {
                 _state.value = _state.value.copy(tasksError = e.message ?: "Error deleting task")
+            }
+        }
+    }
+
+    fun updateTask(id: String, title: String, notes: String?, dueAt: String?) {
+        viewModelScope.launch {
+            try {
+                val updated = api.updateTask(id, TaskUpdateDto(title = title, notes = notes, due_at = dueAt))
+                _state.value = _state.value.copy(myTasks = _state.value.myTasks.map { if (it.id == id) updated else it })
+            } catch (e: Throwable) {
+                _state.value = _state.value.copy(tasksError = e.message ?: "Error updating task")
             }
         }
     }
@@ -389,11 +414,30 @@ fun MaintenanceScreen(
     }
 }
 
+private fun choreRelativeDaysLabel(isoDate: String): String {
+    return try {
+        val now = java.time.Instant.now()
+        val target = java.time.Instant.parse(isoDate)
+        val diffMs = target.toEpochMilli() - now.toEpochMilli()
+        val diffDays = Math.ceil(diffMs.toDouble() / (1000.0 * 60 * 60 * 24)).toLong()
+        when {
+            diffDays < -1 -> "${-diffDays} days overdue"
+            diffDays == -1L -> "1 day overdue"
+            diffDays == 0L -> "Due today"
+            diffDays == 1L -> "Due tomorrow"
+            else -> "In $diffDays days"
+        }
+    } catch (e: Exception) {
+        isoDate.take(10)
+    }
+}
+
 @Composable
 private fun ChoreCard(
     chore: ChoreDto,
     onComplete: () -> Unit,
     onDelete: () -> Unit,
+    onEdit: () -> Unit,
 ) {
     val isCompletable: Boolean = if (chore.interval_days == null) {
         chore.last_completed_at == null
@@ -409,9 +453,16 @@ private fun ChoreCard(
         ) {
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(chore.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                if (chore.interval_days != null) {
+                    Text(
+                        text = stringResource(R.string.chore_interval_label, chore.interval_days),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
                 if (chore.next_due_at != null) {
                     Text(
-                        text = chore.next_due_at.take(10),
+                        text = choreRelativeDaysLabel(chore.next_due_at),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -427,6 +478,9 @@ private fun ChoreCard(
             IconButton(onClick = onComplete, enabled = isCompletable) {
                 Icon(Icons.Default.Check, contentDescription = stringResource(R.string.chore_complete), tint = MaterialTheme.colorScheme.primary)
             }
+            IconButton(onClick = onEdit) {
+                Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit), tint = MaterialTheme.colorScheme.secondary)
+            }
             IconButton(onClick = onDelete) {
                 Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.cd_delete), tint = MaterialTheme.colorScheme.error)
             }
@@ -435,11 +489,80 @@ private fun ChoreCard(
 }
 
 @Composable
+private fun ChoreEditDialog(
+    chore: ChoreDto,
+    onDismiss: () -> Unit,
+    onSave: (name: String, notes: String?, intervalDays: Int?) -> Unit,
+) {
+    var name by remember { mutableStateOf(chore.name) }
+    var notes by remember { mutableStateOf(chore.notes ?: "") }
+    var intervalDays by remember { mutableStateOf(chore.interval_days?.toString() ?: "") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.edit)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.chore_name_hint)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = intervalDays,
+                    onValueChange = { intervalDays = it.filter { c -> c.isDigit() } },
+                    label = { Text(stringResource(R.string.chore_interval_hint)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text(stringResource(R.string.chore_notes_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (name.isNotBlank()) {
+                        onSave(
+                            name.trim(),
+                            notes.trim().ifEmpty { null },
+                            intervalDays.toIntOrNull(),
+                        )
+                    }
+                },
+            ) { Text(stringResource(R.string.save)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
+}
+
+@Composable
 private fun ChoresContent(
     s: MaintenanceUi,
     vm: MaintenanceViewModel,
     onAddChore: () -> Unit = {},
 ) {
+    var editingChore by remember { mutableStateOf<ChoreDto?>(null) }
+
+    if (editingChore != null) {
+        ChoreEditDialog(
+            chore = editingChore!!,
+            onDismiss = { editingChore = null },
+            onSave = { name, notes, intervalDays ->
+                vm.updateChore(editingChore!!.id, name, notes, intervalDays)
+                editingChore = null
+            },
+        )
+    }
+
     PullToRefreshBox(
         isRefreshing = s.choresLoading,
         onRefresh = vm::refreshChores,
@@ -483,6 +606,7 @@ private fun ChoresContent(
                     chore = chore,
                     onComplete = { vm.completeChore(chore.id) },
                     onDelete = { vm.deleteChore(chore.id) },
+                    onEdit = { editingChore = chore },
                 )
             }
             item(key = "new_chore") {
@@ -618,6 +742,19 @@ private fun ScoreboardRow(index: Int, entry: ScoreboardEntryDto) {
 
 @Composable
 private fun MyTasksContent(s: MaintenanceUi, vm: MaintenanceViewModel, onAddTask: () -> Unit = {}) {
+    var editingTask by remember { mutableStateOf<StandaloneTaskDto?>(null) }
+
+    if (editingTask != null) {
+        TaskEditDialog(
+            task = editingTask!!,
+            onDismiss = { editingTask = null },
+            onSave = { title, notes, dueAt ->
+                vm.updateTask(editingTask!!.id, title, notes, dueAt)
+                editingTask = null
+            },
+        )
+    }
+
     PullToRefreshBox(
         isRefreshing = s.tasksLoading,
         onRefresh = vm::refreshTasks,
@@ -641,7 +778,7 @@ private fun MyTasksContent(s: MaintenanceUi, vm: MaintenanceViewModel, onAddTask
             }
         }
         items(s.myTasks, key = { it.id }) { task ->
-                TaskCard(task, onComplete = { vm.completeTask(task.id) }, onDelete = { vm.deleteTask(task.id) })
+                TaskCard(task, onComplete = { vm.completeTask(task.id) }, onDelete = { vm.deleteTask(task.id) }, onEdit = { editingTask = task })
             }
         item(key = "new_task") {
             NewTaskCard(onClick = onAddTask)
@@ -655,6 +792,7 @@ private fun TaskCard(
     task: StandaloneTaskDto,
     onComplete: () -> Unit,
     onDelete: () -> Unit,
+    onEdit: () -> Unit,
 ) {
     val isOverdue = task.due_at != null && task.due_at < java.time.Instant.now().toString().take(10)
     Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
@@ -675,6 +813,13 @@ private fun TaskCard(
                             Icons.Default.Check,
                             contentDescription = stringResource(R.string.tasks_complete),
                             tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    IconButton(onClick = onEdit) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = stringResource(R.string.edit),
+                            tint = MaterialTheme.colorScheme.secondary,
                         )
                     }
                     IconButton(onClick = onDelete) {
@@ -703,6 +848,61 @@ private fun TaskCard(
             }
         }
     }
+}
+
+@Composable
+private fun TaskEditDialog(
+    task: StandaloneTaskDto,
+    onDismiss: () -> Unit,
+    onSave: (title: String, notes: String?, dueAt: String?) -> Unit,
+) {
+    var title by remember { mutableStateOf(task.title) }
+    var notes by remember { mutableStateOf(task.notes ?: "") }
+    var dueAt by remember { mutableStateOf(task.due_at?.take(10) ?: "") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.edit)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text(stringResource(R.string.tasks_new_task_title_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text(stringResource(R.string.tasks_new_task_notes_label)) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = dueAt,
+                    onValueChange = { dueAt = it },
+                    label = { Text(stringResource(R.string.tasks_due_at_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (title.isNotBlank()) {
+                        onSave(
+                            title.trim(),
+                            notes.trim().ifEmpty { null },
+                            dueAt.trim().ifEmpty { null },
+                        )
+                    }
+                },
+            ) { Text(stringResource(R.string.save)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
 }
 
 @Composable

@@ -280,6 +280,7 @@
     <string name="tasks_new_task_title_label" tools:ignore="MissingTranslation">Title</string>
     <string name="tasks_new_task_collection_label" tools:ignore="MissingTranslation">Collection</string>
     <string name="tasks_new_task_notes_label" tools:ignore="MissingTranslation">Notes (optional)</string>
+    <string name="tasks_due_at_label" tools:ignore="MissingTranslation">Due date (YYYY-MM-DD, optional)</string>
     <string name="tasks_complete" tools:ignore="MissingTranslation">Mark complete</string>
     <string name="tasks_delete_task" tools:ignore="MissingTranslation">Delete task</string>
     <string name="tasks_manage_chores" tools:ignore="MissingTranslation">Manage chores \u2192</string>

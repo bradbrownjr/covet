@@ -302,6 +302,13 @@ data class CreateTaskBody(
 )
 
 @JsonClass(generateAdapter = true)
+data class TaskUpdateDto(
+    val title: String? = null,
+    val notes: String? = null,
+    val due_at: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
 data class LocationDto(
     val id: String,
     val collection_id: String,
@@ -507,6 +514,13 @@ data class ChoreCreateDto(
     val notes: String? = null,
     val interval_days: Int? = null,
     val next_due_at: String? = null,
+)
+
+@JsonClass(generateAdapter = true)
+data class ChoreUpdateDto(
+    val name: String? = null,
+    val notes: String? = null,
+    val interval_days: Int? = null,
 )
 
 @JsonClass(generateAdapter = true)

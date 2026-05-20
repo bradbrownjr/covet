@@ -4,6 +4,18 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.81] — 2026-05-21
+
+### Added
+
+- **Web Chores tab — delete button:** Standalone chore cards now show a trash button (previously only available on Android). Calls `DELETE /chores/{id}`.
+- **Web Chores tab — recurrence display:** Chore cards now show "Every N days" subtitle when `interval_days` is set, plus a relative due-date label ("In 3 days", "Due today", "2 days overdue") derived from `next_due_at`.
+- **Web Chores tab — inline edit form:** Pencil button on each chore card opens an inline edit form with Name, Repeat every N days, and Notes fields. Saves via `PATCH /chores/{id}`.
+- **Web Tasks tab — inline edit form:** Pencil button on each task card opens an inline edit form with Title, Notes, and Due date fields. Saves via `PATCH /tasks/{id}`.
+- **Android Chores tab — recurrence display:** `ChoreCard` now shows "Every N days" in primary color when `interval_days` is set, plus a relative due-date label (e.g. "In 3 days", "Due today", "1 day overdue").
+- **Android Chores tab — edit dialog:** Pencil (`Edit`) button on each `ChoreCard` opens an `AlertDialog` with Name, Interval, and Notes fields. Saves via `PATCH /chores/{id}`.
+- **Android Tasks tab — edit dialog:** Pencil (`Edit`) button on each `TaskCard` opens an `AlertDialog` with Title, Notes, and Due date fields. Saves via `PATCH /tasks/{id}`.
+
 ## [0.25.80] — 2026-05-20
 
 ### Fixed

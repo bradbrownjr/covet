@@ -841,6 +841,8 @@
     "manage_chores_link": "Manage chores",
     "mark_done_tooltip": "Mark done",
     "chore_not_due_tooltip": "Not due yet — check back later",
+    "chore_delete_tooltip": "Delete chore",
+    "chore_every_n_days": "Every {n} days",
     "new_chore_button": "New chore",
     "tab_my_tasks": "My Tasks",
     "my_tasks_empty": "No pending tasks.",
