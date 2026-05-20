@@ -83,9 +83,9 @@
         })
     );
 
-    // Chores tab: only chore_due alerts, sorted by due_at
+    // Chores tab: only collection-linked chore_due alerts (standalone chores have their own section)
     const choreAlerts = $derived(
-        sorted.filter(a => a.kind === 'chore_due')
+        sorted.filter(a => a.kind === 'chore_due' && !!a.collection_id)
     );
 
     function launchConfetti() {

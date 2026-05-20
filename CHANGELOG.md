@@ -4,6 +4,12 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.80] — 2026-05-20
+
+### Fixed
+
+- **Web Chores tab — duplicate entries for standalone chores:** A standalone chore with `interval_days` set appeared twice — once as a `chore_due` alert (from `GET /alerts`) and again in the standalone chores section (from `GET /chores`). Fixed by filtering `choreAlerts` to only include alerts where `collection_id` is non-null (collection-linked chores). Standalone chores now appear exclusively in their dedicated section.
+
 ## [0.25.79] — 2026-05-20
 
 ### Fixed
