@@ -50,6 +50,7 @@ def _make_handler(settings: "Settings"):
             raw = await asyncio.wait_for(reader.read(_MAX_SELECTOR_BYTES), timeout=10)
             selector = raw.decode("ascii", errors="replace").rstrip("\r\n")
             await _dispatch(writer, selector, settings)
+            await writer.drain()
         except asyncio.TimeoutError:
             pass
         except Exception:
@@ -57,6 +58,7 @@ def _make_handler(settings: "Settings"):
         finally:
             try:
                 writer.close()
+                await writer.wait_closed()
             except Exception:
                 pass
 
@@ -72,7 +74,7 @@ def _item(item_type: str, display: str, selector: str, host: str, port: int) -> 
 
 
 def _info(text: str) -> str:
-    return f"i{text}\t\t\t\r\n"
+    return f"i{text}\tfake\tnull.host\t1\r\n"
 
 
 def _end() -> str:

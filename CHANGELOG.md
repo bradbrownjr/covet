@@ -4,6 +4,18 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.88] — 2026-05-28
+
+### Fixed
+- Gopher server: responses were silently dropped because the write buffer
+  was never flushed before the connection closed (`drain()` + `wait_closed()`
+  now called). `_info()` lines now use the `fake\tnull.host\t1` placeholder
+  fields required by strict Gopher clients (Lagrange).
+- Telnet table headers rendered misaligned/wrapped because internal line
+  separators used bare `\n` instead of `\r\n`.
+- Removed "Department Store Edition" subtitle from the Telnet login and
+  main-menu screens.
+
 ## [0.25.87] — 2026-05-28
 
 ### Changed

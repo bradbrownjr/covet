@@ -70,7 +70,7 @@ def table_header(*cols: tuple[str, int]) -> str:
     for heading, w in cols:
         header += f" {heading[:w].ljust(w)} |"
         divider += "-" * (w + 2) + "+"
-    return divider + "\n" + header + "\n" + divider
+    return divider + "\r\n" + header + "\r\n" + divider
 
 
 def table_row(*cells: tuple[str, int]) -> str:
@@ -114,7 +114,6 @@ def main_menu_screen(operator: str) -> str:
         box_bottom(width=WIDTH),
         "",
         center("TANGIBLE INVENTORY MANAGEMENT SYSTEM"),
-        center("DEPARTMENT STORE EDITION"),
         "",
         hr(),
         "",
@@ -147,7 +146,6 @@ def login_screen() -> str:
         clear_screen(),
         box_top(width=WIDTH),
         box_row(center("TANGIBLE INVENTORY MANAGEMENT SYSTEM"), width=WIDTH),
-        box_row(center("DEPARTMENT STORE EDITION"), width=WIDTH),
         box_bottom(width=WIDTH),
         "",
         center(f"{'':->40}"),
