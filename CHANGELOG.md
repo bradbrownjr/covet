@@ -4,6 +4,19 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.85] — 2026-05-28
+
+### Added
+- **Retro HTTP 1.0 interface** (opt-in, port 8080): full read/write inventory management over plain HTTP for Mosaic, Lynx, MacWeb, and other vintage browsers. HTML 1.0 only — no CSS, no JS, no `<div>`. GIF/JPEG photo serving via Pillow (max 320×240). HTTP Basic Auth.
+- **Retro Telnet interface** (opt-in, port 8023): 80-column IBM 3270 department store terminal aesthetic. Full CRUD with IAC negotiation (WILL ECHO / SGA), password masking, 300 s idle timeout, and Ctrl+C/Ctrl+D disconnect.
+- **Gopher interface** (opt-in, port 70): RFC 1436 read-only server exposing public collections. Supports menu (`1`), text (`0`), GIF (`g`), and info (`i`) item types. No authentication — public collections only.
+- **Brute-force ban protection** for HTTP and Telnet: ramp-up lockout schedule (3 fails→30 s, 5→5 min, 7→1 hr, 10→24 hr, 15+→permanent). 24-hour failure window. IP tracking respects `X-Forwarded-For` for reverse-proxy deployments.
+- **Admin UI — Retro Access Bans**: new section in Settings → Admin showing all ban records (IP, interface, attempt count, expiry, status) with per-row Unban and bulk "Unban All Expired" actions.
+- **Admin API** `GET/DELETE /api/admin/retro-bans` and `GET /api/admin/retro-bans/{ip}/attempts` for ban management.
+- New config settings (all off by default, `TANGIBLE_` prefix): `RETRO_HTTP_ENABLED`, `RETRO_HTTP_PORT`, `RETRO_HTTP_BIND`, `TELNET_ENABLED`, `TELNET_PORT`, `TELNET_BIND`, `RETRO_GOPHER_ENABLED`, `RETRO_GOPHER_PORT`, `RETRO_GOPHER_BIND`, `RETRO_GOPHER_HOST`.
+- Alembic migration `0004_retro_security`: adds `retro_login_attempts` and `retro_banned_ips` tables.
+- Docker Compose files updated with commented-out port mappings and env vars for all three retro interfaces.
+
 ## [0.25.84] — 2026-05-20
 
 ### Changed

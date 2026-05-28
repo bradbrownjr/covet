@@ -24,6 +24,12 @@ services:
       net.unraid.docker.icon: "https://raw.githubusercontent.com/bradbrownjr/tangible/main/web/static/icon-512.png"
     ports:
       - "8000:8000"
+      # Retro HTML 1.0 interface (LAN only — plain HTTP, no TLS)
+      # - "8080:8080"
+      # Retro Telnet interface (LAN only — plaintext)
+      # - "8023:8023"
+      # Retro Gopher interface (LAN only — plaintext)
+      # - "70:70"
     environment:
       TZ: ${TZ:-Etc/UTC}
       # Unraid 'nobody:users' = 99:100
@@ -47,6 +53,11 @@ services:
       # you want a specific admin baked into the deployment.
       # TANGIBLE_ADMIN_USERNAME: admin
       # TANGIBLE_ADMIN_PASSWORD_FILE: /run/secrets/tangible_admin_password
+      # Retro interfaces — uncomment to enable (LAN use only)
+      # TANGIBLE_RETRO_HTTP_ENABLED: "true"
+      # TANGIBLE_TELNET_ENABLED: "true"
+      # TANGIBLE_RETRO_GOPHER_ENABLED: "true"
+      # TANGIBLE_RETRO_GOPHER_HOST: "192.168.1.x"  # your Unraid LAN IP for Gopher menus
     volumes:
       - /mnt/user/appdata/tangible/data:/data
       - /mnt/user/appdata/tangible/config:/config

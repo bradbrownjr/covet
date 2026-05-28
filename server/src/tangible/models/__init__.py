@@ -48,6 +48,7 @@ from tangible.models.user import (
     Session,
     User,
 )
+from tangible.models.retro_security import RetroBannedIP, RetroLoginAttempt
 from tangible.models.webhook import Webhook, WebhookDelivery, WebhookEventType
 
 __all__ = [
@@ -95,6 +96,8 @@ __all__ = [
     "TimestampMixin",
     "ULIDPrimaryKey",
     "User",
+    "RetroBannedIP",
+    "RetroLoginAttempt",
     "Webhook",
     "WebhookDelivery",
     "WebhookEventType",

@@ -176,6 +176,22 @@ class Settings(BaseSettings):
     admin_password: str | None = None
     admin_email: str | None = None
 
+    # Retro HTTP (HTML 1.0) interface
+    retro_http_enabled: bool = False
+    retro_http_port: int = 8080
+    retro_http_bind: str = "0.0.0.0"
+
+    # Retro Telnet interface
+    telnet_enabled: bool = False
+    telnet_port: int = 8023
+    telnet_bind: str = "0.0.0.0"
+
+    # Retro Gopher interface
+    retro_gopher_enabled: bool = False
+    retro_gopher_port: int = 70
+    retro_gopher_bind: str = "0.0.0.0"
+    retro_gopher_host: str = "localhost"
+
     # Integration API keys
     discogs_token: str | None = None
     tmdb_api_key: str | None = None

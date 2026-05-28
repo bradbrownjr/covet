@@ -16,6 +16,11 @@ services:
         condition: service_healthy
     environment:
       TANGIBLE_DATABASE_URL: postgresql+psycopg://tangible:${POSTGRES_PASSWORD:-tangible}@db:5432/tangible
+      # Retro interfaces — uncomment to enable (LAN use only, also uncomment matching ports in base file)
+      # TANGIBLE_RETRO_HTTP_ENABLED: "true"
+      # TANGIBLE_TELNET_ENABLED: "true"
+      # TANGIBLE_RETRO_GOPHER_ENABLED: "true"
+      # TANGIBLE_RETRO_GOPHER_HOST: "192.168.1.x"  # your LAN IP for Gopher menus
 
   db:
     image: postgres:16-alpine

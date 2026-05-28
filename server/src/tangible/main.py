@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -26,7 +27,19 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         run_migrations(settings)
     bootstrap_admin_if_needed(settings)
     discover_plugins()
+
+    # Start retro interface servers (HTML 1.0, Telnet, Gopher)
+    _retro_servers: list[asyncio.Server] = []
+    if settings.retro_http_enabled or settings.telnet_enabled or settings.retro_gopher_enabled:
+        from tangible.retro import start_retro_servers
+        _retro_servers = await start_retro_servers(settings)
+
     yield
+
+    # Gracefully close retro servers on shutdown
+    for srv in _retro_servers:
+        srv.close()
+        await srv.wait_closed()
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:

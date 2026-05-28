@@ -39,6 +39,23 @@
     let scrubResult     = $state('');
     const scrubPhrase   = 'SCRUB INVENTORY';
 
+    // Retro access bans
+    interface BanEntry {
+        id: string;
+        ip_address: string;
+        interface: string;
+        attempt_count: number;
+        banned_at: string;
+        ban_expires_at: string | null;
+        is_permanent: boolean;
+        is_active: boolean;
+        unbanned_at: string | null;
+    }
+    let bans = $state<BanEntry[]>([]);
+    let bansLoaded = $state(false);
+    let bansError = $state('');
+    let unbanningIp = $state<string | null>(null);
+
     function siteSettingDisplayValue(s: SiteSetting): string {
         if (s.value === null) return '';
         return s.value === '***' ? '' : s.value;
@@ -134,9 +151,40 @@
         }
     }
 
+    async function loadBans() {
+        bansError = '';
+        try {
+            bans = await api.get<BanEntry[]>('/admin/retro-bans');
+            bansLoaded = true;
+        } catch (e) {
+            bansError = (e as Error).message;
+        }
+    }
+
+    async function unbanIp(ip: string) {
+        unbanningIp = ip;
+        try {
+            await api.delete(`/admin/retro-bans/${encodeURIComponent(ip)}`);
+            await loadBans();
+        } catch (e) {
+            bansError = (e as Error).message;
+        } finally {
+            unbanningIp = null;
+        }
+    }
+
+    async function unbanAllExpired() {
+        try {
+            await api.delete('/admin/retro-bans');
+            await loadBans();
+        } catch (e) {
+            bansError = (e as Error).message;
+        }
+    }
+
     onMount(async () => {
         if (!$me?.is_admin) { await goto('/settings/appearance'); return; }
-        await Promise.all([loadSiteSettings(), loadBarcodeAdapters()]);
+        await Promise.all([loadSiteSettings(), loadBarcodeAdapters(), loadBans()]);
     });
 </script>
 
@@ -272,6 +320,86 @@
     <Button variant="danger" onclick={() => (scrubModalOpen = true)}>{$_('settings.scrub_inventory_button')}</Button>
 </div>
 
+<!-- Retro Access Bans -->
+<div class="card" style="margin-bottom: 1rem">
+    <h3 style="margin-top:0">Retro Interface Access Bans</h3>
+    <p class="muted">
+        IPs blocked after repeated failed login attempts on the HTML 1.0 or Telnet interfaces.
+        Unban an IP to restore access (e.g., after a legitimate forgotten-password lockout).
+    </p>
+
+    {#if bansError}
+        <p class="error">{bansError}</p>
+    {/if}
+
+    {#if bansLoaded}
+        {#if bans.length === 0}
+            <p class="muted">No ban records found.</p>
+        {:else}
+            <div class="bans-table-wrap">
+                <table class="bans-table">
+                    <thead>
+                        <tr>
+                            <th>IP Address</th>
+                            <th>Interface</th>
+                            <th>Attempts</th>
+                            <th>Banned At</th>
+                            <th>Expires</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {#each bans as ban (ban.id)}
+                            <tr class={ban.is_active ? 'row-active' : 'row-inactive'}>
+                                <td><code>{ban.ip_address}</code></td>
+                                <td>{ban.interface}</td>
+                                <td>{ban.attempt_count}</td>
+                                <td>{new Date(ban.banned_at).toLocaleString()}</td>
+                                <td>
+                                    {#if ban.unbanned_at}
+                                        <span class="badge-cleared">Cleared</span>
+                                    {:else if ban.is_permanent}
+                                        <span class="badge-permanent">Permanent</span>
+                                    {:else if ban.ban_expires_at}
+                                        {new Date(ban.ban_expires_at).toLocaleString()}
+                                    {/if}
+                                </td>
+                                <td>
+                                    {#if ban.unbanned_at}
+                                        <span class="badge-cleared">Unbanned</span>
+                                    {:else if ban.is_active}
+                                        <span class="badge-active">Active</span>
+                                    {:else}
+                                        <span class="badge-expired">Expired</span>
+                                    {/if}
+                                </td>
+                                <td>
+                                    {#if ban.is_active}
+                                        <Button
+                                            variant="secondary"
+                                            onclick={() => unbanIp(ban.ip_address)}
+                                            disabled={unbanningIp === ban.ip_address}
+                                        >
+                                            {unbanningIp === ban.ip_address ? 'Unbanning…' : 'Unban'}
+                                        </Button>
+                                    {/if}
+                                </td>
+                            </tr>
+                        {/each}
+                    </tbody>
+                </table>
+            </div>
+            <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
+                <Button variant="secondary" onclick={loadBans}>Refresh</Button>
+                <Button variant="secondary" onclick={unbanAllExpired}>Unban All Expired</Button>
+            </div>
+        {/if}
+    {:else}
+        <p class="muted">Loading…</p>
+    {/if}
+</div>
+
 <!-- Scrub modal -->
 <Modal open={scrubModalOpen} title={$_('settings.scrub_title')} onclose={() => (scrubModalOpen = false)}>
     <p class="muted">{$_('settings.scrub_text')}</p>
@@ -339,4 +467,20 @@
         border: 1px solid color-mix(in srgb, var(--success) 45%, transparent);
         white-space: nowrap;
     }
+
+    /* Retro bans table */
+    .bans-table-wrap { overflow-x: auto; }
+    .bans-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    .bans-table th, .bans-table td {
+        padding: 0.4rem 0.6rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+    }
+    .bans-table th { font-weight: 600; background: var(--surface-2); }
+    .row-inactive { opacity: 0.55; }
+    .badge-active   { color: var(--danger); font-weight: 600; font-size: 0.75rem; }
+    .badge-expired  { color: var(--muted); font-size: 0.75rem; }
+    .badge-cleared  { color: var(--success); font-size: 0.75rem; }
+    .badge-permanent { color: var(--danger); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; }
+    .error { color: var(--danger); }
 </style>

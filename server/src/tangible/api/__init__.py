@@ -30,6 +30,7 @@ from tangible.api import photos as photos_router
 from tangible.api import share as share_router
 from tangible.api import shopping as shopping_router
 from tangible.api import sync as sync_router
+from tangible.api import retro_bans as retro_bans_router
 from tangible.api import system as system_router
 from tangible.api import tags as tags_router
 from tangible.api import webhooks as webhooks_router
@@ -73,6 +74,7 @@ api_router.include_router(notifications_router.router)
 api_router.include_router(photos_router.router)
 api_router.include_router(manual_bundles_router.router)
 api_router.include_router(system_router.router)
+api_router.include_router(retro_bans_router.router)
 api_router.include_router(webhooks_router.router)
 api_router.include_router(ha_router.router)
 
