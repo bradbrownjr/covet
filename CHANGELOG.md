@@ -4,6 +4,19 @@ All notable changes to **Tangible** are documented here.
 
 ## [Unreleased]
 
+## [0.25.91] — 2026-05-28
+
+### Changed
+- Telnet: navigation key `[H]ome` replaced with `0` (zero) = main menu, matching
+  1970s–80s AS/400 / numeric-terminal convention (`0. Sign Off` at bottom of every menu).
+- Telnet: hint bars reformatted from `[KEY]Label` bracket style to `KEY=LABEL` format,
+  matching the PF-key hint bar convention used on IBM 5250 / 3270-era screens.
+- Telnet: input prompt changed from `Enter selection:` to `SELECTION ===>` (AS/400 5250).
+- Telnet: login prompts changed to `USER ID ===>` / `PASSWORD ===>` (period-accurate).
+- terminal.py: `clear_screen()` now sends `\x1b[H\x1b[2J\x1b[3J` — corrects
+  cursor-home order and adds `\x1b[3J` (xterm scrollback clear); VT100-only
+  clients silently ignore the extra sequence per ANSI X3.64 parsing rules.
+
 ## [0.25.90] — 2026-05-28
 
 ### Fixed

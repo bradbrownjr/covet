@@ -15,7 +15,7 @@ PAGE_ROWS = 12     # data rows per paginated screen (leaves room for header/foot
 
 
 def clear_screen() -> str:
-    return "\x1b[2J\x1b[H"
+    return "\x1b[H\x1b[2J\x1b[3J"
 
 
 def bold(text: str) -> str:
@@ -101,11 +101,11 @@ def paginate(items: list, page: int, per_page: int = 20) -> tuple[list, int]:
 def pagination_prompt(page: int, total_pages: int) -> str:
     parts = []
     if page > 0:
-        parts.append("[P]rev")
+        parts.append("P=PREV")
     if page < total_pages - 1:
-        parts.append("[N]ext")
-    parts.append("[B]ack")
-    return "  " + "  ".join(parts) + "  ENTER SELECTION: "
+        parts.append("N=NEXT")
+    parts.append("B=BACK")
+    return "  ".join(parts)
 
 
 def main_menu_screen(operator: str) -> str:
@@ -138,7 +138,7 @@ def main_menu_screen(operator: str) -> str:
         "",
         hr(),
         "",
-        "          ENTER SELECTION: ",
+        "          SELECTION ===> ",
     ]
     return "\r\n".join(lines)
 
