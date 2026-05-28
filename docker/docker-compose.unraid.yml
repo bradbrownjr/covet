@@ -4,32 +4,27 @@
 #   /mnt/user/appdata/tangible/data
 #   /mnt/user/appdata/tangible/config
 #
+# Macvlan mode: the container gets its own LAN IP so retro interfaces can use
+# standard ports 80 (HTTP 1.0), 23 (Telnet), and 70 (Gopher) without conflicts.
+#
+# Set your chosen static LAN IP once here — it is reused for both the
+# container's network assignment and the Gopher host advertisement:
+x-lan-ip: &lan-ip "10.0.0.XXX"   # ← change to an unused IP on your LAN
+#
 # Usage (from any working dir):
 #   docker compose -f docker-compose.unraid.yml up -d
-#
-# This file uses absolute host paths; copy and edit as needed.
 
 services:
   tangible:
     image: ${TANGIBLE_IMAGE:-ghcr.io/bradbrownjr/tangible:latest}
     container_name: tangible
     restart: unless-stopped
-    # Unraid Docker tab labels. [IP] resolves to the host's LAN IP and
-    # [PORT:8000] resolves to whichever host port you mapped to 8000
-    # below, so the Web UI link works whether you reverse-proxy or not.
-    # Drop in any HTTPS image URL for `icon` to set a custom tile icon.
+    cap_add:
+      - NET_BIND_SERVICE
     labels:
-      net.unraid.docker.webui: "http://[IP]:[PORT:8000]/"
+      net.unraid.docker.webui: "http://[IP]:8000/"
       net.unraid.docker.shell: "bash"
       net.unraid.docker.icon: "https://raw.githubusercontent.com/bradbrownjr/tangible/main/web/static/icon-512.png"
-    ports:
-      - "8000:8000"
-      # Retro HTML 1.0 interface (LAN only — plain HTTP, no TLS)
-      # - "8080:8080"
-      # Retro Telnet interface (LAN only — plaintext)
-      # - "8023:8023"
-      # Retro Gopher interface (LAN only — plaintext)
-      # - "70:70"
     environment:
       TZ: ${TZ:-Etc/UTC}
       # Unraid 'nobody:users' = 99:100
@@ -38,7 +33,7 @@ services:
       UMASK: "0022"
       # ----- LAN-only first run (default) -----
       # Wildcard allows any Host header so you can reach the container
-      # at http://<unraid-ip>:8000/ immediately. Once you put a reverse
+      # at http://<container-ip>:8000/ immediately. Once you put a reverse
       # proxy in front, narrow this to your real hostname and set
       # TANGIBLE_PUBLIC_URL + TANGIBLE_BEHIND_PROXY to match.
       TANGIBLE_PUBLIC_URL: ${TANGIBLE_PUBLIC_URL:-}
@@ -46,18 +41,16 @@ services:
       # TANGIBLE_BEHIND_PROXY: "true"
       TANGIBLE_REGISTRATION_ENABLED: ${TANGIBLE_REGISTRATION_ENABLED:-true}
       # Optional: bootstrap an admin from env on first launch.
-      # If you leave both unset, browse to http://<unraid-ip>:8000/ after
-      # the container is healthy and click 'Register' — the very first
-      # user to sign up is automatically promoted to admin (regardless
-      # of the TANGIBLE_REGISTRATION_ENABLED setting). Set these only if
-      # you want a specific admin baked into the deployment.
       # TANGIBLE_ADMIN_USERNAME: admin
       # TANGIBLE_ADMIN_PASSWORD_FILE: /run/secrets/tangible_admin_password
-      # Retro interfaces — uncomment to enable (LAN use only)
-      # TANGIBLE_RETRO_HTTP_ENABLED: "true"
-      # TANGIBLE_TELNET_ENABLED: "true"
-      # TANGIBLE_RETRO_GOPHER_ENABLED: "true"
-      # TANGIBLE_RETRO_GOPHER_HOST: "192.168.1.x"  # your Unraid LAN IP for Gopher menus
+      # Retro interfaces — uses standard ports since container has its own IP
+      TANGIBLE_RETRO_HTTP_ENABLED: "true"
+      TANGIBLE_RETRO_HTTP_PORT: "80"
+      TANGIBLE_TELNET_ENABLED: "true"
+      TANGIBLE_TELNET_PORT: "23"
+      TANGIBLE_RETRO_GOPHER_ENABLED: "true"
+      TANGIBLE_RETRO_GOPHER_PORT: "70"
+      TANGIBLE_RETRO_GOPHER_HOST: *lan-ip
     volumes:
       - /mnt/user/appdata/tangible/data:/data
       - /mnt/user/appdata/tangible/config:/config
@@ -68,15 +61,15 @@ services:
       retries: 3
       start_period: 20s
     networks:
-      - tangible
+      tangible_lan:
+        ipv4_address: *lan-ip
 
 networks:
-  # Default: a Compose-managed bridge network created on first 'up'.
-  # If you front Tangible with a reverse proxy (SWAG / Nginx Proxy Manager /
-  # Traefik) running on a shared external network, replace the block
-  # below with:
-  #   tangible:
-  #     external: true
-  #     name: proxy        # or whatever your proxy network is called
-  tangible:
-    driver: bridge
+  tangible_lan:
+    driver: macvlan
+    driver_opts:
+      parent: br0
+    ipam:
+      config:
+        - subnet: 10.0.0.0/24    # ← your LAN subnet
+          ip_range: 10.0.0.XXX/32  # ← same IP as x-lan-ip above
